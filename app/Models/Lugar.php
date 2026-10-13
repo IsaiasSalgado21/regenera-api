@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Models;
+
+use MongoDB\Laravel\Eloquent\Model;
+
+class Lugar extends Model
+{
+    protected $connection = 'mongodb';
+
+    protected $collection = 'lugares';
+
+    protected $fillable = [
+        'nombre',
+        'descripcion',
+        'municipio',
+        'direccion',
+        'latitud',
+        'longitud',
+        'tipo',
+        'estado',
+        'creadoPor',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'latitud' => 'float',
+            'longitud' => 'float',
+        ];
+    }
+}
