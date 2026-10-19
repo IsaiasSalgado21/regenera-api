@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Inscripcion;
+use App\Models\FloraFauna;
+use App\Models\Articulo;
 use App\Models\Lugar;
 use App\Models\User;
 use App\Models\Voluntariado;
@@ -233,6 +235,82 @@ class RegeneraBCSSeeder extends Seeder
                 'fechaInscripcion' => now(),
                 'estado' => 'inscrita',
                 'observaciones' => 'Inscripción de prueba para reforestación.',
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Flora y Fauna
+        |--------------------------------------------------------------------------
+        */
+
+        FloraFauna::firstOrCreate(
+            ['nombre' => 'Mangle Rojo'],
+            [
+                'nombreCientifico' => 'Rhizophora mangle',
+                'tipo' => 'flora',
+                'descripcion' => 'Árbol halófito crucial para la protección de la línea de costa y esteros de BCS.',
+                'habitat' => 'Esteros y zonas intermareales costeras',
+                'estadoConservation' => 'Protección especial',
+                'imagenes' => [],
+                'ubicacion' => [
+                    'nombre' => 'Ensenada de La Paz',
+                    'latitud' => 24.142,
+                    'longitud' => -110.315,
+                ],
+                'lugaresRelacionados' => [(string) $playaBalandra->_id],
+                'fuenteInformacion' => 'CONABIO / Ecosistemas de BCS',
+            ]
+        );
+
+        FloraFauna::firstOrCreate(
+            ['nombre' => 'Tortuga Negra'],
+            [
+                'nombreCientifico' => 'Chelonia agassizii',
+                'tipo' => 'fauna',
+                'descripcion' => 'Especie marina emblemática que habita en las bahías y zonas costeras del estado.',
+                'habitat' => 'Aguas costeras y bahías protegidas',
+                'estadoConservation' => 'En peligro de extinción',
+                'imagenes' => [],
+                'ubicacion' => [
+                    'nombre' => 'Bahía de La Paz',
+                    'latitud' => 24.200,
+                    'longitud' => -110.350,
+                ],
+                'lugaresRelacionados' => [(string) $playaBalandra->_id],
+                'fuenteInformacion' => 'Programa de Conservación de Tortugas Marinas',
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Artículos Ambientales
+        |--------------------------------------------------------------------------
+        */
+
+        Articulo::firstOrCreate(
+            ['titulo' => 'La importancia de la restauración de manglares en la Bahía de La Paz'],
+            [
+                'autorId' => (string) $organizador->_id,
+                'contenido' => 'Los manglares actúan como barreras naturales contra la erosión y son el hogar de numerosas especies marinas juveniles. Su conservación es vital para el equilibrio ecológico...',
+                'imagen' => null,
+                'categoria' => 'Conservación',
+                'estado' => 'publicado',
+                'fechaPublicacion' => now(),
+                'fechaActualizacion' => now(),
+            ]
+        );
+
+        Articulo::firstOrCreate(
+            ['titulo' => 'Guía práctica para reducir residuos plásticos en las playas de BCS'],
+            [
+                'autorId' => (string) $organizador->_id,
+                'contenido' => 'Pequeñas acciones diarias, como el uso de termos reutilizables y la participación en limpiezas comunitarias, generan un impacto positivo directo en nuestros ecosistemas costeros...',
+                'imagen' => null,
+                'categoria' => 'Educación Ambiental',
+                'estado' => 'publicado',
+                'fechaPublicacion' => now(),
+                'fechaActualizacion' => now(),
             ]
         );
 

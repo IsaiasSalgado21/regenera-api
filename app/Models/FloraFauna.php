@@ -8,6 +8,7 @@ class FloraFauna extends Model
 {
     protected $connection = 'mongodb';
 
+    protected $table = 'floraFauna';
     protected $collection = 'floraFauna';
 
     protected $fillable = [
