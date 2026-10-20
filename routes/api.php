@@ -7,6 +7,9 @@ use App\Http\Controllers\VoluntariadoController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\FloraFaunaController;
 use App\Http\Controllers\ArticuloController;
+use App\Http\Controllers\AsistenciaController;
+use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\NotificacionController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -72,3 +75,19 @@ Route::get('/articulos/{id}', [ArticuloController::class, 'show']);
 Route::put('/articulos/{id}', [ArticuloController::class, 'update']);
 Route::patch('/articulos/{id}', [ArticuloController::class, 'update']);
 Route::delete('/articulos/{id}', [ArticuloController::class, 'destroy']);
+
+Route::get('/asistencias', [AsistenciaController::class, 'index']);
+Route::post('/asistencias', [AsistenciaController::class, 'store']);
+Route::get('/asistencias/{id}', [AsistenciaController::class, 'show']);
+Route::delete('/asistencias/{id}', [AsistenciaController::class, 'destroy']);
+
+Route::get('/auditoria', [AuditoriaController::class, 'index']);
+Route::post('/auditoria', [AuditoriaController::class, 'store']);
+Route::get('/auditoria/{id}', [AuditoriaController::class, 'show']);
+
+Route::get('/notificaciones', [NotificacionController::class, 'index']);
+Route::get('/notificaciones/no-leidas/{usuarioId}', [NotificacionController::class, 'noLeidas']);
+Route::post('/notificaciones', [NotificacionController::class, 'store']);
+Route::patch('/notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);
+Route::patch('/notificaciones/marcar-todas-leidas/{usuarioId}', [NotificacionController::class, 'marcarTodasLeidas']);
+Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy']);

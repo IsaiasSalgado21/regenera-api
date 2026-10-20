@@ -8,6 +8,9 @@ use App\Models\Articulo;
 use App\Models\Lugar;
 use App\Models\User;
 use App\Models\Voluntariado;
+use App\Models\Asistencia;
+use App\Models\Notificacion;
+use App\Models\Auditoria;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -288,7 +291,7 @@ class RegeneraBCSSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        Articulo::firstOrCreate(
+        $articulo1 = Articulo::firstOrCreate(
             ['titulo' => 'La importancia de la restauración de manglares en la Bahía de La Paz'],
             [
                 'autorId' => (string) $organizador->_id,
@@ -311,6 +314,138 @@ class RegeneraBCSSeeder extends Seeder
                 'estado' => 'publicado',
                 'fechaPublicacion' => now(),
                 'fechaActualizacion' => now(),
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 7. Asistencias
+        |--------------------------------------------------------------------------
+        */
+
+        Asistencia::firstOrCreate(
+            [
+                'usuarioId' => (string) $usuario1->_id,
+                'voluntariadoId' => (string) $limpieza->_id,
+            ],
+            [
+                'fecha' => now(),
+                'hora' => '08:15:00',
+                'metodo' => 'QR',
+                'confirmada' => true,
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 8. Notificaciones
+        |--------------------------------------------------------------------------
+        */
+
+        Notificacion::firstOrCreate(
+            [
+                'usuarioId' => (string) $usuario1->_id,
+                'titulo' => 'Inscripción confirmada',
+            ],
+            [
+                'tipo' => 'inscripcion_confirmada',
+                'mensaje' => 'Te has inscrito exitosamente en la Jornada de limpieza de Playa Balandra.',
+                'entidad' => [
+                    'entidadtipo' => 'voluntariado',
+                    'id' => (string) $limpieza->_id,
+                ],
+                'prioridad' => 'normal',
+                'leida' => true,
+                'fechaCreacion' => now()->subDays(1),
+                'fechaLectura' => now()->subHours(12),
+                'fechaExpiracion' => null,
+                'datos' => [
+                    'voluntariadoTitulo' => $limpieza->titulo,
+                ],
+            ]
+        );
+
+        Notificacion::firstOrCreate(
+            [
+                'usuarioId' => (string) $usuario1->_id,
+                'titulo' => 'Asistencia registrada',
+            ],
+            [
+                'tipo' => 'asistencia_registrada',
+                'mensaje' => 'Tu asistencia ha sido confirmada mediante código QR. ¡Gracias por tu participación!',
+                'entidad' => [
+                    'entidadtipo' => 'voluntariado',
+                    'id' => (string) $limpieza->_id,
+                ],
+                'prioridad' => 'alta',
+                'leida' => false,
+                'fechaCreacion' => now(),
+                'fechaLectura' => null,
+                'fechaExpiracion' => null,
+                'datos' => [
+                    'metodo' => 'QR',
+                ],
+            ]
+        );
+
+        Notificacion::firstOrCreate(
+            [
+                'usuarioId' => (string) $organizador->_id,
+                'titulo' => 'Artículo publicado',
+            ],
+            [
+                'tipo' => 'articulo_aprobado',
+                'mensaje' => 'Tu artículo "La importancia de la restauración de manglares" ha sido aprobado y publicado.',
+                'entidad' => [
+                    'entidadtipo' => 'articulo',
+                    'id' => (string) $articulo1->_id,
+                ],
+                'prioridad' => 'normal',
+                'leida' => false,
+                'fechaCreacion' => now(),
+                'fechaLectura' => null,
+                'fechaExpiracion' => null,
+                'datos' => [],
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 9. Auditoría
+        |--------------------------------------------------------------------------
+        */
+
+        Auditoria::firstOrCreate(
+            [
+                'usuarioId' => (string) $organizador->_id,
+                'accion' => 'verificacion_organizador',
+            ],
+            [
+                'entidad' => 'usuarios',
+                'entidadId' => (string) $organizador->_id,
+                'fecha' => now()->subDays(2),
+                'ip' => '127.0.0.1',
+                'detalles' => [
+                    'motivo' => 'Verificación inicial de cuenta de organizador.',
+                    'aprobadoPor' => 'sistema',
+                ],
+            ]
+        );
+
+        Auditoria::firstOrCreate(
+            [
+                'usuarioId' => (string) $organizador->_id,
+                'accion' => 'crear_voluntariado',
+            ],
+            [
+                'entidad' => 'voluntariados',
+                'entidadId' => (string) $limpieza->_id,
+                'fecha' => now()->subDays(1),
+                'ip' => '127.0.0.1',
+                'detalles' => [
+                    'titulo' => $limpieza->titulo,
+                    'lugarId' => (string) $playaBalandra->_id,
+                ],
             ]
         );
 
