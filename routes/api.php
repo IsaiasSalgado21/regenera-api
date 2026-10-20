@@ -10,6 +10,7 @@ use App\Http\Controllers\ArticuloController;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,13 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/auth/me', [AuthController::class, 'me']);
 
 Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+Route::get('/usuarios', [UserController::class, 'index']);
+Route::post('/usuarios', [UserController::class, 'store']);
+Route::get('/usuarios/{id}', [UserController::class, 'show']);
+Route::put('/usuarios/{id}', [UserController::class, 'update']);
+Route::patch('/usuarios/{id}', [UserController::class, 'update']);
+Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
 
 Route::get('/lugares', [LugarController::class, 'index']);
 Route::post('/lugares', [LugarController::class, 'store']);
