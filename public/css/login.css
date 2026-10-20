@@ -1,0 +1,111 @@
+.auth-page {
+    min-height: 100vh;
+    padding: 110px 24px 50px;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(ellipse at top right, rgba(47, 128, 100, .12), transparent 38%),
+        var(--cream);
+}
+
+.auth-box {
+    width: min(100%, 500px);
+    padding: 44px;
+    border: 1px solid rgba(20, 32, 27, .07);
+    border-radius: 26px;
+    background: white;
+    box-shadow: 0 22px 70px rgba(20, 32, 27, .08);
+}
+
+.auth-box h1 {
+    margin: 8px 0 14px;
+    font-family: "Playfair Display", serif;
+    font-size: clamp(38px, 7vw, 54px);
+    line-height: 1;
+}
+
+.auth-box > p:not(.auth-demo) {
+    margin-bottom: 28px;
+    color: var(--gray);
+    line-height: 1.7;
+}
+
+.auth-box form {
+    display: grid;
+    gap: 10px;
+}
+
+.auth-box label {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.auth-box input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid rgba(20, 32, 27, .16);
+    border-radius: 10px;
+    background: #fbfcfa;
+    color: var(--black);
+    font: inherit;
+}
+
+.password-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    border: 1px solid rgba(20, 32, 27, .16);
+    background: white;
+}
+
+.password-field input {
+    min-width: 0;
+    border: 0;
+}
+
+.password-field button {
+    align-self: stretch;
+    padding: 0 13px;
+    border: 0;
+    background: transparent;
+    color: var(--green);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-box input:focus {
+    outline: 2px solid rgba(47, 128, 100, .25);
+    border-color: var(--green-light);
+}
+
+.auth-box form button {
+    margin-top: 14px;
+    padding: 14px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--green);
+    color: white;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-box form button:hover {
+    background: var(--green-light);
+}
+
+.auth-demo {
+    margin-top: 22px;
+    color: var(--gray);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+@media (max-width: 500px) {
+    .auth-box {
+        padding: 32px 24px;
+    }
+}

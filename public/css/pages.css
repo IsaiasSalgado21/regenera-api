@@ -1,0 +1,277 @@
+/* =====================================================
+   PÁGINAS INTERNAS
+===================================================== */
+
+.page {
+    padding-top: 72px;
+    min-height: 100vh;
+}
+
+
+/* =====================================================
+   HERO DE PÁGINA
+===================================================== */
+
+.page-hero {
+    min-height: 52vh;
+    padding: 100px 7%;
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    background: var(--green);
+}
+
+.page-hero-background {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: .75;
+}
+
+.page-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,.72),
+            rgba(0,0,0,.18)
+        );
+}
+
+.page-hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 760px;
+}
+
+.page-label {
+    display: block;
+    margin-bottom: 18px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #a9e4ce;
+}
+
+.page-hero h1 {
+    font-family: "Playfair Display", serif;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: .95;
+    margin-bottom: 25px;
+}
+
+.page-hero p {
+    max-width: 620px;
+    color: rgba(255,255,255,.82);
+    line-height: 1.7;
+}
+
+
+/* =====================================================
+   CONTENIDO
+===================================================== */
+
+.page-content {
+    max-width: 1200px;
+    margin: auto;
+    padding: 90px 30px;
+}
+
+.page-intro {
+    max-width: 700px;
+    margin-bottom: 70px;
+}
+
+.page-intro h2 {
+    font-family: "Playfair Display", serif;
+    font-size: clamp(38px, 5vw, 60px);
+    line-height: 1.05;
+    margin-bottom: 22px;
+}
+
+.page-intro p {
+    color: var(--gray);
+    line-height: 1.8;
+}
+
+
+/* =====================================================
+   TARJETAS
+===================================================== */
+
+.page-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.info-card {
+    overflow: hidden;
+    background: white;
+    border-radius: 22px;
+    transition:
+        transform .35s ease,
+        box-shadow .35s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 20px 50px rgba(0,0,0,.08);
+}
+
+.info-card-image {
+    height: 250px;
+    background-size: cover;
+    background-position: center;
+}
+
+.info-card-content {
+    padding: 26px;
+}
+
+.info-card-category {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-light);
+}
+
+.info-card h3 {
+    font-family: "Playfair Display", serif;
+    font-size: 26px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+}
+
+.info-card p {
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+
+/* =====================================================
+   INFORMACIÓN DESTACADA
+===================================================== */
+
+.feature-section {
+    margin-top: 100px;
+    padding: 55px;
+    border-radius: 30px;
+    background: var(--green);
+    color: white;
+}
+
+.feature-section h2 {
+    font-family: "Playfair Display", serif;
+    font-size: 42px;
+    margin-bottom: 18px;
+}
+
+.feature-section p {
+    max-width: 700px;
+    color: rgba(255,255,255,.78);
+    line-height: 1.8;
+}
+
+
+/* =====================================================
+   ARTÍCULOS
+===================================================== */
+
+.article-page-card {
+    overflow: hidden;
+    background: white;
+    border-radius: 22px;
+    transition:
+        transform .35s ease,
+        box-shadow .35s ease;
+}
+
+.article-page-card:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 20px 50px rgba(0,0,0,.08);
+}
+
+.article-page-image {
+    height: 270px;
+    background-size: cover;
+    background-position: center;
+}
+
+.article-page-content {
+    padding: 28px;
+}
+
+.article-page-content span {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-light);
+}
+
+.article-page-content h2 {
+    font-family: "Playfair Display", serif;
+    font-size: 28px;
+    line-height: 1.15;
+    margin: 12px 0;
+}
+
+.article-page-content p {
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.article-link {
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.page-footer {
+    padding: 60px 30px;
+    text-align: center;
+    border-top: 1px solid rgba(0,0,0,.08);
+    color: var(--gray);
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 800px) {
+
+    .page-hero {
+        min-height: 55vh;
+        padding: 80px 25px;
+    }
+
+    .page-content {
+        padding: 70px 20px;
+    }
+
+    .page-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-section {
+        margin-top: 70px;
+        padding: 40px 28px;
+    }
+
+    .feature-section h2 {
+        font-size: 35px;
+    }
+
+}
