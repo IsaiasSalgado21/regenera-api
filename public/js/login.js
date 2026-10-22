@@ -140,10 +140,8 @@ form.addEventListener("submit", async event => {
 
         setMessage(result.data.message || "¡Bienvenido!", "success");
 
-        // Redirección por rol (placeholders; cambia a las rutas reales cuando existan).
-        const rol = result.data.usuario?.rol;
-        const destino = rol === "admin" ? "/admin" : "/perfil";
-        setTimeout(() => { window.location.href = destino; }, 600);
+        // Redirección: al inicio tras iniciar sesión o crear la cuenta.
+        setTimeout(() => { window.location.href = "/"; }, 600);
     } catch (error) {
         console.error(error);
         setMessage(

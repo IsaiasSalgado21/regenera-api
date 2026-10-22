@@ -14,30 +14,72 @@
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap"
         rel="stylesheet">
 
-    {{-- Estilos compilados con Vite (login.css + login.js) --}}
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @stack('styles')
-</head>
+    {{-- Estilos compilados con Vite --}}
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('styles')
+    </head>
 
-<body>
+    <body>
 
-    <header class="topbar">
-        <a href="{{ url('/') }}" class="logo">
-            <span class="logo-mark">
-                <img src="{{ asset('img/logo.svg') }}" alt="Logo Regenera BCS">
-            </span>
-            <span>
-                Regenera<span>BCS</span>
-            </span>
-        </a>
-    </header>
+        {{-- =========================
+             TOPBAR
+        ========================== --}}
+        <header class="topbar">
 
-    <main>
-        @yield('content')
-    </main>
+            <a href="{{ url('/') }}" class="logo">
+                <span class="logo-mark">
+                    <img src="{{ asset('img/logo.svg') }}" alt="Logo Regenera BCS">
+                </span>
+                <span>
+                    Regenera<span>BCS</span>
+                </span>
+            </a>
 
-    @stack('scripts')
+            <nav class="nav">
+                <a href="{{ url('/') }}">Inicio</a>
+                <a href="{{ url('/flora') }}">Flora y fauna</a>
+                <a href="{{ url('/voluntariados') }}">Voluntariados</a>
+                <a href="{{ url('/articulos') }}">Artículos</a>
+
+                @auth
+                    <a href="{{ url('/perfil') }}" class="user-nav">{{ Auth::user()->nombre }}</a>
+                    <a href="{{ url('/logout') }}" class="user-nav">Salir</a>
+                @else
+                    <a href="{{ route('login') }}" class="user-nav">Iniciar sesión</a>
+                @endauth
+            </nav>
+
+            <button class="menu-button" id="menuButton" aria-label="Abrir menú">☰</button>
+        </header>
+
+        {{-- =========================
+             MENÚ MÓVIL
+        ========================== --}}
+        <nav class="mobile-menu" id="mobileMenu">
+            <a href="{{ url('/') }}">Inicio</a>
+            <a href="{{ url('/flora') }}">Flora y fauna</a>
+            <a href="{{ url('/voluntariados') }}">Voluntariados</a>
+            <a href="{{ url('/articulos') }}">Artículos</a>
+
+            @auth
+                <a href="{{ url('/perfil') }}" class="user-nav">{{ Auth::user()->nombre }}</a>
+                <a href="{{ url('/logout') }}" class="user-nav">Salir</a>
+            @else
+                <a href="{{ route('login') }}" class="user-nav">Iniciar sesión</a>
+            @endauth
+        </nav>
+
+        <main>
+            @yield('content')
+        </main>
+
+        @stack('scripts')
+
+        {{-- Script global del sitio (menú móvil) --}}
+        @if (file_exists(public_path('js/site.js')))
+            <script src="{{ asset('js/site.js') }}"></script>
+        @endif
 
     </body>
 
-</html>
+    </html>
