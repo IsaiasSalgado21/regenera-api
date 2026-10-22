@@ -13,6 +13,7 @@ class Voluntariado extends Model
     protected $fillable = [
         'titulo',
         'descripcion',
+        'categoria',
         'lugarId',
         'organizadorId',
         'fechaInicio',
