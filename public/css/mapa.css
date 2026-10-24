@@ -1,0 +1,84 @@
+.map-content {
+    max-width: 1400px;
+}
+
+.map-toolbar {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.map-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 22px;
+}
+
+.map-filters label,
+.map-municipality-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gray);
+    font-size: 14px;
+}
+
+.map-filters input {
+    accent-color: var(--green);
+}
+
+.map-municipality-filter {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.map-municipality-filter select {
+    min-width: 190px;
+    padding: 10px 12px;
+    border: 1px solid #d9e0d9;
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+}
+
+.environment-map {
+    width: 100%;
+    height: min(68vh, 720px);
+    min-height: 420px;
+    border-radius: 18px;
+    background: #e8eee8;
+    z-index: 0;
+}
+
+.map-status {
+    min-height: 1.5em;
+    margin: 0 0 10px;
+    color: var(--gray);
+    font-size: 14px;
+}
+
+.map-attribution-note {
+    margin-top: 12px;
+    color: var(--gray);
+    font-size: 13px;
+}
+
+.map-popup-title {
+    margin: 0 0 6px;
+    font-size: 16px;
+}
+
+.map-popup-detail,
+.map-popup-description {
+    margin: 0 0 6px;
+}
+
+@media (max-width: 640px) {
+    .environment-map {
+        height: 60vh;
+        min-height: 360px;
+    }
+}

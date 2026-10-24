@@ -39,6 +39,7 @@
                 <a href="{{ url('/') }}">Inicio</a>
                 <a href="{{ url('/flora') }}">Flora y fauna</a>
                 <a href="{{ url('/voluntariados') }}">Voluntariados</a>
+                <a href="{{ route('mapa') }}">Mapa</a>
                 <a href="{{ url('/articulos') }}">Artículos</a>
 
                 @auth
@@ -59,6 +60,7 @@
             <a href="{{ url('/') }}">Inicio</a>
             <a href="{{ url('/flora') }}">Flora y fauna</a>
             <a href="{{ url('/voluntariados') }}">Voluntariados</a>
+            <a href="{{ route('mapa') }}">Mapa</a>
             <a href="{{ url('/articulos') }}">Artículos</a>
 
             @auth
