@@ -25,18 +25,18 @@ class ArticlePageController extends Controller
 
         $articulos = $query->orderBy('fechaPublicacion', 'desc')->get()->map(function ($a) {
             return [
-                'id'        => (string) $a->_id,
-                'titulo'    => $a->titulo,
-                'resumen'   => Str::limit(strip_tags($a->contenido), 150),
-                'imagen'    => $a->imagen,
+                'id' => (string) $a->_id,
+                'titulo' => $a->titulo,
+                'resumen' => Str::limit(strip_tags($a->contenido), 150),
+                'imagen' => $a->imagen,
                 'categoria' => $a->categoria,
-                'fecha'     => $a->fechaPublicacion?->format('d/m/Y'),
+                'fecha' => $a->fechaPublicacion?->format('d/m/Y'),
             ];
         });
 
         return view('articulos', [
             'articulos' => $articulos,
-            'q'         => $request->q,
+            'q' => $request->q,
         ]);
     }
 
@@ -59,7 +59,7 @@ class ArticlePageController extends Controller
 
         return view('articulos.show', [
             'articulo' => $articulo,
-            'otros'    => $otros,
+            'otros' => $otros,
         ]);
     }
 }

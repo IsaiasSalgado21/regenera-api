@@ -40,17 +40,17 @@ class VoluntariadoPageController extends Controller
         $voluntariados = $query->orderBy('fechaInicio', 'asc')->get()->map(function ($v) use ($lugares) {
             $lugar = $lugares->firstWhere('_id', (string) $v->lugarId);
             return [
-                'id'         => (string) $v->_id,
-                'titulo'     => $v->titulo,
-                'descripcion'=> Str::limit(strip_tags($v->descripcion), 160),
-                'imagen'     => $v->imagen,
-                'categoria'  => $v->categoria ?? null,
-                'lugar'      => $lugar?->nombre,
-                'fecha'      => $v->fechaInicio?->format('d/m/Y'),
-                'fecha_iso'  => $v->fechaInicio?->format('Y-m-d'),
-                'hora_inicio'=> $v->horaInicio,
-                'hora_fin'   => $v->horaFin,
-                'cupo'       => $v->cupo,
+                'id' => (string) $v->_id,
+                'titulo' => $v->titulo,
+                'descripcion' => Str::limit(strip_tags($v->descripcion), 160),
+                'imagen' => $v->imagen,
+                'categoria' => $v->categoria ?? null,
+                'lugar' => $lugar?->nombre,
+                'fecha' => $v->fechaInicio?->format('d/m/Y'),
+                'fecha_iso' => $v->fechaInicio?->format('Y-m-d'),
+                'hora_inicio' => $v->horaInicio,
+                'hora_fin' => $v->horaFin,
+                'cupo' => $v->cupo,
                 'requisitos' => $v->requisitos,
                 'materiales' => $v->materiales,
             ];
@@ -58,10 +58,10 @@ class VoluntariadoPageController extends Controller
 
         return view('voluntariados', [
             'voluntariados' => $voluntariados,
-            'lugares'       => $lugares,
-            'categoria'     => $request->categoria,
-            'q'             => $request->q,
-            'lugarId'       => $request->lugarId,
+            'lugares' => $lugares,
+            'categoria' => $request->categoria,
+            'q' => $request->q,
+            'lugarId' => $request->lugarId,
         ]);
     }
 
@@ -80,7 +80,7 @@ class VoluntariadoPageController extends Controller
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
-            'lugar'       => $lugar,
+            'lugar' => $lugar,
         ]);
     }
 }

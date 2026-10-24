@@ -32,23 +32,23 @@ class FloraPageController extends Controller
 
         $especies = $query->orderBy('nombre', 'asc')->get()->map(function ($e) {
             return [
-                'id'          => (string) $e->_id,
-                'nombre'      => $e->nombre,
-                'cientifico'  => $e->nombreCientifico,
-                'tipo'        => $e->tipo,
+                'id' => (string) $e->_id,
+                'nombre' => $e->nombre,
+                'cientifico' => $e->nombreCientifico,
+                'tipo' => $e->tipo,
                 'descripcion' => $e->descripcion,
-                'habitat'     => $e->habitat,
-                'conservacion'=> $e->estadoConservacion,
-                'imagen'      => is_array($e->imagenes) && count($e->imagenes) ? $e->imagenes[0] : null,
-                'ubicacion'   => $e->ubicacion,
-                'fuente'      => $e->fuenteInformacion,
+                'habitat' => $e->habitat,
+                'conservacion' => $e->estadoConservacion,
+                'imagen' => is_array($e->imagenes) && count($e->imagenes) ? $e->imagenes[0] : null,
+                'ubicacion' => $e->ubicacion,
+                'fuente' => $e->fuenteInformacion,
             ];
         });
 
         return view('flora', [
             'especies' => $especies,
-            'tipo'     => $request->tipo,
-            'q'        => $request->q,
+            'tipo' => $request->tipo,
+            'q' => $request->q,
         ]);
     }
 
