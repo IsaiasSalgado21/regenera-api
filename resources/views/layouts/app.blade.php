@@ -42,10 +42,10 @@
                 <a href="{{ url('/articulos') }}">Artículos</a>
 
                 @auth
-                    <a href="{{ url('/perfil') }}" class="user-nav">{{ Auth::user()->nombre }}</a>
-                    <a href="{{ url('/logout') }}" class="user-nav">Salir</a>
+                    <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}</a>
+                    <a href="{{ url('/logout') }}" class="user-nav" data-auth-logout>Salir</a>
                 @else
-                    <a href="{{ route('login') }}" class="user-nav">Iniciar sesión</a>
+                    <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
                 @endauth
             </nav>
 
@@ -62,10 +62,10 @@
             <a href="{{ url('/articulos') }}">Artículos</a>
 
             @auth
-                <a href="{{ url('/perfil') }}" class="user-nav">{{ Auth::user()->nombre }}</a>
-                <a href="{{ url('/logout') }}" class="user-nav">Salir</a>
+                <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}</a>
+                <a href="{{ url('/logout') }}" class="user-nav" data-auth-logout>Salir</a>
             @else
-                <a href="{{ route('login') }}" class="user-nav">Iniciar sesión</a>
+                <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
             @endauth
         </nav>
 

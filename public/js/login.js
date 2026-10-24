@@ -136,12 +136,23 @@ form.addEventListener("submit", async event => {
                 usuario_id: result.data.usuario.id,
                 fechaInicio: new Date().toISOString(),
             }));
-        } catch (_) { /* localStorage no disponible */ }
+        } catch (error) {
+            console.error("No se pudo guardar el usuario en este navegador.", error);
+            setMessage("No se pudo guardar la sesión en este navegador. Habilita el almacenamiento e inténtalo de nuevo.", "error");
+            return;
+        }
 
         setMessage(result.data.message || "¡Bienvenido!", "success");
 
-        // Redirección: al inicio tras iniciar sesión o crear la cuenta.
-        setTimeout(() => { window.location.href = "/"; }, 600);
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        let destination = "/";
+        if (redirect && redirect.startsWith("/")) {
+            const redirectUrl = new URL(redirect, window.location.origin);
+            if (redirectUrl.origin === window.location.origin) {
+                destination = redirectUrl.pathname + redirectUrl.search + redirectUrl.hash;
+            }
+        }
+        setTimeout(() => { window.location.assign(destination); }, 600);
     } catch (error) {
         console.error(error);
         setMessage(

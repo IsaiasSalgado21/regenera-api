@@ -87,7 +87,10 @@
                         @endif
                     </div>
 
-                    <a href="{{ route('login') }}" class="volunteer-cta">Quiero participar</a>
+                    <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
+                       class="volunteer-cta"
+                       data-voluntariado-id="{{ (string) $voluntariado->_id }}">Quiero participar</a>
+                    <p id="enrollmentMessage" role="status" aria-live="polite"></p>
                 </div>
             </aside>
 
