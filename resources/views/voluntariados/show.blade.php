@@ -60,26 +60,36 @@
             </div>
 
             {{-- PANEL LATERAL --}}
+            
             <aside class="volunteer-detail-aside">
                 <div class="volunteer-detail-card">
                     <h3>Datos de la actividad</h3>
 
                     <div class="volunteer-meta">
                         @if ($voluntariado->fechaInicio)
-                            <span>📅 {{ $voluntariado->fechaInicio->format('d/m/Y') }}</span>
+                            <span>
+                                📅 {{ $voluntariado->fechaInicio->format('d/m/Y') }}
+                            </span>
                         @endif
+
                         @if ($voluntariado->horaInicio)
-                            <span>🕐 {{ $voluntariado->horaInicio }}@if ($voluntariado->horaFin)–{{ $voluntariado->horaFin }}@endif</span>
+                            <span>
+                                🕐 {{ $voluntariado->horaInicio }}@if ($voluntariado->horaFin)–{{ $voluntariado->horaFin }}@endif
+                            </span>
                         @endif
+
                         @if ($lugar)
                             <span>📍 {{ $lugar->nombre }}</span>
+
                             @if ($lugar->municipio)
                                 <span>🏘️ {{ $lugar->municipio }}</span>
                             @endif
                         @endif
+
                         @if ($voluntariado->cupo)
                             <span>👥 Cupo: {{ $voluntariado->cupo }} personas</span>
                         @endif
+
                         @if ($voluntariado->estado)
                             <span class="volunteer-status volunteer-status--{{ $voluntariado->estado }}">
                                 {{ ucfirst($voluntariado->estado) }}
@@ -87,12 +97,68 @@
                         @endif
                     </div>
 
-                    <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
-                       class="volunteer-cta"
-                       data-voluntariado-id="{{ (string) $voluntariado->_id }}">Quiero participar</a>
+                    <a
+                        href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
+                        class="volunteer-cta"
+                        data-voluntariado-id="{{ (string) $voluntariado->_id }}"
+                    >
+                        Quiero participar
+                    </a>
+
                     <p id="enrollmentMessage" role="status" aria-live="polite"></p>
                 </div>
+
+                <div
+                    class="volunteer-calendar-card"
+                    data-event-date="{{ $voluntariado->fechaInicio ? $voluntariado->fechaInicio->format('Y-m-d') : '' }}"
+                >
+                    <h3>Fecha del voluntariado</h3>
+
+                    <div class="calendar-header">
+                        <button type="button" id="calendarPrev" aria-label="Mes anterior">
+                            ←
+                        </button>
+
+                        <h4 id="calendarMonth"></h4>
+
+                        <button type="button" id="calendarNext" aria-label="Mes siguiente">
+                            →
+                        </button>
+                    </div>
+
+                    <div class="calendar-weekdays">
+                        <span>Lun</span>
+                        <span>Mar</span>
+                        <span>Mié</span>
+                        <span>Jue</span>
+                        <span>Vie</span>
+                        <span>Sáb</span>
+                        <span>Dom</span>
+                    </div>
+
+                    <div class="calendar-days" id="calendarDays"></div>
+
+                    <p class="calendar-event-date">
+                        <span class="calendar-event-dot"></span>
+                        Fecha programada:
+                        <strong id="calendarSelectedDate"></strong>
+                    </p>
+                </div>
+                
+                <div class="calendar-legend">
+                    <div class="calendar-legend-item">
+                        <span class="calendar-legend-event">15</span>
+                        <span>Fecha del voluntariado</span>
+                    </div>
+
+                    <div class="calendar-legend-item">
+                        <span class="calendar-legend-today">15</span>
+                        <span>Día actual</span>
+                    </div>
+                </div>
+
             </aside>
+
 
         </div>
 
@@ -109,3 +175,6 @@
 </footer>
 
 @endsection
+@push('scripts')
+    <script src="{{ asset('js/voluntariado-calendar.js') }}"></script>
+@endpush
