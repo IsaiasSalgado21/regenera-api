@@ -254,7 +254,7 @@ class RegeneraBCSSeeder extends Seeder
                 'tipo' => 'flora',
                 'descripcion' => 'Árbol halófito crucial para la protección de la línea de costa y esteros de BCS.',
                 'habitat' => 'Esteros y zonas intermareales costeras',
-                'estadoConservation' => 'Protección especial',
+                'estadoConservacion' => 'Protección especial',
                 'imagenes' => [],
                 'ubicacion' => [
                     'nombre' => 'Ensenada de La Paz',
@@ -273,7 +273,7 @@ class RegeneraBCSSeeder extends Seeder
                 'tipo' => 'fauna',
                 'descripcion' => 'Especie marina emblemática que habita en las bahías y zonas costeras del estado.',
                 'habitat' => 'Aguas costeras y bahías protegidas',
-                'estadoConservation' => 'En peligro de extinción',
+                'estadoConservacion' => 'en_peligro',
                 'imagenes' => [],
                 'ubicacion' => [
                     'nombre' => 'Bahía de La Paz',

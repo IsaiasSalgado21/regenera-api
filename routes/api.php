@@ -3,6 +3,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LugarController;
+use App\Http\Controllers\MapApiController;
 use App\Http\Controllers\VoluntariadoController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\FloraFaunaController;
@@ -38,9 +39,15 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
-Route::get('/auth/me', [AuthController::class, 'me']);
+Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']);
 
-Route::post('/auth/logout', [AuthController::class, 'logout']);
+Route::middleware('auth:sanctum')->post('/auth/logout', [AuthController::class, 'logout']);
+
+Route::prefix('v1/mapa')->group(function () {
+    Route::get('/voluntariados', [MapApiController::class, 'voluntariados']);
+    Route::get('/lugares', [MapApiController::class, 'lugares']);
+    Route::get('/flora-fauna', [MapApiController::class, 'floraFauna']);
+});
 
 Route::get('/usuarios', [UserController::class, 'index']);
 Route::post('/usuarios', [UserController::class, 'store']);
@@ -64,7 +71,7 @@ Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update']);
 Route::delete('/voluntariados/{id}', [VoluntariadoController::class, 'destroy']);
 
 Route::get('/inscripciones', [InscripcionController::class, 'index']);
-Route::post('/inscripciones', [InscripcionController::class, 'store']);
+Route::post('/inscripciones', [InscripcionController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/inscripciones/{id}', [InscripcionController::class, 'show']);
 Route::put('/inscripciones/{id}', [InscripcionController::class, 'update']);
 Route::patch('/inscripciones/{id}', [InscripcionController::class, 'update']);

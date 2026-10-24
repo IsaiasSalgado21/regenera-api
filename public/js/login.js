@@ -129,16 +129,15 @@ form.addEventListener("submit", async event => {
             return;
         }
 
-        // Guardamos el usuario devuelto por el backend para usarlo en otras vistas.
+        // El token vive solo en esta pestaña y no se guarda en localStorage.
         try {
-            localStorage.setItem("regenera_usuario", JSON.stringify(result.data.usuario));
-            localStorage.setItem("regenera_sesion", JSON.stringify({
-                usuario_id: result.data.usuario.id,
-                fechaInicio: new Date().toISOString(),
-            }));
+            if (typeof result.data.token !== "string" || !result.data.token) {
+                throw new Error("El servidor no devolvió un token de acceso.");
+            }
+            sessionStorage.setItem("regenera_access_token", result.data.token);
         } catch (error) {
-            console.error("No se pudo guardar el usuario en este navegador.", error);
-            setMessage("No se pudo guardar la sesión en este navegador. Habilita el almacenamiento e inténtalo de nuevo.", "error");
+            console.error("No se pudo establecer la sesión en este navegador.", error);
+            setMessage(error.message || "No se pudo guardar la sesión en este navegador.", "error");
             return;
         }
 

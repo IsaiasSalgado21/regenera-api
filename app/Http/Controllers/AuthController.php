@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -52,10 +51,12 @@ class AuthController extends Controller
             'fechaRegistro' => now(),
             'estado' => 'activo',
         ]);
+        $token = $user->createToken('regenera-web')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Usuario registrado correctamente.',
+            'token' => $token,
             'usuario' => [
                 'id' => (string) $user->_id,
                 'nombre' => $user->nombre,
@@ -98,12 +99,19 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // En esta prueba solo confirmamos las credenciales.
-        // Todavía no generamos un token ni una sesión persistente.
+        if ($usuario->estado !== 'activo') {
+            return response()->json([
+                'success' => false,
+                'message' => 'La cuenta no está activa.',
+            ], 403);
+        }
+
+        $token = $usuario->createToken('regenera-web')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'message' => 'Credenciales verificadas correctamente.',
+            'message' => 'Inicio de sesión correcto.',
+            'token' => $token,
             'usuario' => [
                 'id' => (string) $usuario->_id,
                 'nombre' => $usuario->nombre,
@@ -115,21 +123,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Consultar el usuario autenticado por sesión.
-     *
-     * Este método solo funcionará cuando la autenticación
-     * por sesión esté configurada para la ruta.
+     * Consultar el usuario autenticado con su token de acceso.
      */
-    public function me()
+    public function me(Request $request)
     {
-        $usuario = Auth::user();
-
-        if (!$usuario) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No hay un usuario autenticado.',
-            ], 401);
-        }
+        $usuario = $request->user();
 
         return response()->json([
             'success' => true,
@@ -145,18 +143,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Cerrar sesión.
-     *
-     * Este método requiere una sesión válida.
+     * Revocar el token usado en la solicitud.
      */
     public function logout(Request $request)
     {
-        Auth::logout();
-
-        if ($request->hasSession()) {
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
+        $request->user()->currentAccessToken()?->delete();
 
         return response()->json([
             'success' => true,

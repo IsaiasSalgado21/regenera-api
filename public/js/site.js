@@ -1,23 +1,26 @@
 /**
- * Comportamiento global del sitio.
- * - Toggle del menú móvil.
+ * Navegación global y acciones que requieren la sesión Sanctum.
  */
 (function () {
-    function getStoredUser() {
-        try {
-            const storedUser = localStorage.getItem("regenera_usuario");
-            if (!storedUser) return null;
+    const token = () => sessionStorage.getItem("regenera_access_token");
 
-            const user = JSON.parse(storedUser);
-            if (!user || typeof user.id !== "string" || !user.id || typeof user.nombre !== "string") {
-                return null;
-            }
+    async function currentUser() {
+        if (!token()) return null;
 
-            return user;
-        } catch (error) {
-            console.error("No se pudo leer el usuario guardado.", error);
+        const response = await fetch("/api/auth/me", {
+            headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${token()}`,
+            },
+        });
+        if (response.status === 401) {
+            sessionStorage.removeItem("regenera_access_token");
             return null;
         }
+        if (!response.ok) throw new Error("No se pudo verificar la sesión.");
+
+        const data = await response.json();
+        return data.usuario || null;
     }
 
     function updateNavigation(user) {
@@ -47,69 +50,80 @@
         });
     }
 
-    updateNavigation(getStoredUser());
+    currentUser()
+        .then(updateNavigation)
+        .catch(error => console.error("No se pudo verificar la sesión.", error));
 
-    document.addEventListener("click", event => {
+    document.addEventListener("click", async event => {
         const logoutLink = event.target.closest("[data-auth-logout]");
-        if (!logoutLink) return;
-
-        event.preventDefault();
-        try {
-            localStorage.removeItem("regenera_usuario");
-            localStorage.removeItem("regenera_sesion");
-        } catch (error) {
-            console.error("No se pudo cerrar la sesión guardada.", error);
-            return;
-        }
-        window.location.assign("/");
-    });
-
-    const volunteerCta = document.querySelector("[data-voluntariado-id]");
-    if (volunteerCta) {
-        const user = getStoredUser();
-        if (user) {
-            const enrollButton = document.createElement("button");
-            enrollButton.type = "button";
-            enrollButton.className = volunteerCta.className;
-            enrollButton.dataset.voluntariadoId = volunteerCta.dataset.voluntariadoId;
-            enrollButton.textContent = volunteerCta.textContent;
-            volunteerCta.replaceWith(enrollButton);
-
-            const message = document.getElementById("enrollmentMessage");
-            enrollButton.addEventListener("click", async () => {
-                enrollButton.disabled = true;
-                message.textContent = "";
-                try {
-                    const response = await fetch("/api/inscripciones", {
+        if (logoutLink) {
+            event.preventDefault();
+            try {
+                if (token()) {
+                    const response = await fetch("/api/auth/logout", {
                         method: "POST",
                         headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
+                            Accept: "application/json",
+                            Authorization: `Bearer ${token()}`,
                         },
-                        body: JSON.stringify({
-                            usuarioId: user.id,
-                            voluntariadoId: enrollButton.dataset.voluntariadoId,
-                        }),
                     });
-                    const data = await response.json();
-                    if (!response.ok || data.success === false) {
-                        throw new Error(data.message || "No se pudo registrar la inscripción.");
-                    }
-
-                    enrollButton.textContent = "Inscripción registrada";
-                    message.textContent = data.message || "Inscripción registrada correctamente.";
-                } catch (error) {
-                    console.error("No se pudo completar la inscripción.", error);
-                    message.textContent = error.message || "No se pudo conectar con el servidor.";
-                    enrollButton.disabled = false;
+                    if (!response.ok) throw new Error("No se pudo cerrar la sesión en el servidor.");
                 }
-            });
+                sessionStorage.removeItem("regenera_access_token");
+                window.location.assign("/");
+            } catch (error) {
+                console.error(error);
+                logoutLink.setAttribute("aria-label", error.message);
+            }
+            return;
         }
-    }
+
+        const enrollmentLink = event.target.closest("[data-voluntariado-id]");
+        if (enrollmentLink?.tagName !== "A") return;
+
+        event.preventDefault();
+        const accessToken = token();
+        if (!accessToken) {
+            window.location.assign(enrollmentLink.href);
+            return;
+        }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = enrollmentLink.className;
+        button.dataset.voluntariadoId = enrollmentLink.dataset.voluntariadoId;
+        button.textContent = enrollmentLink.textContent;
+        enrollmentLink.replaceWith(button);
+        const message = document.getElementById("enrollmentMessage");
+
+        button.addEventListener("click", async () => {
+            button.disabled = true;
+            message.textContent = "";
+            try {
+                const response = await fetch("/api/inscripciones", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        Authorization: `Bearer ${token()}`,
+                    },
+                    body: JSON.stringify({ voluntariadoId: button.dataset.voluntariadoId }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || "No se pudo registrar la inscripción.");
+
+                button.textContent = "Inscripción registrada";
+                message.textContent = data.message || "Inscripción registrada correctamente.";
+            } catch (error) {
+                console.error("No se pudo completar la inscripción.", error);
+                message.textContent = error.message;
+                button.disabled = false;
+            }
+        });
+    });
 
     const menuButton = document.getElementById("menuButton");
     const mobileMenu = document.getElementById("mobileMenu");
-
     if (!menuButton || !mobileMenu) return;
 
     menuButton.addEventListener("click", function (event) {

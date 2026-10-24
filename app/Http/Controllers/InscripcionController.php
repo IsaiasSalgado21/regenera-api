@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inscripcion;
-use App\Models\User;
 use App\Models\Voluntariado;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,18 +25,24 @@ class InscripcionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'usuarioId' => 'required|string|max:100',
             'voluntariadoId' => 'required|string|max:100',
             'observaciones' => 'nullable|string|max:1000',
         ]);
 
-        $usuario = User::find($validated['usuarioId']);
+        $usuario = $request->user();
 
-        if (!$usuario) {
+        if (!$usuario || !in_array($usuario->rol, ['usuario', 'organizador'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'El usuario indicado no existe.',
-            ], 404);
+                'message' => 'Solo usuarios y organizadores pueden inscribirse.',
+            ], 403);
+        }
+
+        if ($usuario->estado !== 'activo') {
+            return response()->json([
+                'success' => false,
+                'message' => 'La cuenta no está activa.',
+            ], 403);
         }
 
         $voluntariado = Voluntariado::find(
@@ -58,9 +63,22 @@ class InscripcionController extends Controller
             ], 422);
         }
 
+        $cupo = (int) ($voluntariado->cupo ?? 0);
+        $inscripcionesActivas = Inscripcion::where(
+            'voluntariadoId',
+            (string) $voluntariado->_id
+        )->whereIn('estado', ['inscrita', 'activa'])->count();
+
+        if ($cupo < 1 || $inscripcionesActivas >= $cupo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este voluntariado ya no tiene cupo disponible.',
+            ], 409);
+        }
+
         $inscripcionExistente = Inscripcion::where(
             'usuarioId',
-            $validated['usuarioId']
+            (string) $usuario->_id
         )->where(
             'voluntariadoId',
             $validated['voluntariadoId']
@@ -78,7 +96,7 @@ class InscripcionController extends Controller
         }
 
         $inscripcion = Inscripcion::create([
-            'usuarioId' => $validated['usuarioId'],
+            'usuarioId' => (string) $usuario->_id,
             'voluntariadoId' => $validated['voluntariadoId'],
             'fechaInscripcion' => now(),
             'estado' => 'inscrita',
