@@ -30,7 +30,7 @@ class CheckDataCommand extends Command
         $this->newLine();
         $this->line('Flora/Fauna: ' . FloraFauna::count());
         foreach (FloraFauna::all() as $f) {
-            $this->line('  - ' . $f->nombre . ' (imagenes: ' . (is_array($f->imagenes) ? count($f->imagenes) : 0) . ')');
+            $this->line('  - ' . $f->nombre . ' (imagenes: ' . count($f->imagenes ?? []) . ')');
         }
 
         $this->newLine();

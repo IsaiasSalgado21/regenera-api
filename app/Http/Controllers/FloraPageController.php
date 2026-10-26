@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\FloraFauna;
+use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
 
 class FloraPageController extends Controller
 {
+    public function __construct(private readonly FloraFaunaService $floraFaunaService) {}
+
     /**
      * Listado público de flora y fauna con filtros del lado del servidor.
      */
     public function index(Request $request)
     {
-        $query = FloraFauna::query();
+        $query = FloraFauna::query()->where('estado', 'publicado');
 
         // Filtro por tipo (flora / fauna)
         if ($request->filled('tipo') && in_array($request->tipo, ['flora', 'fauna'])) {
@@ -39,8 +42,8 @@ class FloraPageController extends Controller
                 'descripcion' => $e->descripcion,
                 'habitat' => $e->habitat,
                 'conservacion' => $e->estadoConservacion,
-                'imagen' => is_array($e->imagenes) && count($e->imagenes) ? $e->imagenes[0] : null,
-                'ubicacion' => $e->ubicacion,
+                'imagen' => $this->floraFaunaService->imagenes($e)[0] ?? null,
+                'ubicacion' => $this->floraFaunaService->ubicacionVisible($e),
                 'fuente' => $e->fuenteInformacion,
             ];
         });
@@ -59,9 +62,12 @@ class FloraPageController extends Controller
     {
         $especie = FloraFauna::find($id);
 
-        if (!$especie) {
+        if (!$especie || $especie->estado !== 'publicado') {
             abort(404);
         }
+
+        $especie->setAttribute('ubicacion', $this->floraFaunaService->ubicacionVisible($especie));
+        $especie->setAttribute('imagenes', $this->floraFaunaService->imagenes($especie));
 
         return view('flora.show', [
             'especie' => $especie,

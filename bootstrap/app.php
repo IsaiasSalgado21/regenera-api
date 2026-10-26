@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\OptionalSanctumAuthentication;
+use App\Http\Middleware\ResetSanctumGuard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->api(prepend: ResetSanctumGuard::class);
+        $middleware->alias([
+            'role' => EnsureUserHasRole::class,
+            'auth.optional' => OptionalSanctumAuthentication::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

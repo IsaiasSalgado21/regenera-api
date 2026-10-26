@@ -4,126 +4,85 @@ namespace App\Http\Controllers;
 
 use App\Models\Notificacion;
 use Illuminate\Http\Request;
+use MongoDB\BSON\ObjectId;
 
 class NotificacionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Notificacion::query();
-
-        if ($request->has('usuarioId')) {
-            $query->where('usuarioId', $request->usuarioId);
-        }
-
-        $notificaciones = $query->orderBy('fechaCreacion', 'desc')->get();
+        $notificaciones = $this->queryForUser((string) $request->user()->getAuthIdentifier())
+            ->orderBy('fechaCreacion', 'desc')
+            ->get();
 
         return response()->json([
-            'success' => true,
-            'notificaciones' => $notificaciones,
+            'data' => $notificaciones,
+            'message' => 'Notificaciones consultadas correctamente.',
         ]);
     }
 
-    public function noLeidas(string $usuarioId)
+    public function noLeidas(Request $request)
     {
-        $notificaciones = Notificacion::where('usuarioId', $usuarioId)
+        $notificaciones = $this->queryForUser((string) $request->user()->getAuthIdentifier())
             ->where('leida', false)
             ->orderBy('fechaCreacion', 'desc')
             ->get();
 
         return response()->json([
-            'success' => true,
-            'noLeidasCount' => $notificaciones->count(),
-            'notificaciones' => $notificaciones,
+            'data' => $notificaciones,
+            'count' => $notificaciones->count(),
+            'message' => 'Notificaciones no leídas consultadas correctamente.',
         ]);
     }
 
-    public function store(Request $request)
+    public function marcarLeida(Request $request, string $id)
     {
-        $validated = $request->validate([
-            'usuarioId' => 'required|string|max:100',
-            'tipo' => 'required|string|max:100',
-            'titulo' => 'required|string|max:200',
-            'mensaje' => 'required|string|max:1000',
-            'entidad' => 'nullable|array',
-            'prioridad' => 'nullable|string|in:baja,normal,alta',
-            'datos' => 'nullable|array',
-        ]);
-
-        $notificacion = Notificacion::create([
-            'usuarioId' => $validated['usuarioId'],
-            'tipo' => $validated['tipo'],
-            'titulo' => $validated['titulo'],
-            'mensaje' => $validated['mensaje'],
-            'entidad' => $validated['entidad'] ?? null,
-            'prioridad' => $validated['prioridad'] ?? 'normal',
-            'leida' => false,
-            'fechaCreacion' => now(),
-            'fechaLectura' => null,
-            'fechaExpiracion' => null,
-            'datos' => $validated['datos'] ?? null,
-        ]);
+        $notificacion = Notificacion::findOrFail($id);
+        abort_unless($this->perteneceAlUsuario($notificacion, (string) $request->user()->getAuthIdentifier()), 403);
+        $notificacion->update(['leida' => true, 'fechaLectura' => now()]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Notificación creada correctamente.',
-            'notificacion' => $notificacion,
-        ], 201);
-    }
-
-    public function marcarLeida(string $id)
-    {
-        $notificacion = Notificacion::find($id);
-
-        if (!$notificacion) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Notificación no encontrada.',
-            ], 404);
-        }
-
-        $notificacion->update([
-            'leida' => true,
-            'fechaLectura' => now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
+            'data' => $notificacion->fresh(),
             'message' => 'Notificación marcada como leída.',
-            'notificacion' => $notificacion->fresh(),
         ]);
     }
 
-    public function marcarTodasLeidas(string $usuarioId)
+    public function marcarTodasLeidas(Request $request)
     {
-        Notificacion::where('usuarioId', $usuarioId)
+        $this->queryForUser((string) $request->user()->getAuthIdentifier())
             ->where('leida', false)
-            ->update([
-                'leida' => true,
-                'fechaLectura' => now(),
-            ]);
+            ->update(['leida' => true, 'fechaLectura' => now()]);
 
         return response()->json([
-            'success' => true,
+            'data' => [],
             'message' => 'Todas las notificaciones fueron marcadas como leídas.',
         ]);
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $notificacion = Notificacion::find($id);
-
-        if (!$notificacion) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Notificación no encontrada.',
-            ], 404);
-        }
-
+        $notificacion = Notificacion::findOrFail($id);
+        abort_unless($this->perteneceAlUsuario($notificacion, (string) $request->user()->getAuthIdentifier()), 403);
         $notificacion->delete();
 
         return response()->json([
-            'success' => true,
+            'data' => ['id' => $id],
             'message' => 'Notificación eliminada correctamente.',
         ]);
+    }
+
+    private function queryForUser(string $usuarioId)
+    {
+        return Notificacion::query()->where(function ($query) use ($usuarioId): void {
+            $query->where('usuarioId', $usuarioId);
+
+            if (preg_match('/^[a-f0-9]{24}$/i', $usuarioId)) {
+                $query->orWhere('usuarioId', new ObjectId($usuarioId));
+            }
+        });
+    }
+
+    private function perteneceAlUsuario(Notificacion $notificacion, string $usuarioId): bool
+    {
+        return (string) $notificacion->usuarioId === $usuarioId;
     }
 }

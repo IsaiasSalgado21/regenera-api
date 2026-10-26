@@ -7,7 +7,9 @@ use MongoDB\Laravel\Eloquent\Model;
 class Lugar extends Model
 {
     protected $connection = 'mongodb';
+
     protected $table = 'lugares';
+
     protected $collection = 'lugares';
 
     protected $fillable = [
@@ -19,6 +21,7 @@ class Lugar extends Model
         'longitud',
         'tipo',
         'estado',
+        // ObjectId de usuarios para aplicar edición por propietario.
         'creadoPor',
     ];
 

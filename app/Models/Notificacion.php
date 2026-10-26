@@ -9,6 +9,7 @@ class Notificacion extends Model
     protected $connection = 'mongodb';
 
     protected $table = 'notificaciones';
+
     protected $collection = 'notificaciones';
 
     protected $fillable = [
@@ -32,8 +33,6 @@ class Notificacion extends Model
             'fechaCreacion' => 'datetime',
             'fechaLectura' => 'datetime',
             'fechaExpiracion' => 'datetime',
-            'entidad' => 'array',
-            'datos' => 'array',
         ];
     }
 }

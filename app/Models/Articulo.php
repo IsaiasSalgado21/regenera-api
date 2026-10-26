@@ -17,6 +17,7 @@ class Articulo extends Model
         'imagen',
         'categoria',
         'estado',
+        'motivoRechazo',
         'fechaPublicacion',
         'fechaActualizacion',
     ];

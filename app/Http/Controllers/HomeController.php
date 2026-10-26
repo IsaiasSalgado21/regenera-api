@@ -46,13 +46,11 @@ class HomeController extends Controller
 
         // Flora y fauna: alimenta el carrusel del hero.
         $especies = FloraFauna::query()
+            ->where('estado', 'publicado')
             ->limit(4)
             ->get()
             ->map(function ($especie) {
-                $imagen = null;
-                if (is_array($especie->imagenes) && count($especie->imagenes) > 0) {
-                    $imagen = $especie->imagenes[0];
-                }
+                $imagen = collect($especie->imagenes ?? [])->first();
 
                 return [
                     'id'        => (string) $especie->_id,

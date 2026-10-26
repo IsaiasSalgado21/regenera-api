@@ -20,6 +20,7 @@ class VoluntariadoController extends Controller
 
     public function store(Request $request)
     {
+        // MVP: organizadorVerificado=false no debe bloquear a un organizador al crear un voluntariado.
         $validated = $request->validate([
             'titulo' => 'required|string|max:150',
             'descripcion' => 'required|string|max:3000',

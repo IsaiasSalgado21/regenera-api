@@ -27,6 +27,19 @@
         if (!user) return;
 
         document.querySelectorAll(".nav, .mobile-menu").forEach(nav => {
+            const existingDashboard = nav.querySelector("[data-auth-dashboard]");
+            if (existingDashboard) existingDashboard.remove();
+
+            if (user.rol === "admin" || user.rol === "organizador") {
+                const dashboardLink = document.createElement("a");
+                dashboardLink.href = user.rol === "admin" ? "/admin/dashboard" : "/organizador/dashboard";
+                dashboardLink.className = "user-nav";
+                dashboardLink.dataset.authDashboard = "";
+                dashboardLink.textContent = "Panel";
+                const logoutLink = nav.querySelector("[data-auth-logout]");
+                nav.insertBefore(dashboardLink, logoutLink || null);
+            }
+
             const loginLink = nav.querySelector("[data-auth-login]");
             if (loginLink) {
                 const userLabel = document.createElement("span");

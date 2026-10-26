@@ -6,12 +6,14 @@ use App\Models\FloraFauna;
 use App\Models\Inscripcion;
 use App\Models\Lugar;
 use App\Models\Voluntariado;
+use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class MapApiController extends Controller
 {
+    public function __construct(private readonly FloraFaunaService $floraFaunaService) {}
+
     public function voluntariados(Request $request)
     {
         $filters = $request->validate([
@@ -133,7 +135,7 @@ class MapApiController extends Controller
             'estado_conservacion' => 'sometimes|nullable|string|max:100',
         ]);
 
-        $query = FloraFauna::query();
+        $query = FloraFauna::query()->where('estado', 'publicado');
 
         if (! empty($filters['tipo'])) {
             $query->where('tipo', $filters['tipo']);
@@ -146,23 +148,15 @@ class MapApiController extends Controller
                         === $filters['estado_conservacion'];
             })
             ->filter(function (FloraFauna $registro) {
-                $ubicacion = $registro->ubicacion;
+                $ubicacion = $this->floraFaunaService->ubicacionVisible($registro);
 
                 return is_array($ubicacion)
                     && $this->hasCoordinates($ubicacion['latitud'] ?? null, $ubicacion['longitud'] ?? null);
             })
             ->map(function (FloraFauna $registro) {
-                $ubicacion = $registro->ubicacion;
-                $estadoConservacion = $this->conservationStatus($registro);
-                $estado = $this->normalizeConservationStatus($estadoConservacion);
-                $zonaAproximada = in_array($estado, ['en_peligro', 'en_peligro_critico', 'vulnerable'], true);
-                $latitud = (float) $ubicacion['latitud'];
-                $longitud = (float) $ubicacion['longitud'];
-
-                if ($zonaAproximada) {
-                    $latitud = round($latitud, 2);
-                    $longitud = round($longitud, 2);
-                }
+                $registroPresentado = $this->floraFaunaService->present($registro);
+                $ubicacion = $registroPresentado['ubicacion'];
+                $zonaAproximada = $registroPresentado['zonaAproximada'];
 
                 return [
                     'id' => (string) $registro->_id,
@@ -170,12 +164,12 @@ class MapApiController extends Controller
                     'nombre' => $registro->nombre,
                     'nombre_cientifico' => $registro->nombreCientifico,
                     'descripcion' => $registro->descripcion,
-                    'estado_conservacion' => $estadoConservacion,
+                    'estado_conservacion' => $registroPresentado['estadoConservacion'],
                     'lugares_relacionados' => collect($registro->lugaresRelacionados ?? [])
                         ->map(fn ($id) => (string) $id)
                         ->values(),
-                    'lat' => $latitud,
-                    'lng' => $longitud,
+                    'lat' => (float) $ubicacion['latitud'],
+                    'lng' => (float) $ubicacion['longitud'],
                     'zona_aproximada' => $zonaAproximada,
                     'radio_metros' => $zonaAproximada ? 5000 : null,
                 ];
@@ -196,22 +190,5 @@ class MapApiController extends Controller
             && (float) $latitud <= 90
             && (float) $longitud >= -180
             && (float) $longitud <= 180;
-    }
-
-    private function conservationStatus(FloraFauna $registro): ?string
-    {
-        return $registro->getAttribute('estadoConservacion')
-            ?? $registro->getAttribute('estadoConservation');
-    }
-
-    private function normalizeConservationStatus(?string $status): string
-    {
-        $normalized = Str::of((string) $status)
-            ->lower()
-            ->ascii()
-            ->replace([' ', '-'], '_')
-            ->toString();
-
-        return $normalized === 'en_peligro_de_extincion' ? 'en_peligro' : $normalized;
     }
 }

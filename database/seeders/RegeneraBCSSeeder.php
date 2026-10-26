@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\Inscripcion;
-use App\Models\FloraFauna;
 use App\Models\Articulo;
+use App\Models\Asistencia;
+use App\Models\Auditoria;
+use App\Models\FloraFauna;
+use App\Models\Inscripcion;
 use App\Models\Lugar;
+use App\Models\Notificacion;
 use App\Models\User;
 use App\Models\Voluntariado;
-use App\Models\Asistencia;
-use App\Models\Notificacion;
-use App\Models\Auditoria;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use MongoDB\BSON\ObjectId;
 
 class RegeneraBCSSeeder extends Seeder
 {
@@ -81,7 +82,7 @@ class RegeneraBCSSeeder extends Seeder
                 'longitud' => -110.3248,
                 'tipo' => 'playa',
                 'estado' => 'activo',
-                'creadoPor' => (string) $organizador->_id,
+                'creadoPor' => new ObjectId((string) $organizador->_id),
             ]
         );
 
@@ -95,7 +96,7 @@ class RegeneraBCSSeeder extends Seeder
                 'longitud' => -110.3158,
                 'tipo' => 'zona_urbana',
                 'estado' => 'activo',
-                'creadoPor' => (string) $organizador->_id,
+                'creadoPor' => new ObjectId((string) $organizador->_id),
             ]
         );
 
@@ -109,7 +110,7 @@ class RegeneraBCSSeeder extends Seeder
                 'longitud' => -110.3120,
                 'tipo' => 'parque',
                 'estado' => 'activo',
-                'creadoPor' => (string) $organizador->_id,
+                'creadoPor' => new ObjectId((string) $organizador->_id),
             ]
         );
 
@@ -250,18 +251,20 @@ class RegeneraBCSSeeder extends Seeder
         FloraFauna::firstOrCreate(
             ['nombre' => 'Mangle Rojo'],
             [
+                'creadoPor' => new ObjectId((string) $organizador->_id),
                 'nombreCientifico' => 'Rhizophora mangle',
                 'tipo' => 'flora',
                 'descripcion' => 'Árbol halófito crucial para la protección de la línea de costa y esteros de BCS.',
                 'habitat' => 'Esteros y zonas intermareales costeras',
                 'estadoConservacion' => 'Protección especial',
+                'estado' => 'publicado',
                 'imagenes' => [],
                 'ubicacion' => [
                     'nombre' => 'Ensenada de La Paz',
                     'latitud' => 24.142,
                     'longitud' => -110.315,
                 ],
-                'lugaresRelacionados' => [(string) $playaBalandra->_id],
+                'lugaresRelacionados' => [new ObjectId((string) $playaBalandra->_id)],
                 'fuenteInformacion' => 'CONABIO / Ecosistemas de BCS',
             ]
         );
@@ -269,18 +272,20 @@ class RegeneraBCSSeeder extends Seeder
         FloraFauna::firstOrCreate(
             ['nombre' => 'Tortuga Negra'],
             [
+                'creadoPor' => new ObjectId((string) $organizador->_id),
                 'nombreCientifico' => 'Chelonia agassizii',
                 'tipo' => 'fauna',
                 'descripcion' => 'Especie marina emblemática que habita en las bahías y zonas costeras del estado.',
                 'habitat' => 'Aguas costeras y bahías protegidas',
                 'estadoConservacion' => 'en_peligro',
+                'estado' => 'publicado',
                 'imagenes' => [],
                 'ubicacion' => [
                     'nombre' => 'Bahía de La Paz',
                     'latitud' => 24.200,
                     'longitud' => -110.350,
                 ],
-                'lugaresRelacionados' => [(string) $playaBalandra->_id],
+                'lugaresRelacionados' => [new ObjectId((string) $playaBalandra->_id)],
                 'fuenteInformacion' => 'Programa de Conservación de Tortugas Marinas',
             ]
         );

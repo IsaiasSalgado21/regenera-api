@@ -14,6 +14,10 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::get('/mapa', [MapPageController::class, 'index'])->name('mapa');
+Route::get('/admin/dashboard', fn () => view('dashboard.index', ['dashboardRole' => 'admin']))
+    ->name('dashboard.admin');
+Route::get('/organizador/dashboard', fn () => view('dashboard.index', ['dashboardRole' => 'organizador']))
+    ->name('dashboard.organizador');
 
 // Voluntariados
 Route::get('/voluntariados', [VoluntariadoPageController::class, 'index'])->name('voluntariados.index');
