@@ -175,6 +175,38 @@
         </div>
     </form>
 </dialog>
+
+<dialog class="dashboard-dialog dashboard-confirm-dialog" id="actionConfirmDialog">
+    <form id="actionConfirmForm">
+        <div class="dashboard-confirm-icon" id="actionConfirmIcon" aria-hidden="true">
+            !
+        </div>
+
+        <h2 id="actionConfirmTitle">Confirmar acción</h2>
+
+        <p id="actionConfirmMessage">
+            ¿Estás seguro de que deseas continuar?
+        </p>
+
+        <div class="dashboard-form-actions">
+            <button
+                class="button button-primary"
+                type="submit"
+                id="actionConfirmSubmit"
+            >
+                Confirmar
+            </button>
+
+            <button
+                class="button button-secondary"
+                type="button"
+                id="cancelActionConfirm"
+            >
+                Cancelar
+            </button>
+        </div>
+    </form>
+</dialog>
 @endsection
 
 @push('scripts')

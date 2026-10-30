@@ -29,7 +29,28 @@ class LugarController extends Controller
             'message' => 'Todos los lugares consultados correctamente.',
         ]);
     }
+    public function publicar(string $id)
+    {
+        $lugar = Lugar::findOrFail($id);
 
+        $this->authorize('publicar', $lugar);
+
+        $lugar->estado = 'activo';
+        $lugar->save();
+
+        app(AuditoriaService::class)->registrar(
+            auth()->user(),
+            'publicar',
+            'lugar',
+            (string) $lugar->id,
+            request()
+        );
+
+        return response()->json([
+            'message' => 'Lugar publicado correctamente.',
+            'data' => $lugar,
+        ]);
+    }
     public function archivar(Request $request, string $id)
     {
         $lugar = Lugar::findOrFail($id);

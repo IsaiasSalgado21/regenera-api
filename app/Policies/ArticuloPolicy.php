@@ -49,6 +49,11 @@ class ArticuloPolicy
         return $user->rol === 'admin' && $articulo->estado === 'publicado';
     }
 
+    public function publicar(User $user, Articulo $articulo): bool
+    {
+        return $user->rol === 'admin'
+            && $articulo->estado === 'borrador';
+    }
     public function eliminar(User $user, Articulo $articulo): bool
     {
         return $user->rol === 'admin' && $articulo->estado === 'borrador';

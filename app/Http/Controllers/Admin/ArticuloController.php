@@ -39,7 +39,30 @@ class ArticuloController extends Controller
             'message' => 'Artículos pendientes consultados correctamente.',
         ]);
     }
+    public function publicar(string $id)
+    {
+        $articulo = Articulo::findOrFail($id);
 
+        $this->authorize('publicar', $articulo);
+
+        $articulo->estado = 'publicado';
+        $articulo->fechaPublicacion = now();
+        $articulo->motivoRechazo = null;
+        $articulo->save();
+
+        app(AuditoriaService::class)->registrar(
+            auth()->user(),
+            'publicar',
+            'articulo',
+            (string) $articulo->id,
+            request()
+        );
+
+        return response()->json([
+            'message' => 'Artículo publicado correctamente.',
+            'data' => $articulo,
+        ]);
+    }
     public function aprobar(Request $request, string $id)
     {
         $articulo = Articulo::findOrFail($id);

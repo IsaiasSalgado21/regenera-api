@@ -57,4 +57,12 @@ export const dashboardApi = {
     allNotifications: () => request('get', '/api/notificaciones'),
     markNotificationRead: id => request('patch', `/api/notificaciones/${id}/leida`),
     markAllNotificationsRead: () => request('patch', '/api/notificaciones/marcar-todas-leidas'),
+    archivePlace: id => request('patch', `/api/admin/lugares/${id}/archivar`),
+    publishPlace: id => request('patch', `/api/admin/lugares/${id}/publicar`),
+
+    archiveFlora: id => request('patch', `/api/admin/flora-fauna/${id}/archivar`),
+    publishFlora: id => request('patch', `/api/admin/flora-fauna/${id}/publicar`),
+
+    publishArticle: id => request('patch', `/api/admin/articulos/${id}/publicar`),
+    unpublishArticle: id => request('patch', `/api/admin/articulos/${id}/despublicar`),
 };

@@ -60,9 +60,11 @@ function initializeDashboard() {
                     actions += action('Rechazar', 'reject-article', article.id, 'danger');
                 }
                 if (article.estado === 'publicado') {
-                    actions += action('Despublicar', 'unpublish-article', article.id);
+                    actions += action('Despublicar', 'unpublish-article', article.id, 'danger');
                 }
+
                 if (article.estado === 'borrador') {
+                    actions += action('Publicar', 'publish-article', article.id, 'primary');
                     actions += action('Eliminar borrador', 'delete-article', article.id, 'danger');
                 }
             } else {
@@ -100,8 +102,14 @@ function initializeDashboard() {
         byId('placeCards').innerHTML = list.map(place => {
             const meta = `<span class="status-pill status-${escapeHtml(place.estado)}">${escapeHtml(place.estado)}</span><span>${escapeHtml(place.tipo)}</span><span>${escapeHtml(place.municipio)}</span>`;
             let actions = action('Editar', 'edit-place', place.id);
-            if (user.rol === 'admin' && place.estado !== 'archivado') {
-                actions += action('Archivar', 'archive-place', place.id, 'danger');
+            if (user.rol === 'admin') {
+                if (place.estado === 'activo') {
+                    actions += action('Archivar', 'archive-place', place.id, 'danger');
+                }
+
+                if (place.estado === 'archivado') {
+                    actions += action('Publicar', 'publish-place', place.id, 'primary');
+                }
             }
 
             return card({
@@ -126,8 +134,14 @@ function initializeDashboard() {
         byId('floraCards').innerHTML = list.map(record => {
             const meta = `<span class="status-pill status-${escapeHtml(record.estado)}">${escapeHtml(record.estado)}</span><span>${escapeHtml(record.tipo)}</span><span>${escapeHtml(record.estadoConservacion || 'Conservación sin especificar')}</span>`;
             let actions = action('Editar', 'edit-flora', record.id);
-            if (user.rol === 'admin' && record.estado !== 'archivado') {
-                actions += action('Archivar', 'archive-flora', record.id, 'danger');
+            if (user.rol === 'admin') {
+                if (record.estado === 'publicado') {
+                    actions += action('Archivar', 'archive-flora', record.id, 'danger');
+                }
+
+                if (record.estado === 'archivado') {
+                    actions += action('Publicar', 'publish-flora', record.id, 'primary');
+                }
             }
 
             return card({
@@ -273,13 +287,15 @@ function initializeDashboard() {
     async function handleAction(button) {
         const id = button.dataset.id;
         const actionName = button.dataset.action;
+
         const record = [...cache.articles, ...cache.places, ...cache.flora]
-            .find(item => item.id === id);
+            .find(item => String(item.id) === String(id));
 
         if (actionName.startsWith('edit-')) {
             openForm(actionName.slice(5), record);
             return;
         }
+
         if (actionName === 'reject-article') {
             rejectArticleId = id;
             byId('rejectReason').value = '';
@@ -287,34 +303,91 @@ function initializeDashboard() {
             return;
         }
 
-        const confirmMessage = actionName.startsWith('archive-')
-            ? '¿Archivar este registro? Ya no aparecerá en el catálogo público.'
-            : actionName === 'delete-article'
-                ? '¿Eliminar este borrador? Esta acción no se puede deshacer.'
-                : actionName === 'unpublish-article'
-                    ? '¿Retirar este artículo de publicación?'
-                    : null;
-        if (confirmMessage && !window.confirm(confirmMessage)) return;
+        const confirmationActions = [
+            'publish-article',
+            'unpublish-article',
+            'publish-place',
+            'archive-place',
+            'publish-flora',
+            'archive-flora',
+            'delete-article',
+        ];
 
-        button.disabled = true;
+        if (confirmationActions.includes(actionName)) {
+            openActionConfirmation(actionName, id);
+            return;
+        }
+
+        await executeAction(actionName, id, button);
+    }
+    async function executeAction(actionName, id, button = null) {
+        if (button) button.disabled = true;
+
         try {
-            if (actionName === 'approve-article') await dashboardApi.approveArticle(id);
-            if (actionName === 'unpublish-article') await dashboardApi.unpublishArticle(id);
-            if (actionName === 'delete-article') await dashboardApi.deleteDraft(id);
-            if (actionName === 'submit-article') await dashboardApi.submitArticle(id);
-            if (actionName === 'archive-place') await dashboardApi.archivePlace(id);
-            if (actionName === 'archive-flora') await dashboardApi.archiveFlora(id);
-            if (actionName === 'read-notification') await dashboardApi.markNotificationRead(id);
+            switch (actionName) {
+                case 'approve-article':
+                    await dashboardApi.approveArticle(id);
+                    break;
+
+                case 'publish-article':
+                    await dashboardApi.publishArticle(id);
+                    break;
+
+                case 'unpublish-article':
+                    await dashboardApi.unpublishArticle(id);
+                    break;
+
+                case 'delete-article':
+                    await dashboardApi.deleteDraft(id);
+                    break;
+
+                case 'submit-article':
+                    await dashboardApi.submitArticle(id);
+                    break;
+
+                case 'archive-place':
+                    await dashboardApi.archivePlace(id);
+                    break;
+
+                case 'publish-place':
+                    await dashboardApi.publishPlace(id);
+                    break;
+
+                case 'archive-flora':
+                    await dashboardApi.archiveFlora(id);
+                    break;
+
+                case 'publish-flora':
+                    await dashboardApi.publishFlora(id);
+                    break;
+
+                case 'read-notification':
+                    await dashboardApi.markNotificationRead(id);
+                    break;
+
+                default:
+                    return false;
+            }
+
             showNotice('La acción se completó correctamente.');
+
             await refreshCurrentSection();
-            if (actionName === 'read-notification') await loadNotifications(true);
+
+            if (actionName === 'read-notification') {
+                await loadNotifications(true);
+            }
+
+            return true;
+
         } catch (error) {
+            console.error(`Error al ejecutar ${actionName}:`, error);
             showNotice(error.message, 'error');
+            return false;
+
         } finally {
-            button.disabled = false;
+            if (button) button.disabled = false;
         }
     }
-
     async function refreshCurrentSection() {
         await loadResource(activeSection);
     }
@@ -322,6 +395,77 @@ function initializeDashboard() {
     let activeSection = 'articles';
     let user;
     let rejectArticleId = null;
+    let pendingAction = null;
+    function openActionConfirmation(actionName, id) {
+    const configurations = {
+            'publish-article': {
+                title: 'Publicar artículo',
+                message: 'El artículo estará disponible para el público en el catálogo de Regenera BCS.',
+                button: 'Publicar artículo',
+                icon: '✓',
+                style: 'is-publish',
+            },
+            'unpublish-article': {
+                title: 'Despublicar artículo',
+                message: 'El artículo dejará de estar disponible en el catálogo público y volverá al estado de borrador.',
+                button: 'Despublicar',
+                icon: '!',
+                style: 'is-danger',
+            },
+            'publish-place': {
+                title: 'Publicar lugar',
+                message: 'Este lugar volverá a estar activo y aparecerá nuevamente en el catálogo público.',
+                button: 'Publicar lugar',
+                icon: '✓',
+                style: 'is-publish',
+            },
+            'archive-place': {
+                title: 'Archivar lugar',
+                message: 'El lugar dejará de aparecer en el catálogo público. Podrás publicarlo nuevamente después.',
+                button: 'Archivar lugar',
+                icon: '!',
+                style: 'is-danger',
+            },
+            'publish-flora': {
+                title: 'Publicar registro',
+                message: 'Este registro de flora o fauna volverá a estar disponible públicamente.',
+                button: 'Publicar registro',
+                icon: '✓',
+                style: 'is-publish',
+            },
+            'archive-flora': {
+                title: 'Archivar registro',
+                message: 'Este registro dejará de aparecer en el catálogo público. Podrás publicarlo nuevamente después.',
+                button: 'Archivar registro',
+                icon: '!',
+                style: 'is-danger',
+            },
+            'delete-article': {
+                title: 'Eliminar borrador',
+                message: 'Esta acción eliminará permanentemente el borrador. No podrás recuperarlo.',
+                button: 'Eliminar borrador',
+                icon: '!',
+                style: 'is-danger',
+            },
+        };
+
+        const config = configurations[actionName];
+
+        if (!config) return;
+
+        pendingAction = { actionName, id };
+
+        byId('actionConfirmTitle').textContent = config.title;
+        byId('actionConfirmMessage').textContent = config.message;
+        byId('actionConfirmSubmit').textContent = config.button;
+        byId('actionConfirmIcon').textContent = config.icon;
+
+        const submit = byId('actionConfirmSubmit');
+        submit.classList.remove('is-danger', 'is-publish');
+        submit.classList.add(config.style);
+
+        byId('actionConfirmDialog').showModal();
+    }
 
     root.querySelectorAll('[data-section]').forEach(tab => {
         tab.addEventListener('click', async () => {
@@ -402,7 +546,32 @@ function initializeDashboard() {
         }
     });
     byId('cancelReject').addEventListener('click', () => byId('rejectDialog').close());
+    byId('actionConfirmForm').addEventListener('submit', async event => {
+        event.preventDefault();
 
+        if (!pendingAction) return;
+
+        const submit = byId('actionConfirmSubmit');
+        submit.disabled = true;
+
+        const { actionName, id } = pendingAction;
+
+        try {
+            const completed = await executeAction(actionName, id);
+
+            if (completed) {
+                byId('actionConfirmDialog').close();
+                pendingAction = null;
+            }
+        } finally {
+            submit.disabled = false;
+        }
+    });
+
+    byId('cancelActionConfirm').addEventListener('click', () => {
+        byId('actionConfirmDialog').close();
+        pendingAction = null;
+    });
     byId('notificationToggle').addEventListener('click', async () => {
         const popover = byId('notificationPopover');
         const open = popover.hidden;

@@ -30,4 +30,10 @@ class LugarPolicy
     {
         return $user->rol === 'admin';
     }
+
+    public function publicar(User $user, Lugar $lugar): bool
+    {
+        return $user->rol === 'admin'
+            && $lugar->estado === 'archivado';
+    }
 }

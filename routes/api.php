@@ -89,14 +89,17 @@ Route::prefix('admin')
         Route::patch('/lugares/{id}/archivar', [AdminLugarController::class, 'archivar']);
         Route::get('/flora-fauna', [AdminFloraFaunaController::class, 'index']);
         Route::patch('/flora-fauna/{id}/archivar', [AdminFloraFaunaController::class, 'archivar']);
+        Route::patch('/lugares/{id}/publicar', [AdminLugarController::class, 'publicar']);
         Route::get('/articulos/pendientes', [AdminArticuloController::class, 'pendientes']);
         Route::patch('/articulos/{id}/aprobar', [AdminArticuloController::class, 'aprobar']);
         Route::patch('/articulos/{id}/rechazar', [AdminArticuloController::class, 'rechazar']);
         Route::patch('/articulos/{id}/despublicar', [AdminArticuloController::class, 'despublicar']);
         Route::delete('/articulos/{id}', [AdminArticuloController::class, 'destroy']);
+        Route::patch('/flora-fauna/{id}/publicar', [AdminFloraFaunaController::class, 'publicar']);
         Route::get('/auditoria', [AuditoriaController::class, 'index']);
         Route::get('/auditoria/{id}', [AuditoriaController::class, 'show']);
-    });
+        Route::patch('/articulos/{id}/publicar', [AdminArticuloController::class, 'publicar']);    
+        });
 
 Route::get('/articulos', [ArticuloController::class, 'index'])->middleware('auth.optional');
 Route::post('/articulos', [ArticuloController::class, 'store'])->middleware('auth:sanctum');

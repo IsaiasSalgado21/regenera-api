@@ -13,7 +13,11 @@ class FloraFaunaPolicy
             || $registro->estado === 'publicado'
             || ($user?->rol === 'organizador' && (string) $registro->creadoPor === (string) $user->getAuthIdentifier());
     }
-
+    public function publicar(User $user, FloraFauna $registro): bool
+    {
+        return $user->rol === 'admin'
+            && $registro->estado === 'archivado';
+    }
     public function create(User $user): bool
     {
         return in_array($user->rol, ['admin', 'organizador'], true);
@@ -29,4 +33,7 @@ class FloraFaunaPolicy
     {
         return $user->rol === 'admin';
     }
+    
+
+    
 }

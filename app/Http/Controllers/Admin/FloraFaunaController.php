@@ -28,7 +28,28 @@ class FloraFaunaController extends Controller
             'message' => 'Todos los registros de flora y fauna consultados correctamente.',
         ]);
     }
+public function publicar(string $id)
+{
+    $registro = FloraFauna::findOrFail($id);
 
+    $this->authorize('publicar', $registro);
+
+    $registro->estado = 'publicado';
+    $registro->save();
+
+    app(AuditoriaService::class)->registrar(
+        auth()->user(),
+        'publicar',
+        'flora_fauna',
+        (string) $registro->id,
+        request()
+    );
+
+    return response()->json([
+        'message' => 'Registro publicado correctamente.',
+        'data' => $registro,
+    ]);
+}
     public function archivar(Request $request, string $id)
     {
         $registro = FloraFauna::findOrFail($id);
