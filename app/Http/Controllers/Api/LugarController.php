@@ -7,12 +7,17 @@ use App\Http\Requests\StoreLugarRequest;
 use App\Http\Requests\UpdateLugarRequest;
 use App\Models\Lugar;
 use App\Services\AuditoriaService;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
 class LugarController extends Controller
 {
-    public function __construct(private readonly AuditoriaService $auditoria) {}
+    public function __construct(
+        private readonly AuditoriaService $auditoria,
+        private readonly GridFsImageService $gridFsImages,
+    ) {}
 
     public function index(Request $request)
     {
@@ -44,9 +49,15 @@ class LugarController extends Controller
     public function store(StoreLugarRequest $request)
     {
         $this->authorize('create', Lugar::class);
+        $validated = $request->validated();
+
+        if ($request->hasFile('imagen')) {
+            $validated['imagen'] = Storage::disk('gridfs')
+                ->putFile('lugares', $request->file('imagen'));
+        }
 
         $lugar = Lugar::create([
-            ...$request->validated(),
+            ...$validated,
             'estado' => 'activo',
             'creadoPor' => new ObjectId((string) $request->user()->getAuthIdentifier()),
         ]);
@@ -58,7 +69,7 @@ class LugarController extends Controller
                 'lugar',
                 (string) $lugar->_id,
                 $request,
-                ['campos' => array_keys($request->validated())],
+                ['campos' => array_keys($validated)],
             );
         }
 
@@ -86,6 +97,10 @@ class LugarController extends Controller
         $lugar = Lugar::findOrFail($id);
         $this->authorize('update', $lugar);
         $validated = $request->validated();
+        if ($request->hasFile('imagen')) {
+            $validated['imagen'] = Storage::disk('gridfs')
+                ->putFile('lugares', $request->file('imagen'));
+        }
         $lugar->update($validated);
 
         if ($request->user()->rol === 'admin') {
@@ -116,6 +131,7 @@ class LugarController extends Controller
             'latitud' => $lugar->latitud,
             'longitud' => $lugar->longitud,
             'tipo' => $lugar->tipo,
+            'imagen' => $this->gridFsImages->url($lugar->imagen),
             'estado' => $lugar->estado,
             'creadoPor' => $mostrarCreador ? (string) $lugar->creadoPor : null,
         ];

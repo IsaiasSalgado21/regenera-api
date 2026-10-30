@@ -70,7 +70,7 @@
                 <input type="hidden" name="id">
                 <label>Título<input name="titulo" required maxlength="200"></label>
                 <label>Categoría<input name="categoria" required maxlength="100"></label>
-                <label>Imagen (URL)<input name="imagen" type="url" maxlength="500"></label>
+                <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
                 <label>Contenido<textarea name="contenido" rows="8" required></textarea></label>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar borrador</button>
@@ -108,6 +108,7 @@
                     <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
                     <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
                 </div>
+                <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
                 <label>Descripción<textarea name="descripcion" rows="4" maxlength="2000"></textarea></label>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar lugar</button>
@@ -151,7 +152,7 @@
                     Esta especie requiere una ubicación aproximada. Al guardar otros cambios se conservará su ubicación original sin exponerla.
                 </p>
                 <label>Lugares relacionados (IDs separados por coma)<input name="lugaresRelacionados" placeholder="ID de lugar, ID de lugar"></label>
-                <label>Imágenes (URLs separadas por coma)<input name="imagenes" placeholder="https://…"></label>
+                <label>Imágenes<input name="imagenes[]" type="file" accept="image/*" multiple></label>
                 <label>Fuente de información<input name="fuenteInformacion" maxlength="255"></label>
                 <label>Descripción<textarea name="descripcion" rows="4" required maxlength="2000"></textarea></label>
                 <div class="dashboard-form-actions">

@@ -37,15 +37,21 @@ async function request(method, path, data) {
     }
 }
 
+function methodOverride(data, method) {
+    if (!(data instanceof FormData)) return data;
+    data.append('_method', method.toUpperCase());
+    return data;
+}
+
 export const dashboardApi = {
     currentUser: () => request('get', '/api/auth/me'),
     listPlaces: role => request('get', role === 'admin' ? '/api/admin/lugares' : '/api/lugares'),
     listFlora: role => request('get', role === 'admin' ? '/api/admin/flora-fauna' : '/api/flora-fauna'),
     listArticles: () => request('get', '/api/articulos'),
     listPendingArticles: () => request('get', '/api/admin/articulos/pendientes'),
-    savePlace: (id, data) => request(id ? 'put' : 'post', id ? `/api/lugares/${id}` : '/api/lugares', data),
-    saveFlora: (id, data) => request(id ? 'put' : 'post', id ? `/api/flora-fauna/${id}` : '/api/flora-fauna', data),
-    saveArticle: (id, data) => request(id ? 'put' : 'post', id ? `/api/articulos/${id}` : '/api/articulos', data),
+    savePlace: (id, data) => request('post', id ? `/api/lugares/${id}` : '/api/lugares', id ? methodOverride(data, 'put') : data),
+    saveFlora: (id, data) => request('post', id ? `/api/flora-fauna/${id}` : '/api/flora-fauna', id ? methodOverride(data, 'put') : data),
+    saveArticle: (id, data) => request('post', id ? `/api/articulos/${id}` : '/api/articulos', id ? methodOverride(data, 'put') : data),
     archivePlace: id => request('patch', `/api/admin/lugares/${id}/archivar`),
     archiveFlora: id => request('patch', `/api/admin/flora-fauna/${id}/archivar`),
     submitArticle: id => request('patch', `/api/articulos/${id}/enviar-revision`),

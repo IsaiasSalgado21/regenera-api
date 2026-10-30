@@ -24,7 +24,7 @@ return [
     | may even configure multiple disks for the same driver. Examples for
     | most supported storage drivers are configured here for reference.
     |
-    | Supported drivers: "local", "ftp", "sftp", "s3"
+    | Supported drivers: "local", "ftp", "sftp", "s3", "gridfs"
     |
     */
 
@@ -45,6 +45,13 @@ return [
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
+        ],
+
+        'gridfs' => [
+            'driver' => 'gridfs',
+            'connection' => 'mongodb',
+            'bucket' => env('GRIDFS_BUCKET', 'fs'),
+            'throw' => true,
         ],
 
         's3' => [

@@ -3,18 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Voluntariado;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class VoluntariadoController extends Controller
 {
+    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+
     public function index()
     {
         $voluntariados = Voluntariado::orderBy('fechaInicio')->get();
 
         return response()->json([
             'success' => true,
-            'voluntariados' => $voluntariados,
+            'voluntariados' => $voluntariados->map(function (Voluntariado $voluntariado) {
+                $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
+
+                return $voluntariado;
+            }),
         ]);
     }
 
@@ -42,7 +50,7 @@ class VoluntariadoController extends Controller
             'requisitos.*' => 'string|max:255',
             'materiales' => 'nullable|array',
             'materiales.*' => 'string|max:255',
-            'imagen' => 'nullable|string|max:2048',
+            'imagen' => 'nullable|file|image|max:5120',
             'estado' => [
                 'sometimes',
                 Rule::in([
@@ -57,6 +65,11 @@ class VoluntariadoController extends Controller
         $validated['estado'] = $validated['estado'] ?? 'pendiente';
         $validated['requisitos'] = $validated['requisitos'] ?? [];
         $validated['materiales'] = $validated['materiales'] ?? [];
+
+        if ($request->hasFile('imagen')) {
+            $validated['imagen'] = Storage::disk('gridfs')
+                ->putFile('voluntariados', $request->file('imagen'));
+        }
 
         $voluntariado = Voluntariado::create($validated);
 
@@ -80,7 +93,9 @@ class VoluntariadoController extends Controller
 
         return response()->json([
             'success' => true,
-            'voluntariado' => $voluntariado,
+            'voluntariado' => tap($voluntariado, function (Voluntariado $voluntariado): void {
+                $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
+            }),
         ]);
     }
 
@@ -109,7 +124,7 @@ class VoluntariadoController extends Controller
             'requisitos.*' => 'string|max:255',
             'materiales' => 'sometimes|nullable|array',
             'materiales.*' => 'string|max:255',
-            'imagen' => 'sometimes|nullable|string|max:2048',
+            'imagen' => 'sometimes|nullable|file|image|max:5120',
             'estado' => [
                 'sometimes',
                 'required',
@@ -122,12 +137,19 @@ class VoluntariadoController extends Controller
             ],
         ]);
 
+        if ($request->hasFile('imagen')) {
+            $validated['imagen'] = Storage::disk('gridfs')
+                ->putFile('voluntariados', $request->file('imagen'));
+        }
+
         $voluntariado->update($validated);
 
         return response()->json([
             'success' => true,
             'message' => 'Voluntariado actualizado correctamente.',
-            'voluntariado' => $voluntariado->fresh(),
+            'voluntariado' => tap($voluntariado->fresh(), function (Voluntariado $voluntariado): void {
+                $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
+            }),
         ]);
     }
 

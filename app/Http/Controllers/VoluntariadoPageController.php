@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Lugar;
 use App\Models\Voluntariado;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class VoluntariadoPageController extends Controller
 {
+    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+
     /**
      * Lista pública de voluntariados, con filtros del lado del servidor.
      */
@@ -43,7 +46,7 @@ class VoluntariadoPageController extends Controller
                 'id' => (string) $v->_id,
                 'titulo' => $v->titulo,
                 'descripcion' => Str::limit(strip_tags($v->descripcion), 160),
-                'imagen' => $v->imagen,
+                'imagen' => $this->gridFsImages->url($v->imagen),
                 'categoria' => $v->categoria ?? null,
                 'lugar' => $lugar?->nombre,
                 'fecha' => $v->fechaInicio?->format('d/m/Y'),
@@ -77,6 +80,7 @@ class VoluntariadoPageController extends Controller
         }
 
         $lugar = $voluntariado->lugarId ? Lugar::find($voluntariado->lugarId) : null;
+        $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,

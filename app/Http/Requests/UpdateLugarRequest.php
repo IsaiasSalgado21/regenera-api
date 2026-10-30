@@ -22,6 +22,7 @@ class UpdateLugarRequest extends FormRequest
             'latitud' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
             'longitud' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
             'tipo' => ['sometimes', 'required', Rule::in(['playa', 'parque', 'reserva', 'zona_urbana', 'otro'])],
+            'imagen' => ['sometimes', 'nullable', 'file', 'image', 'max:5120'],
             'estado' => ['prohibited'],
             'creadoPor' => ['prohibited'],
         ];

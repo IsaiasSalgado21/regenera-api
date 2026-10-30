@@ -16,7 +16,7 @@ class StoreArticuloRequest extends FormRequest
         return [
             'titulo' => ['required', 'string', 'max:200'],
             'contenido' => ['required', 'string'],
-            'imagen' => ['nullable', 'string', 'max:500'],
+            'imagen' => ['nullable', 'file', 'image', 'max:5120'],
             'categoria' => ['required', 'string', 'max:100'],
             'autorId' => ['prohibited'],
             'estado' => ['prohibited'],

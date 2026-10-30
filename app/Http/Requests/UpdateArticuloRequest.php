@@ -16,7 +16,7 @@ class UpdateArticuloRequest extends FormRequest
         return [
             'titulo' => ['sometimes', 'required', 'string', 'max:200'],
             'contenido' => ['sometimes', 'required', 'string'],
-            'imagen' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'imagen' => ['sometimes', 'nullable', 'file', 'image', 'max:5120'],
             'categoria' => ['sometimes', 'required', 'string', 'max:100'],
             'autorId' => ['prohibited'],
             'estado' => ['prohibited'],

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LugarController;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GridFsImageController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\MapApiController;
 use App\Http\Controllers\NotificacionController;
@@ -16,6 +17,10 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoluntariadoController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/imagen/{path}', [GridFsImageController::class, 'mostrarImagen'])
+    ->where('path', '.*')
+    ->name('imagenes.mostrar');
 
 Route::get('/ping', function () {
 

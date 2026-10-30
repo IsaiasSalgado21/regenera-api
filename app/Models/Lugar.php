@@ -20,6 +20,7 @@ class Lugar extends Model
         'latitud',
         'longitud',
         'tipo',
+        'imagen',
         'estado',
         // ObjectId de usuarios para aplicar edición por propietario.
         'creadoPor',

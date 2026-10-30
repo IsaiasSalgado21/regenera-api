@@ -7,6 +7,10 @@ use Illuminate\Support\Str;
 
 class FloraFaunaService
 {
+    public function __construct(
+        private readonly GridFsImageService $gridFsImages = new GridFsImageService(),
+    ) {}
+
     public function ubicacionVisible(FloraFauna $registro, bool $esAdmin = false): ?array
     {
         $ubicacion = $registro->ubicacion;
@@ -60,9 +64,7 @@ class FloraFaunaService
 
     public function imagenes(FloraFauna $registro): array
     {
-        return collect($registro->imagenes ?? [])
-            ->values()
-            ->all();
+        return $this->gridFsImages->urls($registro->imagenes ?? []);
     }
 
     private function esSensible(FloraFauna $registro): bool

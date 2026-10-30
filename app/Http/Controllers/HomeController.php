@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Articulo;
 use App\Models\FloraFauna;
 use App\Models\Voluntariado;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
+    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+
     /**
      * Página principal de Regenera BCS.
      *
@@ -36,7 +39,7 @@ class HomeController extends Controller
                     'id'         => (string) $voluntariado->_id,
                     'titulo'     => $voluntariado->titulo,
                     'descripcion'=> $voluntariado->descripcion,
-                    'imagen'     => $voluntariado->imagen,
+                    'imagen'     => $this->gridFsImages->url($voluntariado->imagen),
                     'categoria'  => $voluntariado->estado,
                     'lugar'      => $lugar?->nombre,
                     'fecha'      => $voluntariado->fechaInicio?->format('d/m/Y'),
@@ -50,7 +53,7 @@ class HomeController extends Controller
             ->limit(4)
             ->get()
             ->map(function ($especie) {
-                $imagen = collect($especie->imagenes ?? [])->first();
+                $imagen = $this->gridFsImages->url(collect($especie->imagenes ?? [])->first());
 
                 return [
                     'id'        => (string) $especie->_id,
@@ -73,7 +76,7 @@ class HomeController extends Controller
                     'id'        => (string) $articulo->_id,
                     'titulo'    => $articulo->titulo,
                     'contenido' => \Illuminate\Support\Str::limit(strip_tags($articulo->contenido), 120),
-                    'imagen'    => $articulo->imagen,
+                    'imagen'    => $this->gridFsImages->url($articulo->imagen),
                     'categoria' => $articulo->categoria,
                     'fecha'     => $articulo->fechaPublicacion?->format('d/m/Y'),
                 ];

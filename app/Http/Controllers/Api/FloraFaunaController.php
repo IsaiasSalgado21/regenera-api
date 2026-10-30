@@ -9,6 +9,7 @@ use App\Models\FloraFauna;
 use App\Services\AuditoriaService;
 use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
 class FloraFaunaController extends Controller
@@ -52,6 +53,7 @@ class FloraFaunaController extends Controller
     {
         $this->authorize('create', FloraFauna::class);
         $validated = $this->convertLugarIds($request->validated());
+        $validated = $this->storeImages($request, $validated);
 
         // Flora/fauna is published on creation; this phase has no review workflow.
         $registro = FloraFauna::create([
@@ -97,6 +99,7 @@ class FloraFaunaController extends Controller
         $registro = FloraFauna::findOrFail($id);
         $this->authorize('update', $registro);
         $validated = $this->convertLugarIds($request->validated());
+        $validated = $this->storeImages($request, $validated);
         $registro->update($validated);
 
         if ($request->user()->rol === 'admin') {
@@ -128,6 +131,19 @@ class FloraFaunaController extends Controller
                 $attributes['lugaresRelacionados'],
             );
         }
+
+        return $attributes;
+    }
+
+    private function storeImages(Request $request, array $attributes): array
+    {
+        if (! $request->hasFile('imagenes')) {
+            return $attributes;
+        }
+
+        $attributes['imagenes'] = collect($request->file('imagenes'))
+            ->map(fn ($image) => Storage::disk('gridfs')->putFile('flora-fauna', $image))
+            ->all();
 
         return $attributes;
     }

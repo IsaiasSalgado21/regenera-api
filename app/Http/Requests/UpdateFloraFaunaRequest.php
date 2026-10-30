@@ -22,7 +22,7 @@ class UpdateFloraFaunaRequest extends FormRequest
             'habitat' => ['sometimes', 'nullable', 'string', 'max:500'],
             'estadoConservacion' => ['sometimes', 'nullable', 'string', 'max:100'],
             'imagenes' => ['sometimes', 'nullable', 'array'],
-            'imagenes.*' => ['string', 'max:2048'],
+            'imagenes.*' => ['file', 'image', 'max:5120'],
             'ubicacion' => ['sometimes', 'nullable', 'array:nombre,latitud,longitud'],
             'ubicacion.nombre' => ['nullable', 'string', 'max:255'],
             'ubicacion.latitud' => ['nullable', 'numeric', 'between:-90,90'],

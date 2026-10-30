@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RechazarArticuloRequest;
 use App\Models\Articulo;
 use App\Services\AuditoriaService;
+use App\Services\GridFsImageService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
@@ -13,6 +14,7 @@ class ArticuloController extends Controller
 {
     public function __construct(
         private readonly AuditoriaService $auditoria,
+        private readonly GridFsImageService $gridFsImages,
         private readonly NotificationService $notificaciones,
     ) {}
 
@@ -27,7 +29,7 @@ class ArticuloController extends Controller
                 'autorId' => (string) $articulo->autorId,
                 'titulo' => $articulo->titulo,
                 'contenido' => $articulo->contenido,
-                'imagen' => $articulo->imagen,
+                'imagen' => $this->gridFsImages->url($articulo->imagen),
                 'categoria' => $articulo->categoria,
                 'estado' => $articulo->estado,
                 'fechaActualizacion' => $articulo->fechaActualizacion?->toISOString(),

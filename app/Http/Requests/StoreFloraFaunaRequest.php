@@ -22,7 +22,7 @@ class StoreFloraFaunaRequest extends FormRequest
             'habitat' => ['nullable', 'string', 'max:500'],
             'estadoConservacion' => ['nullable', 'string', 'max:100'],
             'imagenes' => ['nullable', 'array'],
-            'imagenes.*' => ['string', 'max:2048'],
+            'imagenes.*' => ['file', 'image', 'max:5120'],
             'ubicacion' => ['nullable', 'array:nombre,latitud,longitud'],
             'ubicacion.nombre' => ['nullable', 'string', 'max:255'],
             'ubicacion.latitud' => ['nullable', 'numeric', 'between:-90,90'],

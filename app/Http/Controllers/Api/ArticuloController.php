@@ -8,12 +8,17 @@ use App\Http\Requests\UpdateArticuloRequest;
 use App\Models\Articulo;
 use App\Models\User;
 use App\Services\AuditoriaService;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
 class ArticuloController extends Controller
 {
-    public function __construct(private readonly AuditoriaService $auditoria) {}
+    public function __construct(
+        private readonly AuditoriaService $auditoria,
+        private readonly GridFsImageService $gridFsImages,
+    ) {}
 
     public function index(Request $request)
     {
@@ -52,6 +57,11 @@ class ArticuloController extends Controller
         $this->authorize('create', Articulo::class);
         $validated = $request->validated();
         $autorId = (string) $request->user()->getAuthIdentifier();
+
+        if ($request->hasFile('imagen')) {
+            $validated['imagen'] = Storage::disk('gridfs')
+                ->putFile('articulos', $request->file('imagen'));
+        }
 
         $articulo = Articulo::create([
             ...$validated,
@@ -93,8 +103,15 @@ class ArticuloController extends Controller
     {
         $articulo = Articulo::findOrFail($id);
         $this->authorize('update', $articulo);
+        $validated = $request->validated();
+
+        if ($request->hasFile('imagen')) {
+            $validated['imagen'] = Storage::disk('gridfs')
+                ->putFile('articulos', $request->file('imagen'));
+        }
+
         $articulo->update([
-            ...$request->validated(),
+            ...$validated,
             'fechaActualizacion' => now(),
         ]);
 
@@ -105,7 +122,7 @@ class ArticuloController extends Controller
                 'articulo',
                 (string) $articulo->_id,
                 $request,
-                ['campos' => array_keys($request->validated()), 'estado' => $articulo->estado],
+                ['campos' => array_keys($validated), 'estado' => $articulo->estado],
             );
         }
 
@@ -141,7 +158,7 @@ class ArticuloController extends Controller
             'autorNombre' => $autor?->nombre,
             'titulo' => $articulo->titulo,
             'contenido' => $articulo->contenido,
-            'imagen' => $articulo->imagen,
+            'imagen' => $this->gridFsImages->url($articulo->imagen),
             'categoria' => $articulo->categoria,
             'estado' => $articulo->estado,
             'motivoRechazo' => $articulo->motivoRechazo,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FloraFauna;
 use App\Models\Inscripcion;
 use App\Models\Lugar;
+use App\Services\GridFsImageService;
 use App\Models\Voluntariado;
 use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
@@ -12,7 +13,10 @@ use Illuminate\Support\Carbon;
 
 class MapApiController extends Controller
 {
-    public function __construct(private readonly FloraFaunaService $floraFaunaService) {}
+    public function __construct(
+        private readonly FloraFaunaService $floraFaunaService,
+        private readonly GridFsImageService $gridFsImages,
+    ) {}
 
     public function voluntariados(Request $request)
     {
@@ -117,6 +121,7 @@ class MapApiController extends Controller
                 'descripcion' => $lugar->descripcion,
                 'municipio' => $lugar->municipio,
                 'tipo_lugar' => $lugar->tipo,
+                'imagen' => $this->gridFsImages->url($lugar->imagen),
                 'lat' => (float) $lugar->latitud,
                 'lng' => (float) $lugar->longitud,
             ])->values();

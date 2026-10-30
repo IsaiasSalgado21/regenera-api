@@ -22,6 +22,7 @@ class StoreLugarRequest extends FormRequest
             'latitud' => ['nullable', 'numeric', 'between:-90,90'],
             'longitud' => ['nullable', 'numeric', 'between:-180,180'],
             'tipo' => ['required', Rule::in(['playa', 'parque', 'reserva', 'zona_urbana', 'otro'])],
+            'imagen' => ['nullable', 'file', 'image', 'max:5120'],
             'estado' => ['prohibited'],
             'creadoPor' => ['prohibited'],
         ];

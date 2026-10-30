@@ -235,13 +235,13 @@ function initializeDashboard() {
         }
 
         for (const [name, value] of Object.entries(record)) {
-            if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value ?? '';
+            const field = form.elements.namedItem(name);
+            if (field && field.type !== 'file') field.value = value ?? '';
         }
         if (type === 'flora') {
             form.elements.latitud.value = record.ubicacion?.latitud ?? '';
             form.elements.longitud.value = record.ubicacion?.longitud ?? '';
             form.elements.lugaresRelacionados.value = (record.lugaresRelacionados || []).join(', ');
-            form.elements.imagenes.value = (record.imagenes || []).join(', ');
         }
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -251,10 +251,26 @@ function initializeDashboard() {
         const isExistingRecord = Boolean(values.id);
         delete values.id;
 
-        if (type === 'place') {
-            values.latitud = values.latitud === '' ? null : Number(values.latitud);
-            values.longitud = values.longitud === '' ? null : Number(values.longitud);
-        } else if (type === 'flora') {
+        if (type === 'article' || type === 'place' || type === 'flora') {
+            const payload = new FormData();
+            for (const [name, value] of new FormData(form).entries()) {
+                if (name === 'id' || name === 'zonaAproximada') continue;
+                if (name === 'imagenes[]') {
+                    if (value instanceof File && value.size > 0) payload.append(name, value);
+                    continue;
+                }
+                if (name === 'lugaresRelacionados') {
+                    value.split(',').map(item => item.trim()).filter(Boolean)
+                        .forEach(item => payload.append('lugaresRelacionados[]', item));
+                    continue;
+                }
+                if (name === 'imagenes') continue;
+                payload.append(name, value);
+            }
+            return payload;
+        }
+
+        if (type === 'flora') {
             const lat = values.latitud;
             const lng = values.longitud;
             const locationIsApproximate = values.zonaAproximada === 'true';
