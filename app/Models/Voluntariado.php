@@ -16,6 +16,8 @@ class Voluntariado extends Model
         'categoria',
         'lugarId',
         'organizadorId',
+        'latitud',
+        'longitud',
         'fechaInicio',
         'fechaFin',
         'horaInicio',
@@ -33,6 +35,8 @@ class Voluntariado extends Model
             'fechaInicio' => 'datetime',
             'fechaFin' => 'datetime',
             'cupo' => 'integer',
+            'latitud' => 'float',
+            'longitud' => 'float',
             'requisitos' => 'array',
             'materiales' => 'array',
         ];

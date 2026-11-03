@@ -1,5 +1,6 @@
 import '../../css/dashboard.css';
 import { dashboardApi } from './dashboard-api';
+import { initializeLocationSelector } from '../map-selector';
 
 const root = document.getElementById('dashboardRoot');
 if (root) initializeDashboard();
@@ -245,6 +246,8 @@ function initializeDashboard() {
     function openForm(type, record = null) {
         const form = byId(formNames[type]);
         form.hidden = false;
+        const locationSelector = initializeLocationSelector(form);
+        locationSelector?.refresh();
         form.elements.id.value = record?.id || '';
         if (type === 'flora') {
             form.elements.zonaAproximada.value = record?.zonaAproximada ? 'true' : '';
@@ -258,6 +261,7 @@ function initializeDashboard() {
                         : 'Nuevo voluntariado';
 
         if (!record) {
+            locationSelector?.setCoordinates(null, null);
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
@@ -270,6 +274,15 @@ function initializeDashboard() {
             form.elements.latitud.value = record.ubicacion?.latitud ?? '';
             form.elements.longitud.value = record.ubicacion?.longitud ?? '';
             form.elements.lugaresRelacionados.value = (record.lugaresRelacionados || []).join(', ');
+        }
+        if (type === 'place' || type === 'voluntariado') {
+            locationSelector?.setCoordinates(record.latitud, record.longitud);
+        }
+        if (type === 'flora') {
+            locationSelector?.setCoordinates(
+                record.ubicacion?.latitud,
+                record.ubicacion?.longitud,
+            );
         }
         if (type === 'voluntariado') {
             form.elements.requisitos.value = (record.requisitos || []).join(', ');

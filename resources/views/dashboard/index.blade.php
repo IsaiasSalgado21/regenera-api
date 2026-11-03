@@ -109,6 +109,13 @@
                     <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
                     <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
                 </div>
+                <div class="location-selector">
+                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
+                    <div class="location-selector-map" data-location-map>
+                        <div class="location-selector-pin" aria-hidden="true"></div>
+                    </div>
+                    <div class="location-selector-coordinates" aria-hidden="true"></div>
+                </div>
                 <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
                 <label>Descripción<textarea name="descripcion" rows="4" maxlength="2000"></textarea></label>
                 <div class="dashboard-form-actions">
@@ -150,6 +157,17 @@
                 <div class="dashboard-form-row">
                     <label>Hora de inicio<input name="horaInicio" type="time" required></label>
                     <label>Hora de fin<input name="horaFin" type="time" required></label>
+                </div>
+                <div class="dashboard-form-row">
+                    <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
+                    <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
+                </div>
+                <div class="location-selector">
+                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
+                    <div class="location-selector-map" data-location-map>
+                        <div class="location-selector-pin" aria-hidden="true"></div>
+                    </div>
+                    <div class="location-selector-coordinates" aria-hidden="true"></div>
                 </div>
                 <label>Cupo<input name="cupo" type="number" min="1" max="10000" required></label>
                 <label>Estado<select name="estado" required><option value="pendiente">Pendiente</option><option value="publicado">Publicado</option><option value="cancelado">Cancelado</option><option value="finalizado">Finalizado</option></select></label>
@@ -194,6 +212,13 @@
                 <div class="dashboard-form-row">
                     <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
                     <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
+                </div>
+                <div class="location-selector">
+                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
+                    <div class="location-selector-map" data-location-map>
+                        <div class="location-selector-pin" aria-hidden="true"></div>
+                    </div>
+                    <div class="location-selector-coordinates" aria-hidden="true"></div>
                 </div>
                 <p class="dashboard-location-warning" id="approximateLocationNotice" hidden>
                     Esta especie requiere una ubicación aproximada. Al guardar otros cambios se conservará su ubicación original sin exponerla.

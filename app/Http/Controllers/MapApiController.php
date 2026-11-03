@@ -53,7 +53,8 @@ class MapApiController extends Controller
         }
 
         $voluntariados = $query->orderBy('fechaInicio')->get()
-            ->filter(fn (Voluntariado $voluntariado) => $lugares->has((string) $voluntariado->lugarId))
+            ->filter(fn (Voluntariado $voluntariado) => $this->hasCoordinates($voluntariado->latitud, $voluntariado->longitud)
+                || $lugares->has((string) $voluntariado->lugarId))
             ->values();
         $ids = $voluntariados->map(fn (Voluntariado $voluntariado) => (string) $voluntariado->_id);
         $inscripcionesPorVoluntariado = Inscripcion::query()
@@ -65,6 +66,7 @@ class MapApiController extends Controller
 
         $data = $voluntariados->map(function (Voluntariado $voluntariado) use ($lugares, $inscripcionesPorVoluntariado) {
             $lugar = $lugares->get((string) $voluntariado->lugarId);
+            $hasOwnCoordinates = $this->hasCoordinates($voluntariado->latitud, $voluntariado->longitud);
             $cupo = (int) ($voluntariado->cupo ?? 0);
             $inscripcionesActivas = (int) $inscripcionesPorVoluntariado->get((string) $voluntariado->_id, 0);
             $lleno = $cupo < 1 || $inscripcionesActivas >= $cupo;
@@ -78,12 +80,12 @@ class MapApiController extends Controller
                 'estado' => $voluntariado->estado,
                 'fecha_inicio' => $voluntariado->fechaInicio?->toISOString(),
                 'lugar_id' => (string) $voluntariado->lugarId,
-                'lugar_nombre' => $lugar->nombre,
+                'lugar_nombre' => $lugar?->nombre,
                 'cupo' => $cupo,
                 'inscripciones_activas' => $inscripcionesActivas,
                 'lleno' => $lleno,
-                'lat' => (float) $lugar->latitud,
-                'lng' => (float) $lugar->longitud,
+                'lat' => $hasOwnCoordinates ? (float) $voluntariado->latitud : (float) $lugar->latitud,
+                'lng' => $hasOwnCoordinates ? (float) $voluntariado->longitud : (float) $lugar->longitud,
             ];
         })->filter(function (array $voluntariado) use ($filters) {
             if (! array_key_exists('disponibles', $filters) || $filters['disponibles'] === null) {
