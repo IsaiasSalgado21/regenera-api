@@ -28,8 +28,6 @@ class CrudAccessTest extends TestCase
         $this->getJson('/api/admin/lugares')->assertForbidden();
         Sanctum::actingAs($organizador);
         $this->getJson('/api/admin/flora-fauna')->assertForbidden();
-        Sanctum::actingAs($organizador);
-        $this->getJson('/api/admin/voluntariados')->assertForbidden();
     }
 
     public function test_create_requests_reject_client_supplied_owner_and_state(): void

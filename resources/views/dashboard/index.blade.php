@@ -45,7 +45,7 @@
             <button type="button" class="dashboard-tab is-active" data-section="articles">Artículos</button>
             <button type="button" class="dashboard-tab" data-section="places">Lugares</button>
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
-            <button type="button" class="dashboard-tab" data-section="voluntariados" data-admin-only>Voluntariados</button>
+            <button type="button" class="dashboard-tab" data-section="voluntariados">Voluntariados</button>
         </nav>
 
         <section class="dashboard-section is-active" id="section-articles" data-resource="articles">
@@ -131,7 +131,7 @@
                     <span class="dashboard-eyebrow">PARTICIPACIÓN AMBIENTAL</span>
                     <h2>Voluntariados</h2>
                 </div>
-                <button type="button" class="button button-primary" data-new="voluntariado" data-admin-only>Crear voluntariado</button>
+                <button type="button" class="button button-primary" data-new="voluntariado">Crear voluntariado</button>
             </div>
             <div class="dashboard-error" data-error="voluntariados" hidden>
                 <p>No se pudieron cargar los voluntariados.</p>
@@ -149,7 +149,7 @@
                 <label>Título<input name="titulo" required maxlength="150"></label>
                 <label>Categoría<input name="categoria" required maxlength="100"></label>
                 <label>Lugar (ID)<input name="lugarId" required maxlength="100"></label>
-                <label>Organizador (ID)<input name="organizadorId" required maxlength="100"></label>
+                <label>Organizador (ID, solo admin)<input name="organizadorId" maxlength="100"></label>
                 <div class="dashboard-form-row">
                     <label>Fecha de inicio<input name="fechaInicio" type="date" required></label>
                     <label>Fecha de fin<input name="fechaFin" type="date" required></label>
