@@ -16,6 +16,7 @@ class CrudAccessTest extends TestCase
         $this->putJson('/api/flora-fauna/507f1f77bcf86cd799439011', [])->assertUnauthorized();
         $this->getJson('/api/admin/lugares')->assertUnauthorized();
         $this->getJson('/api/admin/flora-fauna')->assertUnauthorized();
+        $this->getJson('/api/admin/voluntariados')->assertUnauthorized();
     }
 
     public function test_admin_routes_reject_authenticated_non_admin_users(): void
@@ -27,6 +28,8 @@ class CrudAccessTest extends TestCase
         $this->getJson('/api/admin/lugares')->assertForbidden();
         Sanctum::actingAs($organizador);
         $this->getJson('/api/admin/flora-fauna')->assertForbidden();
+        Sanctum::actingAs($organizador);
+        $this->getJson('/api/admin/voluntariados')->assertForbidden();
     }
 
     public function test_create_requests_reject_client_supplied_owner_and_state(): void

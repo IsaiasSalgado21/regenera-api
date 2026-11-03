@@ -45,6 +45,7 @@
             <button type="button" class="dashboard-tab is-active" data-section="articles">Artículos</button>
             <button type="button" class="dashboard-tab" data-section="places">Lugares</button>
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
+            <button type="button" class="dashboard-tab" data-section="voluntariados" data-admin-only>Voluntariados</button>
         </nav>
 
         <section class="dashboard-section is-active" id="section-articles" data-resource="articles">
@@ -113,6 +114,52 @@
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar lugar</button>
                     <button class="button button-secondary" type="button" data-cancel="place">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="dashboard-section" id="section-voluntariados" data-resource="voluntariados" hidden>
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-eyebrow">PARTICIPACIÓN AMBIENTAL</span>
+                    <h2>Voluntariados</h2>
+                </div>
+                <button type="button" class="button button-primary" data-new="voluntariado" data-admin-only>Crear voluntariado</button>
+            </div>
+            <div class="dashboard-error" data-error="voluntariados" hidden>
+                <p>No se pudieron cargar los voluntariados.</p>
+                <button type="button" class="button button-secondary" data-retry="voluntariados">Reintentar</button>
+            </div>
+            <div class="dashboard-loading" data-loading="voluntariados">Cargando voluntariados…</div>
+            <div class="dashboard-card-grid" id="voluntariadoCards"></div>
+            <p class="dashboard-empty" data-empty="voluntariados" hidden>No hay voluntariados para mostrar.</p>
+            <form class="dashboard-form" id="voluntariadoForm" hidden>
+                <div class="dashboard-form-heading">
+                    <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="voluntariado">Nuevo voluntariado</h3></div>
+                    <button class="icon-button" type="button" data-cancel="voluntariado" aria-label="Cerrar formulario">×</button>
+                </div>
+                <input type="hidden" name="id">
+                <label>Título<input name="titulo" required maxlength="150"></label>
+                <label>Categoría<input name="categoria" required maxlength="100"></label>
+                <label>Lugar (ID)<input name="lugarId" required maxlength="100"></label>
+                <label>Organizador (ID)<input name="organizadorId" required maxlength="100"></label>
+                <div class="dashboard-form-row">
+                    <label>Fecha de inicio<input name="fechaInicio" type="date" required></label>
+                    <label>Fecha de fin<input name="fechaFin" type="date" required></label>
+                </div>
+                <div class="dashboard-form-row">
+                    <label>Hora de inicio<input name="horaInicio" type="time" required></label>
+                    <label>Hora de fin<input name="horaFin" type="time" required></label>
+                </div>
+                <label>Cupo<input name="cupo" type="number" min="1" max="10000" required></label>
+                <label>Estado<select name="estado" required><option value="pendiente">Pendiente</option><option value="publicado">Publicado</option><option value="cancelado">Cancelado</option><option value="finalizado">Finalizado</option></select></label>
+                <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
+                <label>Requisitos (separados por coma)<input name="requisitos" placeholder="Uso de bloqueador, puntualidad"></label>
+                <label>Materiales (separados por coma)<input name="materiales" placeholder="Guantes, agua"></label>
+                <label>Descripción<textarea name="descripcion" rows="5" required maxlength="3000"></textarea></label>
+                <div class="dashboard-form-actions">
+                    <button class="button button-primary" type="submit">Guardar voluntariado</button>
+                    <button class="button button-secondary" type="button" data-cancel="voluntariado">Cancelar</button>
                 </div>
             </form>
         </section>

@@ -6,7 +6,7 @@ if (root) initializeDashboard();
 
 function initializeDashboard() {
     const routeRole = root.dataset.dashboardRole;
-    const cache = { articles: [], places: [], flora: [], pending: [], notifications: [] };
+    const cache = { articles: [], places: [], flora: [], voluntariados: [], pending: [], notifications: [] };
     const byId = id => document.getElementById(id);
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
@@ -158,6 +158,23 @@ function initializeDashboard() {
             : 'Mis registros de flora y fauna';
     }
 
+    function renderVoluntariados() {
+        const list = cache.voluntariados;
+
+        byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
+            const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
+            return card({
+                title: voluntariado.titulo,
+                description: voluntariado.descripcion,
+                meta,
+                id: voluntariado.id,
+                actions: action('Editar', 'edit-voluntariado', voluntariado.id)
+                    + action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger'),
+            });
+        }).join('');
+        showResourceState('voluntariados', list.length ? 'ready' : 'empty');
+    }
+
     async function loadResource(resource) {
         showResourceState(resource, 'loading');
         try {
@@ -177,6 +194,9 @@ function initializeDashboard() {
             } else if (resource === 'flora') {
                 cache.flora = (await dashboardApi.listFlora(user.rol)).data;
                 renderFlora(user);
+            } else if (resource === 'voluntariados') {
+                cache.voluntariados = (await dashboardApi.listVoluntariados()).data;
+                renderVoluntariados();
             }
         } catch (error) {
             showResourceState(resource, 'error');
@@ -209,7 +229,12 @@ function initializeDashboard() {
         }
     }
 
-    const formNames = { article: 'articleForm', place: 'placeForm', flora: 'floraForm' };
+    const formNames = {
+        article: 'articleForm',
+        place: 'placeForm',
+        flora: 'floraForm',
+        voluntariado: 'voluntariadoForm',
+    };
     function closeForm(type) {
         const form = byId(formNames[type]);
         form.reset();
@@ -227,7 +252,10 @@ function initializeDashboard() {
         }
         root.querySelector(`[data-form-title="${type}"]`).textContent = record
             ? 'Editar registro'
-            : type === 'article' ? 'Nuevo artículo' : type === 'place' ? 'Nuevo lugar' : 'Nuevo registro';
+            : type === 'article' ? 'Nuevo artículo'
+                : type === 'place' ? 'Nuevo lugar'
+                    : type === 'flora' ? 'Nuevo registro'
+                        : 'Nuevo voluntariado';
 
         if (!record) {
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -243,6 +271,10 @@ function initializeDashboard() {
             form.elements.longitud.value = record.ubicacion?.longitud ?? '';
             form.elements.lugaresRelacionados.value = (record.lugaresRelacionados || []).join(', ');
         }
+        if (type === 'voluntariado') {
+            form.elements.requisitos.value = (record.requisitos || []).join(', ');
+            form.elements.materiales.value = (record.materiales || []).join(', ');
+        }
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -251,7 +283,7 @@ function initializeDashboard() {
         const isExistingRecord = Boolean(values.id);
         delete values.id;
 
-        if (type === 'article' || type === 'place' || type === 'flora') {
+        if (type === 'article' || type === 'place' || type === 'flora' || type === 'voluntariado') {
             const payload = new FormData();
             for (const [name, value] of new FormData(form).entries()) {
                 if (name === 'id' || name === 'zonaAproximada') continue;
@@ -262,6 +294,11 @@ function initializeDashboard() {
                 if (name === 'lugaresRelacionados') {
                     value.split(',').map(item => item.trim()).filter(Boolean)
                         .forEach(item => payload.append('lugaresRelacionados[]', item));
+                    continue;
+                }
+                if (type === 'voluntariado' && ['requisitos', 'materiales'].includes(name)) {
+                    value.split(',').map(item => item.trim()).filter(Boolean)
+                        .forEach(item => payload.append(`${name}[]`, item));
                     continue;
                 }
                 if (name === 'imagenes') continue;
@@ -304,7 +341,7 @@ function initializeDashboard() {
         const id = button.dataset.id;
         const actionName = button.dataset.action;
 
-        const record = [...cache.articles, ...cache.places, ...cache.flora]
+        const record = [...cache.articles, ...cache.places, ...cache.flora, ...cache.voluntariados]
             .find(item => String(item.id) === String(id));
 
         if (actionName.startsWith('edit-')) {
@@ -327,6 +364,7 @@ function initializeDashboard() {
             'publish-flora',
             'archive-flora',
             'delete-article',
+            'delete-voluntariado',
         ];
 
         if (confirmationActions.includes(actionName)) {
@@ -375,6 +413,10 @@ function initializeDashboard() {
 
                 case 'publish-flora':
                     await dashboardApi.publishFlora(id);
+                    break;
+
+                case 'delete-voluntariado':
+                    await dashboardApi.deleteVoluntariado(id);
                     break;
 
                 case 'read-notification':
@@ -463,6 +505,13 @@ function initializeDashboard() {
                 icon: '!',
                 style: 'is-danger',
             },
+            'delete-voluntariado': {
+                title: 'Eliminar voluntariado',
+                message: 'Esta acción eliminará permanentemente el voluntariado y no podrás recuperarlo.',
+                button: 'Eliminar voluntariado',
+                icon: '!',
+                style: 'is-danger',
+            },
         };
 
         const config = configurations[actionName];
@@ -532,9 +581,15 @@ function initializeDashboard() {
                 if (type === 'article') await dashboardApi.saveArticle(id, payload);
                 if (type === 'place') await dashboardApi.savePlace(id, payload);
                 if (type === 'flora') await dashboardApi.saveFlora(id, payload);
+                if (type === 'voluntariado') await dashboardApi.saveVoluntariado(id, payload);
                 closeForm(type);
                 showNotice('Los cambios se guardaron correctamente.');
-                await loadResource(type === 'article' ? 'articles' : type === 'place' ? 'places' : 'flora');
+                await loadResource(
+                    type === 'article' ? 'articles'
+                        : type === 'place' ? 'places'
+                            : type === 'flora' ? 'flora'
+                                : 'voluntariados',
+                );
             } catch (error) {
                 showNotice(error.message, 'error');
             } finally {
@@ -621,12 +676,18 @@ function initializeDashboard() {
 
             byId('dashboardTitle').textContent = user.rol === 'admin' ? 'Panel de administración' : 'Panel de organizador';
             byId('dashboardWelcome').textContent = `Hola, ${user.nombre}. Administra el contenido de Regenera BCS.`;
+            root.querySelectorAll('[data-admin-only]').forEach(element => {
+                element.hidden = user.rol !== 'admin';
+            });
             byId('dashboardContent').hidden = false;
             root.querySelectorAll('[data-new="article"], [data-new="place"], [data-new="flora"]').forEach(button => {
                 button.hidden = !['admin', 'organizador'].includes(user.rol);
             });
             await loadResource('articles');
             await Promise.all([loadResource('places'), loadResource('flora')]);
+            if (user.rol === 'admin') {
+                await loadResource('voluntariados');
+            }
             await loadNotifications();
             window.setInterval(() => loadNotifications(), 60_000);
         } catch (error) {

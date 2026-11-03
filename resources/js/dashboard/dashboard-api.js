@@ -47,11 +47,14 @@ export const dashboardApi = {
     currentUser: () => request('get', '/api/auth/me'),
     listPlaces: role => request('get', role === 'admin' ? '/api/admin/lugares' : '/api/lugares'),
     listFlora: role => request('get', role === 'admin' ? '/api/admin/flora-fauna' : '/api/flora-fauna'),
+    listVoluntariados: () => request('get', '/api/admin/voluntariados'),
     listArticles: () => request('get', '/api/articulos'),
     listPendingArticles: () => request('get', '/api/admin/articulos/pendientes'),
     savePlace: (id, data) => request('post', id ? `/api/lugares/${id}` : '/api/lugares', id ? methodOverride(data, 'put') : data),
     saveFlora: (id, data) => request('post', id ? `/api/flora-fauna/${id}` : '/api/flora-fauna', id ? methodOverride(data, 'put') : data),
+    saveVoluntariado: (id, data) => request('post', id ? `/api/admin/voluntariados/${id}` : '/api/admin/voluntariados', id ? methodOverride(data, 'put') : data),
     saveArticle: (id, data) => request('post', id ? `/api/articulos/${id}` : '/api/articulos', id ? methodOverride(data, 'put') : data),
+    deleteVoluntariado: id => request('delete', `/api/admin/voluntariados/${id}`),
     archivePlace: id => request('patch', `/api/admin/lugares/${id}/archivar`),
     archiveFlora: id => request('patch', `/api/admin/flora-fauna/${id}/archivar`),
     submitArticle: id => request('patch', `/api/articulos/${id}/enviar-revision`),
@@ -65,10 +68,8 @@ export const dashboardApi = {
     markAllNotificationsRead: () => request('patch', '/api/notificaciones/marcar-todas-leidas'),
     archivePlace: id => request('patch', `/api/admin/lugares/${id}/archivar`),
     publishPlace: id => request('patch', `/api/admin/lugares/${id}/publicar`),
-
     archiveFlora: id => request('patch', `/api/admin/flora-fauna/${id}/archivar`),
     publishFlora: id => request('patch', `/api/admin/flora-fauna/${id}/publicar`),
-
     publishArticle: id => request('patch', `/api/admin/articulos/${id}/publicar`),
     unpublishArticle: id => request('patch', `/api/admin/articulos/${id}/despublicar`),
 };

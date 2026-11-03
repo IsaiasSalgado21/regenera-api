@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ArticuloController as AdminArticuloController;
 use App\Http\Controllers\Admin\FloraFaunaController as AdminFloraFaunaController;
 use App\Http\Controllers\Admin\LugarController as AdminLugarController;
+use App\Http\Controllers\Admin\VoluntariadoController as AdminVoluntariadoController;
 use App\Http\Controllers\Api\ArticuloController;
 use App\Http\Controllers\Api\FloraFaunaController;
 use App\Http\Controllers\Api\LugarController;
@@ -91,6 +92,11 @@ Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
         Route::get('/lugares', [AdminLugarController::class, 'index']);
+        Route::get('/voluntariados', [AdminVoluntariadoController::class, 'index']);
+        Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
+        Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
+        Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
+        Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);
         Route::patch('/lugares/{id}/archivar', [AdminLugarController::class, 'archivar']);
         Route::get('/flora-fauna', [AdminFloraFaunaController::class, 'index']);
         Route::patch('/flora-fauna/{id}/archivar', [AdminFloraFaunaController::class, 'archivar']);
