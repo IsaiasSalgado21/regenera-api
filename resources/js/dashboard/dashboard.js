@@ -13,7 +13,7 @@ if (root) initializeDashboard();
 
 function initializeDashboard() {
     const routeRole = root.dataset.dashboardRole;
-    const cache = { articles: [], places: [], flora: [], voluntariados: [], pending: [], notifications: [] };
+    const cache = { articles: [], places: [], flora: [], voluntariados: [], organizers: [], pending: [], notifications: [] };
     const byId = id => document.getElementById(id);
     const volunteerTokenOptions = {
         requisitos: [
@@ -53,6 +53,107 @@ function initializeDashboard() {
         root.querySelector(`[data-loading="${resource}"]`).hidden = state !== 'loading';
         root.querySelector(`[data-error="${resource}"]`).hidden = state !== 'error';
         root.querySelector(`[data-empty="${resource}"]`).hidden = state !== 'empty';
+    }
+
+    function renderOrganizerOptions(selectedId = '') {
+        const select = root.querySelector('[data-organizer-select]');
+        if (!select) return;
+        select.replaceChildren(new Option('Selecciona un organizador', ''));
+        if (!cache.organizers.length) {
+            select.add(new Option('No hay organizadores registrados', ''));
+            return;
+        }
+        cache.organizers.forEach(organizer => {
+            const label = organizer.estado === 'inactivo'
+                ? `${organizer.nombre} · inactivo`
+                : `${organizer.nombre}${organizer.correo ? ` · ${organizer.correo}` : ''}`;
+            select.add(new Option(label, organizer.id));
+        });
+        select.value = selectedId;
+    }
+
+    async function loadOrganizers() {
+        const response = await dashboardApi.listOrganizadores();
+        cache.organizers = response.data || [];
+        renderOrganizerOptions(root.querySelector('[data-organizer-select]')?.value || '');
+    }
+
+    function formatDateLabel(value) {
+        if (!value) return 'dd/mm/aaaa';
+        const [year, month, day] = value.split('-').map(Number);
+        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    }
+
+    function dateFromValue(value) {
+        if (!value) return null;
+        const [year, month, day] = value.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    }
+
+    function dateValue(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function renderDatePicker(picker) {
+        const input = picker.querySelector('input[type="hidden"]');
+        const label = picker.querySelector('[data-date-label]');
+        const monthLabel = picker.querySelector('[data-date-month]');
+        const days = picker.querySelector('[data-date-days]');
+        const date = dateFromValue(input.value);
+        const view = picker.dateView || date || new Date();
+        const year = view.getFullYear();
+        const month = view.getMonth();
+        const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const startValue = picker.closest('form').elements.fechaInicio.value;
+        const endValue = picker.closest('form').elements.fechaFin.value;
+        const isEnd = input.name === 'fechaFin';
+
+        label.textContent = formatDateLabel(input.value);
+        monthLabel.textContent = new Intl.DateTimeFormat('es-MX', {
+            month: 'long',
+            year: 'numeric',
+        }).format(view);
+        days.replaceChildren();
+
+        for (let blank = 0; blank < firstWeekday; blank += 1) {
+            const spacer = document.createElement('span');
+            spacer.className = 'dashboard-date-empty';
+            days.append(spacer);
+        }
+        for (let day = 1; day <= daysInMonth; day += 1) {
+            const current = new Date(year, month, day);
+            const value = dateValue(current);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.dateValue = value;
+            button.textContent = String(day);
+            button.setAttribute('aria-label', formatDateLabel(value));
+            if (value === input.value) button.classList.add('is-selected');
+            if (value === dateValue(new Date())) button.classList.add('is-today');
+            if ((isEnd && startValue && value < startValue) || (!isEnd && endValue && value > endValue)) {
+                button.disabled = true;
+            }
+            days.append(button);
+        }
+    }
+
+    function initializeDatePickers(form) {
+        form.querySelectorAll('[data-date-picker]').forEach(picker => {
+            const value = picker.querySelector('input[type="hidden"]').value;
+            picker.dateView = dateFromValue(value) || new Date();
+            renderDatePicker(picker);
+            picker.querySelector('[data-date-popover]').hidden = true;
+        });
+    }
+
+    function setVolunteerStatus(form, status) {
+        form.elements.estado.value = status;
+        form.querySelectorAll('[data-status-value]').forEach(button => {
+            const selected = button.dataset.statusValue === status;
+            button.classList.toggle('is-selected', selected);
+            button.setAttribute('aria-pressed', String(selected));
+        });
     }
 
     function card({ title, description, meta, id, actions = '', media = '' }) {
@@ -875,6 +976,11 @@ function initializeDashboard() {
             initializeLocationPicker(form, null);
             initializeImagePreviews(form, null);
             if (type === 'voluntariado') initializeTokenFields(form);
+            if (type === 'voluntariado') {
+                renderOrganizerOptions('');
+                initializeDatePickers(form);
+                setVolunteerStatus(form, 'pendiente');
+            }
             if (type === 'flora') syncChoiceFields(form, null);
             locationSelector?.setCoordinates(null, null);
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -896,7 +1002,12 @@ function initializeDashboard() {
         }
         initializeLocationPicker(form, record);
         initializeImagePreviews(form, record);
-        if (type === 'voluntariado') initializeTokenFields(form, record);
+        if (type === 'voluntariado') {
+            initializeTokenFields(form, record);
+            renderOrganizerOptions(record.organizadorId || '');
+            initializeDatePickers(form);
+            setVolunteerStatus(form, record.estado || 'pendiente');
+        }
         if (type === 'place') {
             locationSelector?.setCoordinates(record.latitud, record.longitud);
         }
@@ -1191,6 +1302,9 @@ function initializeDashboard() {
             const picker = suggestions.closest('[data-location-picker], [data-token-field]');
             if (!picker?.contains(event.target)) suggestions.hidden = true;
         });
+        root.querySelectorAll('[data-date-popover]').forEach(popover => {
+            if (!popover.closest('[data-date-picker]')?.contains(event.target)) popover.hidden = true;
+        });
     });
 
     root.addEventListener('keydown', event => {
@@ -1248,6 +1362,47 @@ function initializeDashboard() {
     });
 
     root.addEventListener('click', async event => {
+        const dateTrigger = event.target.closest('[data-date-trigger]');
+        if (dateTrigger) {
+            const picker = dateTrigger.closest('[data-date-picker]');
+            const popover = picker.querySelector('[data-date-popover]');
+            const willOpen = popover.hidden;
+            root.querySelectorAll('[data-date-popover]').forEach(item => { item.hidden = true; });
+            if (willOpen) {
+                picker.dateView = dateFromValue(picker.querySelector('input[type="hidden"]').value) || new Date();
+                renderDatePicker(picker);
+                popover.hidden = false;
+            }
+            return;
+        }
+
+        const dateStep = event.target.closest('[data-date-step]');
+        if (dateStep) {
+            const picker = dateStep.closest('[data-date-picker]');
+            picker.dateView.setDate(1);
+            picker.dateView.setMonth(picker.dateView.getMonth() + Number(dateStep.dataset.dateStep));
+            renderDatePicker(picker);
+            return;
+        }
+
+        const dateChoice = event.target.closest('[data-date-value]');
+        if (dateChoice) {
+            const picker = dateChoice.closest('[data-date-picker]');
+            const form = picker.closest('form');
+            picker.querySelector('input[type="hidden"]').value = dateChoice.dataset.dateValue;
+            picker.dateView = dateFromValue(dateChoice.dataset.dateValue);
+            picker.querySelector('[data-date-popover]').hidden = true;
+            renderDatePicker(picker);
+            form.querySelectorAll('[data-date-picker]').forEach(renderDatePicker);
+            return;
+        }
+
+        const statusChoice = event.target.closest('[data-status-value]');
+        if (statusChoice) {
+            setVolunteerStatus(statusChoice.closest('form'), statusChoice.dataset.statusValue);
+            return;
+        }
+
         const capacityStep = event.target.closest('[data-capacity-step]');
         if (capacityStep) {
             const input = capacityStep.closest('.dashboard-capacity-control').querySelector('[name="cupo"]');
@@ -1401,6 +1556,12 @@ function initializeDashboard() {
                 }
             }
             if (type === 'voluntariado') {
+                const startDate = form.elements.fechaInicio.value;
+                const endDate = form.elements.fechaFin.value;
+                if (!startDate || !endDate || endDate < startDate) {
+                    showNotice('Selecciona fechas de inicio y fin válidas en los calendarios.', 'error');
+                    return;
+                }
                 const picker = form.querySelector('[data-location-picker]');
                 const selectedPlace = picker.locationSelection?.[0];
                 if (!selectedPlace || picker.querySelector('[data-location-query]').value !== selectedPlace.nombre) {
@@ -1415,6 +1576,10 @@ function initializeDashboard() {
                 }
                 if (latitude !== '' && !isInsideBajaCaliforniaSur(Number(latitude), Number(longitude))) {
                     showNotice('La ubicación debe estar dentro de Baja California Sur, México.', 'error');
+                    return;
+                }
+                if (user.rol === 'admin' && !form.elements.organizadorId.value) {
+                    showNotice('Selecciona un organizador de la lista.', 'error');
                     return;
                 }
             }
@@ -1532,6 +1697,14 @@ function initializeDashboard() {
                 element.hidden = user.rol !== 'admin';
             });
             byId('dashboardContent').hidden = false;
+            if (user.rol === 'admin') {
+                try {
+                    await loadOrganizers();
+                } catch (error) {
+                    console.error('No se pudo cargar la lista de organizadores.', error);
+                    showNotice('No se pudo cargar la lista de organizadores. Recarga el panel para intentarlo de nuevo.', 'error');
+                }
+            }
             root.querySelectorAll('[data-new="article"], [data-new="place"], [data-new="flora"]').forEach(button => {
                 button.hidden = !['admin', 'organizador'].includes(user.rol);
             });

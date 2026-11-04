@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateFloraFaunaRequest;
 use App\Models\FloraFauna;
 use App\Services\AuditoriaService;
 use App\Services\FloraFaunaService;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use MongoDB\BSON\ObjectId;
 
@@ -16,6 +17,7 @@ class FloraFaunaController extends Controller
     public function __construct(
         private readonly FloraFaunaService $floraFaunaService,
         private readonly AuditoriaService $auditoria,
+        private readonly GridFsImageService $gridFsImages,
     ) {}
 
     public function index(Request $request)

@@ -48,6 +48,7 @@ export const dashboardApi = {
     listPlaces: role => request('get', role === 'admin' ? '/api/admin/lugares' : '/api/lugares'),
     listFlora: role => request('get', role === 'admin' ? '/api/admin/flora-fauna' : '/api/flora-fauna'),
     listVoluntariados: () => request('get', '/api/admin/voluntariados'),
+    listOrganizadores: () => request('get', '/api/admin/voluntariados/organizadores'),
     listArticles: () => request('get', '/api/articulos'),
     listPendingArticles: () => request('get', '/api/admin/articulos/pendientes'),
     savePlace: (id, data) => request('post', id ? `/api/lugares/${id}` : '/api/lugares', id ? methodOverride(data, 'put') : data),

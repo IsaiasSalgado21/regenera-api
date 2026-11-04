@@ -91,6 +91,7 @@ Route::put('/flora-fauna/{id}', [FloraFaunaController::class, 'update'])->middle
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
+        Route::get('/voluntariados/organizadores', [AdminVoluntariadoController::class, 'organizadores']);
         Route::get('/lugares', [AdminLugarController::class, 'index']);
         Route::patch('/voluntariados/{id}/aprobar', [AdminVoluntariadoController::class, 'aprobar']);
         Route::patch('/voluntariados/{id}/rechazar', [AdminVoluntariadoController::class, 'rechazar']);

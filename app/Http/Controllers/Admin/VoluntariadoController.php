@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lugar;
+use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\AuditoriaService;
 use App\Services\BajaCaliforniaSurBoundary;
@@ -21,6 +22,26 @@ class VoluntariadoController extends Controller
         private readonly GridFsImageService $gridFsImages,
         private readonly NotificationService $notificaciones,
     ) {}
+
+    public function organizadores()
+    {
+        $data = User::query()
+            ->where('rol', 'organizador')
+            ->orderBy('nombre')
+            ->get(['_id', 'nombre', 'correo', 'estado'])
+            ->map(fn (User $usuario) => [
+                'id' => (string) $usuario->getAuthIdentifier(),
+                'nombre' => $usuario->nombre,
+                'correo' => $usuario->correo,
+                'estado' => $usuario->estado,
+            ])
+            ->values();
+
+        return response()->json([
+            'data' => $data,
+            'message' => 'Organizadores consultados correctamente.',
+        ]);
+    }
 
     public function index()
     {

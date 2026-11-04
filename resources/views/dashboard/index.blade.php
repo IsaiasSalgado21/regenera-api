@@ -174,14 +174,56 @@
                     <div class="dashboard-location-selected" data-location-selected></div>
                     <div data-location-values></div>
                 </div>
-                <label>Organizador (ID, solo admin)<input name="organizadorId" maxlength="100"></label>
-                <div class="dashboard-form-row">
-                    <label>Fecha de inicio<input name="fechaInicio" type="date" required></label>
-                    <label>Fecha de fin<input name="fechaFin" type="date" required></label>
+                <label data-admin-only>Organizador
+                    <select name="organizadorId" data-organizer-select>
+                        <option value="">Selecciona un organizador</option>
+                    </select>
+                </label>
+                <div class="dashboard-form-row dashboard-date-row">
+                    <div class="dashboard-date-picker" data-date-picker>
+                        <span class="dashboard-field-label">Fecha de inicio</span>
+                        <input type="hidden" name="fechaInicio">
+                        <button type="button" class="dashboard-date-trigger" data-date-trigger aria-haspopup="dialog">
+                            <span aria-hidden="true">📅</span><span data-date-label>dd/mm/aaaa</span>
+                        </button>
+                        <div class="dashboard-date-popover" data-date-popover hidden>
+                            <div class="dashboard-date-header">
+                                <button type="button" data-date-step="-1" aria-label="Mes anterior">‹</button>
+                                <strong data-date-month></strong>
+                                <button type="button" data-date-step="1" aria-label="Mes siguiente">›</button>
+                            </div>
+                            <div class="dashboard-date-weekdays" aria-hidden="true">
+                                <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                            </div>
+                            <div class="dashboard-date-days" data-date-days></div>
+                        </div>
+                    </div>
+                    <div class="dashboard-date-picker" data-date-picker>
+                        <span class="dashboard-field-label">Fecha de fin</span>
+                        <input type="hidden" name="fechaFin">
+                        <button type="button" class="dashboard-date-trigger" data-date-trigger aria-haspopup="dialog">
+                            <span aria-hidden="true">📅</span><span data-date-label>dd/mm/aaaa</span>
+                        </button>
+                        <div class="dashboard-date-popover" data-date-popover hidden>
+                            <div class="dashboard-date-header">
+                                <button type="button" data-date-step="-1" aria-label="Mes anterior">‹</button>
+                                <strong data-date-month></strong>
+                                <button type="button" data-date-step="1" aria-label="Mes siguiente">›</button>
+                            </div>
+                            <div class="dashboard-date-weekdays" aria-hidden="true">
+                                <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                            </div>
+                            <div class="dashboard-date-days" data-date-days></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="dashboard-form-row">
-                    <label>Hora de inicio<input name="horaInicio" type="time" required></label>
-                    <label>Hora de fin<input name="horaFin" type="time" required></label>
+                    <label class="dashboard-time-field">Hora de inicio
+                        <span class="dashboard-time-control"><span aria-hidden="true">🕒</span><input name="horaInicio" type="time" required></span>
+                    </label>
+                    <label class="dashboard-time-field">Hora de fin
+                        <span class="dashboard-time-control"><span aria-hidden="true">🕒</span><input name="horaFin" type="time" required></span>
+                    </label>
                 </div>
                 <input type="hidden" name="latitud">
                 <input type="hidden" name="longitud">
@@ -196,7 +238,16 @@
                         <span class="dashboard-capacity-unit">personas</span>
                     </div>
                 </div>
-                <label>Estado<select name="estado" required><option value="pendiente">Pendiente</option><option value="publicado">Publicado</option><option value="cancelado">Cancelado</option><option value="finalizado">Finalizado</option></select></label>
+                <div class="dashboard-status-field" data-status-select>
+                    <span class="dashboard-field-label">Estado</span>
+                    <input type="hidden" name="estado" value="pendiente">
+                    <div class="dashboard-status-options">
+                        <button type="button" data-status-value="pendiente">⏳ Pendiente</button>
+                        <button type="button" data-status-value="publicado">✅ Publicado</button>
+                        <button type="button" data-status-value="cancelado">✖ Cancelado</button>
+                        <button type="button" data-status-value="finalizado">🏁 Finalizado</button>
+                    </div>
+                </div>
                 <div class="dashboard-image-field" data-image-field data-max-images="10">
                     <label>Imágenes del voluntariado (hasta 10)<input name="imagenes[]" type="file" accept="image/*" multiple data-image-input></label>
                     <p class="dashboard-image-help">Puedes conservar las imágenes actuales, quitar alguna o agregar más.</p>

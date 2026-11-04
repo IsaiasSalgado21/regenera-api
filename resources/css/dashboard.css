@@ -410,6 +410,16 @@
     color: #81351f;
 }
 
+.status-cancelado {
+    background: #fde9e7;
+    color: #9b3028;
+}
+
+.status-finalizado {
+    background: #e7eafa;
+    color: #384b91;
+}
+
 .dashboard-empty,
 .dashboard-loading {
     margin: 10px 0;
@@ -485,6 +495,211 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
+}
+
+.dashboard-date-row {
+    position: relative;
+    z-index: 3;
+    align-items: start;
+}
+
+.dashboard-date-picker {
+    position: relative;
+    min-width: 0;
+}
+
+.dashboard-field-label {
+    display: block;
+    margin: 14px 0 7px;
+    color: var(--dashboard-text);
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+.dashboard-date-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 45px;
+    border: 1px solid #cbd5cd;
+    border-radius: 9px;
+    padding: 10px 12px;
+    background: #fff;
+    color: var(--dashboard-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.dashboard-date-trigger:hover,
+.dashboard-date-trigger:focus-visible {
+    border-color: var(--dashboard-green-light);
+    outline: 3px solid rgb(47 128 100 / 14%);
+}
+
+.dashboard-date-trigger [data-date-label] {
+    color: var(--dashboard-green);
+    font-weight: 700;
+}
+
+.dashboard-date-popover {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 6px);
+    left: 0;
+    width: min(320px, calc(100vw - 48px));
+    border: 1px solid var(--dashboard-border);
+    border-radius: 14px;
+    padding: 14px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgb(20 32 27 / 18%);
+}
+
+.dashboard-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: var(--dashboard-green);
+    text-transform: capitalize;
+}
+
+.dashboard-date-header button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #edf4ee;
+    color: var(--dashboard-green);
+    cursor: pointer;
+    font-size: 1.4rem;
+}
+
+.dashboard-date-weekdays,
+.dashboard-date-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    text-align: center;
+}
+
+.dashboard-date-weekdays {
+    margin-bottom: 5px;
+    color: var(--dashboard-muted);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.dashboard-date-days button,
+.dashboard-date-empty {
+    display: grid;
+    min-width: 0;
+    aspect-ratio: 1;
+    place-items: center;
+}
+
+.dashboard-date-days button {
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--dashboard-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: .85rem;
+}
+
+.dashboard-date-days button:hover:not(:disabled) {
+    background: #edf4ee;
+}
+
+.dashboard-date-days button.is-today {
+    box-shadow: inset 0 0 0 1px var(--dashboard-green-light);
+}
+
+.dashboard-date-days button.is-selected {
+    background: var(--dashboard-green);
+    color: #fff;
+}
+
+.dashboard-date-days button:disabled {
+    color: #c1c8c2;
+    cursor: not-allowed;
+}
+
+.dashboard-time-field {
+    align-content: start;
+}
+
+.dashboard-time-control {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 45px;
+    border: 1px solid #cbd5cd;
+    border-radius: 9px;
+    padding: 0 12px;
+    background: #fff;
+    color: var(--dashboard-green);
+}
+
+.dashboard-form .dashboard-time-control input[type="time"] {
+    min-width: 0;
+    border: 0;
+    padding: 9px 0;
+}
+
+.dashboard-time-control:focus-within {
+    outline: 3px solid rgb(47 128 100 / 18%);
+    border-color: var(--dashboard-green-light);
+}
+
+.dashboard-status-field {
+    margin: 16px 0;
+}
+
+.dashboard-status-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.dashboard-status-options button {
+    border: 1px solid var(--dashboard-border);
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: #fff;
+    color: var(--dashboard-muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.dashboard-status-options button[data-status-value="pendiente"].is-selected {
+    border-color: #e6c66e;
+    background: #fff3d6;
+    color: #72510b;
+}
+
+.dashboard-status-options button[data-status-value="publicado"].is-selected {
+    border-color: #9fcbaa;
+    background: #e4f2e8;
+    color: #164f3d;
+}
+
+.dashboard-status-options button[data-status-value="cancelado"].is-selected {
+    border-color: #e5aaa3;
+    background: #fde9e7;
+    color: #9b3028;
+}
+
+.dashboard-status-options button[data-status-value="finalizado"].is-selected {
+    border-color: #aeb8e5;
+    background: #e7eafa;
+    color: #384b91;
 }
 
 .dashboard-place-map-section {
