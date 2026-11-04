@@ -10,25 +10,25 @@ class NotificacionController extends Controller
 {
     public function index(Request $request)
     {
-        $notificaciones = $this->queryForUser((string) $request->user()->getAuthIdentifier())
+        $notificaciones = $this->queryVigentes((string) $request->user()->getAuthIdentifier())
             ->orderBy('fechaCreacion', 'desc')
             ->get();
 
         return response()->json([
-            'data' => $notificaciones,
+            'data' => $notificaciones->map(fn (Notificacion $notificacion) => $this->present($notificacion))->values(),
             'message' => 'Notificaciones consultadas correctamente.',
         ]);
     }
 
     public function noLeidas(Request $request)
     {
-        $notificaciones = $this->queryForUser((string) $request->user()->getAuthIdentifier())
+        $notificaciones = $this->queryVigentes((string) $request->user()->getAuthIdentifier())
             ->where('leida', false)
             ->orderBy('fechaCreacion', 'desc')
             ->get();
 
         return response()->json([
-            'data' => $notificaciones,
+            'data' => $notificaciones->map(fn (Notificacion $notificacion) => $this->present($notificacion))->values(),
             'count' => $notificaciones->count(),
             'message' => 'Notificaciones no leídas consultadas correctamente.',
         ]);
@@ -41,7 +41,7 @@ class NotificacionController extends Controller
         $notificacion->update(['leida' => true, 'fechaLectura' => now()]);
 
         return response()->json([
-            'data' => $notificacion->fresh(),
+            'data' => $this->present($notificacion->fresh()),
             'message' => 'Notificación marcada como leída.',
         ]);
     }
@@ -79,6 +79,59 @@ class NotificacionController extends Controller
                 $query->orWhere('usuarioId', new ObjectId($usuarioId));
             }
         });
+    }
+
+    private function queryVigentes(string $usuarioId)
+    {
+        return $this->queryForUser($usuarioId)
+            ->where(function ($query): void {
+                $query->whereNull('fechaExpiracion')
+                    ->orWhere('fechaExpiracion', '>=', now());
+            })
+            ->where(function ($query): void {
+                $query->where('leida', false)
+                    ->orWhereNull('fechaLectura')
+                    ->orWhere('fechaLectura', '>=', now()->subDays(30));
+            });
+    }
+
+    private function present(Notificacion $notificacion): array
+    {
+        $icons = [
+            'inscripcion_confirmada' => 'check',
+            'inscripcion_cancelada' => 'x',
+            'voluntariado_actualizado' => 'calendar',
+            'voluntariado_cancelado' => 'x',
+            'recordatorio_voluntariado' => 'bell',
+            'asistencia_registrada' => 'heart',
+            'articulo_aprobado' => 'file-check',
+            'articulo_rechazado' => 'file-x',
+            'organizador_verificado' => 'shield',
+            'sistema' => 'info',
+        ];
+        $entity = is_array($notificacion->entidad) ? $notificacion->entidad : [];
+        $url = data_get($notificacion->datos, 'url');
+        if (!$url && ($entity['tipo'] ?? null) === 'voluntariado') {
+            $url = url('/voluntariados/'.($entity['id'] ?? ''));
+        } elseif (!$url && ($entity['tipo'] ?? null) === 'articulo') {
+            $url = url('/articulos/'.($entity['id'] ?? ''));
+        }
+
+        return [
+            'id' => (string) $notificacion->_id,
+            'tipo' => (string) $notificacion->tipo,
+            'titulo' => $notificacion->titulo,
+            'mensaje' => $notificacion->mensaje,
+            'entidad' => $entity,
+            'prioridad' => $notificacion->prioridad ?: 'baja',
+            'leida' => (bool) $notificacion->leida,
+            'fechaCreacion' => $notificacion->fechaCreacion?->toISOString(),
+            'fechaLectura' => $notificacion->fechaLectura?->toISOString(),
+            'fechaExpiracion' => $notificacion->fechaExpiracion?->toISOString(),
+            'datos' => $notificacion->datos ?: [],
+            'icono' => $icons[(string) $notificacion->tipo] ?? 'info',
+            'url' => $url,
+        ];
     }
 
     private function perteneceAlUsuario(Notificacion $notificacion, string $usuarioId): bool

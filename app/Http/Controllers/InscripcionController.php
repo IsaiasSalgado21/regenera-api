@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Inscripcion;
 use App\Models\Voluntariado;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class InscripcionController extends Controller
 {
+    public function __construct(private readonly NotificationService $notificaciones) {}
+
     public function index()
     {
         $inscripciones = Inscripcion::orderBy(
@@ -102,6 +105,7 @@ class InscripcionController extends Controller
             'estado' => 'inscrita',
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
+        $this->notificaciones->inscripcionConfirmada($inscripcion, $voluntariado);
 
         return response()->json([
             'success' => true,
@@ -151,7 +155,14 @@ class InscripcionController extends Controller
             'observaciones' => 'sometimes|nullable|string|max:1000',
         ]);
 
+        $estadoAnterior = $inscripcion->estado;
         $inscripcion->update($validated);
+        if (($validated['estado'] ?? null) === 'cancelada' && $estadoAnterior !== 'cancelada') {
+            $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
+            if ($voluntariado) {
+                $this->notificaciones->inscripcionCancelada($inscripcion->fresh(), $voluntariado);
+            }
+        }
 
         return response()->json([
             'success' => true,

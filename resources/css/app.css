@@ -9,3 +9,246 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+.notification-nav-button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: .4rem;
+    padding: .45rem .6rem;
+}
+
+.notification-nav-badge {
+    align-items: center;
+    background: #164f3d;
+    border-radius: 999px;
+    color: #fff;
+    display: inline-flex;
+    font-size: .72rem;
+    font-weight: 700;
+    justify-content: center;
+    min-width: 1.35rem;
+    padding: .12rem .35rem;
+}
+
+.notification-drawer-backdrop {
+    background: rgb(10 35 26 / 25%);
+    inset: 0;
+    position: fixed;
+    z-index: 80;
+}
+
+.notification-drawer {
+    background: #fffdf9;
+    box-shadow: -12px 0 35px rgb(22 79 61 / 18%);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 100%;
+    outline: none;
+    overflow: hidden;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: min(440px, 100vw);
+    z-index: 81;
+}
+
+.notification-drawer-header,
+.notification-drawer-actions {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: 1.25rem 1.35rem;
+}
+
+.notification-drawer-header {
+    border-bottom: 1px solid #e8eee9;
+}
+
+.notification-drawer-header h2 {
+    color: #164f3d;
+    font-size: 1.45rem;
+    margin: 0;
+}
+
+.notification-drawer-eyebrow {
+    color: #6a8578;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    margin: 0 0 .25rem;
+}
+
+.notification-drawer-close {
+    background: transparent;
+    border: 0;
+    color: #164f3d;
+    cursor: pointer;
+    font-size: 1.8rem;
+    line-height: 1;
+    padding: .3rem .6rem;
+}
+
+.notification-drawer-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: .75rem;
+}
+
+.notification-filters {
+    display: flex;
+    gap: .35rem;
+}
+
+.notification-filters button,
+.notification-mark-all {
+    background: transparent;
+    border: 1px solid #c8d8cf;
+    border-radius: 999px;
+    color: #164f3d;
+    cursor: pointer;
+    font: inherit;
+    font-size: .82rem;
+    padding: .42rem .72rem;
+}
+
+.notification-filters button.is-active {
+    background: #164f3d;
+    color: #fff;
+}
+
+.notification-mark-all {
+    border: 0;
+    font-size: .78rem;
+    padding-left: 0;
+    padding-right: 0;
+    text-decoration: underline;
+}
+
+.notification-drawer-status {
+    color: #a44c41;
+    font-size: .82rem;
+    margin: 0 1.35rem .5rem;
+}
+
+.notification-drawer-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 1rem 1.5rem;
+}
+
+.notification-item {
+    align-items: flex-start;
+    background: transparent;
+    border: 0;
+    border-radius: .75rem;
+    color: #294239;
+    cursor: pointer;
+    display: flex;
+    gap: .75rem;
+    margin: .25rem 0;
+    padding: .9rem .65rem;
+    text-align: left;
+    width: 100%;
+}
+
+.notification-item:hover,
+.notification-item:focus-visible {
+    background: #edf4ef;
+    outline: 2px solid #8bb8a4;
+    outline-offset: -2px;
+}
+
+.notification-item.is-unread {
+    background: #f0f7f1;
+}
+
+.notification-item.priority-high {
+    background: #fff0ed;
+}
+
+.notification-item.priority-normal {
+    background: #fff9df;
+}
+
+.notification-item-icon {
+    align-items: center;
+    background: #dcebe1;
+    border-radius: 50%;
+    color: #164f3d;
+    display: inline-flex;
+    flex: 0 0 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+}
+
+.notification-item-content {
+    display: grid;
+    gap: .25rem;
+    min-width: 0;
+}
+
+.notification-item-content strong {
+    color: #164f3d;
+    font-size: .92rem;
+}
+
+.notification-item-content span {
+    font-size: .82rem;
+    line-height: 1.4;
+}
+
+.notification-unread-dot {
+    background: #164f3d;
+    border-radius: 50%;
+    flex: 0 0 .55rem;
+    height: .55rem;
+    margin-left: auto;
+    margin-top: .35rem;
+    width: .55rem;
+}
+
+.notification-empty {
+    color: #557064;
+    padding: 4rem 1.5rem;
+    text-align: center;
+}
+
+.notification-empty span {
+    align-items: center;
+    background: #dcebe1;
+    border-radius: 50%;
+    color: #164f3d;
+    display: inline-flex;
+    font-size: 1.7rem;
+    height: 3.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    width: 3.5rem;
+}
+
+body.notification-drawer-open {
+    overflow: hidden;
+}
+
+/* The shared drawer in the site header replaces the old dashboard popover. */
+.dashboard-notification-wrap {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    .nav > .notification-nav-button {
+        display: none;
+    }
+
+    .mobile-menu .notification-nav-button {
+        margin: .5rem 1rem;
+    }
+}

@@ -9,6 +9,7 @@ use App\Models\Articulo;
 use App\Models\User;
 use App\Services\AuditoriaService;
 use App\Services\GridFsImageService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use MongoDB\BSON\ObjectId;
 
@@ -17,6 +18,7 @@ class ArticuloController extends Controller
     public function __construct(
         private readonly AuditoriaService $auditoria,
         private readonly GridFsImageService $gridFsImages,
+        private readonly NotificationService $notificaciones,
     ) {}
 
     public function index(Request $request)
@@ -106,6 +108,7 @@ class ArticuloController extends Controller
             ...$validated,
             'fechaActualizacion' => now(),
         ]);
+        $this->notificaciones->articuloEnviadoRevision($articulo->fresh());
         $this->gridFsImages->deleteStored($removedImages);
 
         if ($request->user()->rol === 'admin') {

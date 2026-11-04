@@ -6,10 +6,13 @@ use App\Models\Asistencia;
 use App\Models\Inscripcion;
 use App\Models\User;
 use App\Models\Voluntariado;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class AsistenciaController extends Controller
 {
+    public function __construct(private readonly NotificationService $notificaciones) {}
+
     public function index(Request $request)
     {
         $query = Asistencia::query();
@@ -90,6 +93,7 @@ class AsistenciaController extends Controller
 
         // Marcar la inscripción como completada
         $inscripcion->update(['estado' => 'completada']);
+        $this->notificaciones->asistenciaRegistrada($validated['usuarioId'], $voluntariado);
 
         return response()->json([
             'success' => true,

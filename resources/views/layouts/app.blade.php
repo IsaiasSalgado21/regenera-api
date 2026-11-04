@@ -41,6 +41,11 @@
                 <a href="{{ url('/voluntariados') }}">Voluntariados</a>
                 <a href="{{ route('mapa') }}">Mapa</a>
                 <a href="{{ url('/articulos') }}">Artículos</a>
+                <button type="button" class="notification-nav-button" data-notification-toggle
+                    aria-label="Abrir notificaciones" aria-expanded="false" hidden>
+                    <span aria-hidden="true">♧</span> Notificaciones
+                    <span class="notification-nav-badge" data-notification-badge hidden>0</span>
+                </button>
 
                 @auth
                     <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}</a>
@@ -69,7 +74,14 @@
             @else
                 <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
             @endauth
+            <button type="button" class="notification-nav-button" data-notification-toggle
+                aria-label="Abrir notificaciones" aria-expanded="false" hidden>
+                <span aria-hidden="true">♧</span> Notificaciones
+                <span class="notification-nav-badge" data-notification-badge hidden>0</span>
+            </button>
         </nav>
+
+        @include('components.notifications-drawer')
 
         <main>
             @yield('content')
