@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import { isInsideBajaCaliforniaSur } from '../geo/baja-california-sur';
 
 function createClusterGroup(layer) {
     return L.markerClusterGroup({
@@ -51,12 +52,20 @@ function makeIcon(item) {
         : (allowedTypes.includes(item.tipo) ? item.tipo : 'lugar');
     const iconElement = document.createElement('span');
     iconElement.className = `map-marker-icon map-marker-icon--${type}`;
+    iconElement.setAttribute('aria-hidden', 'true');
+    iconElement.textContent = {
+        voluntariado: '✋',
+        lleno: '×',
+        lugar: '⌖',
+        flora: '✿',
+        fauna: '🐾',
+    }[type];
 
     const icon = L.divIcon({
         className: '',
         html: iconElement.outerHTML,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
     });
 
     return icon;
@@ -64,10 +73,23 @@ function makeIcon(item) {
 
 function openFeature(marker, item, onSelect) {
     marker.options.title = markerLabel(item);
-    const tooltip = document.createElement('span');
-    tooltip.textContent = markerLabel(item);
+    const tooltip = document.createElement('div');
+    tooltip.className = 'map-point-tooltip';
+    const label = document.createElement('span');
+    label.textContent = markerLabel(item);
+    tooltip.appendChild(label);
+
+    if (item.tipo === 'lugar' && item.imagen) {
+        const image = document.createElement('img');
+        image.src = item.imagen;
+        image.alt = `Imagen de ${item.nombre || 'el lugar'}`;
+        image.loading = 'lazy';
+        image.addEventListener('error', () => image.remove(), { once: true });
+        tooltip.appendChild(image);
+    }
+
     marker.bindTooltip(tooltip, {
-        delay: 1000,
+        delay: 250,
         direction: 'top',
         sticky: true,
     });
@@ -85,7 +107,7 @@ export function setLayerData(layer, items, onSelect) {
     items.forEach(item => {
         const lat = Number(item.lat);
         const lng = Number(item.lng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        if (!isInsideBajaCaliforniaSur(lat, lng)) return;
 
         if (item.zona_aproximada && Number(item.radio_metros) > 0) {
             const zone = L.circle([lat, lng], {
@@ -123,7 +145,7 @@ export function setLayerVisible(map, layer, visible) {
 export function fitMapToResults(map, allItems) {
     const points = allItems
         .map(item => [Number(item.lat), Number(item.lng)])
-        .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
+        .filter(([lat, lng]) => isInsideBajaCaliforniaSur(lat, lng));
 
     if (points.length) map.fitBounds(points, { padding: [30, 30], maxZoom: 12 });
 }

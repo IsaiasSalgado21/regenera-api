@@ -7,6 +7,7 @@ use App\Http\Requests\StoreLugarRequest;
 use App\Http\Requests\UpdateLugarRequest;
 use App\Models\Lugar;
 use App\Services\AuditoriaService;
+use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,10 +15,15 @@ use MongoDB\BSON\ObjectId;
 
 class LugarController extends Controller
 {
+    private readonly BajaCaliforniaSurBoundary $boundary;
+
     public function __construct(
         private readonly AuditoriaService $auditoria,
+        BajaCaliforniaSurBoundary $boundary,
         private readonly GridFsImageService $gridFsImages,
-    ) {}
+    ) {
+        $this->boundary = $boundary;
+    }
 
     public function index(Request $request)
     {
@@ -122,14 +128,16 @@ class LugarController extends Controller
 
     private function present(Lugar $lugar, bool $mostrarCreador): array
     {
+        $hasValidCoordinates = $this->boundary->contains($lugar->latitud, $lugar->longitud);
+
         return [
             'id' => (string) $lugar->_id,
             'nombre' => $lugar->nombre,
             'descripcion' => $lugar->descripcion,
             'municipio' => $lugar->municipio,
             'direccion' => $lugar->direccion,
-            'latitud' => $lugar->latitud,
-            'longitud' => $lugar->longitud,
+            'latitud' => $hasValidCoordinates ? $lugar->latitud : null,
+            'longitud' => $hasValidCoordinates ? $lugar->longitud : null,
             'tipo' => $lugar->tipo,
             'imagen' => $this->gridFsImages->url($lugar->imagen),
             'estado' => $lugar->estado,

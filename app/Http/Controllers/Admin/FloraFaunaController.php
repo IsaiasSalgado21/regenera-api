@@ -47,7 +47,7 @@ public function publicar(string $id)
 
     return response()->json([
         'message' => 'Registro publicado correctamente.',
-        'data' => $registro,
+        'data' => $this->floraFaunaService->present($registro, true),
     ]);
 }
     public function archivar(Request $request, string $id)

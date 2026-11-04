@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import { bajaCaliforniaSurBoundary, bajaCaliforniaSurBounds } from '../geo/baja-california-sur';
 import { fetchCurrentUser, fetchMapLayer } from './map-api.js';
 import { initializeMapFilters } from './map-filters.js';
 import { addMapLayers, fitMapToResults, setLayerData, setLayerVisible } from './map-layers.js';
@@ -14,10 +15,25 @@ const feedbackElements = new Map(
 );
 
 if (mapElement) {
-    const map = L.map(mapElement).setView([24.2, -110.3], 8);
+    const mapBounds = L.latLngBounds(bajaCaliforniaSurBounds).pad(0.08);
+    const map = L.map(mapElement, {
+        minZoom: 7,
+        maxBounds: mapBounds,
+        maxBoundsViscosity: 1,
+    }).setView([24.2, -110.3], 8);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+    L.geoJSON(bajaCaliforniaSurBoundary, {
+        interactive: false,
+        style: {
+            color: '#164f3d',
+            weight: 2,
+            opacity: 0.8,
+            fill: false,
+            dashArray: '6 5',
+        },
     }).addTo(map);
     addMapLayers(map);
 

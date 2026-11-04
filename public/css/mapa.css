@@ -176,6 +176,15 @@
     font-size: 25px;
 }
 
+.map-panel-image {
+    display: block;
+    width: 100%;
+    max-height: 260px;
+    margin: 0 0 14px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
 .map-info-panel p {
     margin: 8px 0;
     color: #14201b;
@@ -209,33 +218,85 @@
 
 .map-marker-icon {
     display: grid;
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
     place-items: center;
-    border: 3px solid #fff;
+    border: 2px solid #fff;
     border-radius: 50%;
     background: #2f8064;
     box-shadow: 0 1px 8px rgba(20, 32, 27, .45);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
 }
 
 .map-marker-icon--voluntariado {
-    background: #164f3d;
+    background: #7251a3;
 }
 
 .map-marker-icon--lleno {
-    background: #9a3b2f;
+    background: #a33a32;
+    font-size: 18px;
 }
 
 .map-marker-icon--lugar {
-    background: #2f8064;
+    background: #b26a12;
 }
 
 .map-marker-icon--flora {
-    background: #779b3d;
+    background: #3b7c42;
 }
 
 .map-marker-icon--fauna {
-    background: #2878a8;
+    background: #24749a;
+}
+
+.map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin: 12px 0 0;
+    padding: 14px 16px;
+    border: 1px solid rgba(20, 32, 27, .12);
+    border-radius: 12px;
+    background: #fff;
+    list-style: none;
+}
+
+.map-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #34443b;
+    font-size: .82rem;
+}
+
+.map-boundary-attribution {
+    margin: 8px 4px 0;
+    color: #59655f;
+    font-size: .72rem;
+}
+
+.map-legend .map-marker-icon {
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    box-shadow: none;
+}
+
+.map-point-tooltip {
+    width: min(220px, 60vw);
+    color: #14201b;
+}
+
+.map-point-tooltip img {
+    display: block;
+    width: 100%;
+    max-height: 125px;
+    margin-top: 7px;
+    border-radius: 6px;
+    object-fit: cover;
 }
 
 .map-cluster-dot {
@@ -253,11 +314,15 @@
 }
 
 .map-cluster-dot--lugares {
-    background: #2f8064;
+    background: #b26a12;
+}
+
+.map-cluster-dot--voluntariados {
+    background: #7251a3;
 }
 
 .map-cluster-dot--flora-fauna {
-    background: #597f3c;
+    background: #3b7c42;
 }
 
 .map-zone-circle {

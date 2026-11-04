@@ -9,6 +9,7 @@ class FloraFaunaService
 {
     public function __construct(
         private readonly GridFsImageService $gridFsImages = new GridFsImageService(),
+        private readonly BajaCaliforniaSurBoundary $boundary = new BajaCaliforniaSurBoundary(),
     ) {}
 
     public function ubicacionVisible(FloraFauna $registro, bool $esAdmin = false): ?array
@@ -25,6 +26,13 @@ class FloraFaunaService
             return null;
         }
 
+        if (
+            ! isset($ubicacion['latitud'], $ubicacion['longitud'])
+            || ! $this->boundary->contains($ubicacion['latitud'], $ubicacion['longitud'])
+        ) {
+            unset($ubicacion['latitud'], $ubicacion['longitud']);
+        }
+
         if (! $esAdmin && $this->esSensible($registro)) {
             if (isset($ubicacion['latitud']) && is_numeric($ubicacion['latitud'])) {
                 $ubicacion['latitud'] = round((float) $ubicacion['latitud'], 2);
@@ -32,6 +40,13 @@ class FloraFaunaService
 
             if (isset($ubicacion['longitud']) && is_numeric($ubicacion['longitud'])) {
                 $ubicacion['longitud'] = round((float) $ubicacion['longitud'], 2);
+            }
+
+            if (
+                isset($ubicacion['latitud'], $ubicacion['longitud'])
+                && ! $this->boundary->contains($ubicacion['latitud'], $ubicacion['longitud'])
+            ) {
+                unset($ubicacion['latitud'], $ubicacion['longitud']);
             }
         }
 

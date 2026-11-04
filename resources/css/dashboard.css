@@ -268,6 +268,79 @@
     box-shadow: 0 8px 20px rgb(20 32 27 / 4%);
 }
 
+.dashboard-place-carousel {
+    margin-bottom: 12px;
+}
+
+.dashboard-place-slide {
+    display: none;
+}
+
+.dashboard-place-slide.is-active {
+    display: block;
+}
+
+.dashboard-place-preview,
+.dashboard-place-image {
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+    background: #e8eee8;
+}
+
+.dashboard-place-image {
+    display: block;
+    object-fit: cover;
+}
+
+.dashboard-place-preview .leaflet-control-attribution {
+    font-size: 8px;
+}
+
+.dashboard-place-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+    color: var(--dashboard-muted);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.dashboard-place-carousel-button {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--dashboard-green);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.15rem;
+}
+
+.dashboard-place-map-link {
+    align-self: flex-start;
+    margin: 0 0 12px;
+    color: var(--dashboard-green-light);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.dashboard-place-no-coordinates {
+    margin: 0 0 12px;
+    border-radius: 9px;
+    padding: 12px;
+    background: var(--dashboard-cream);
+    color: var(--dashboard-muted);
+    font-size: .85rem;
+}
+
 .dashboard-card-meta {
     display: flex;
     flex-wrap: wrap;
@@ -412,6 +485,39 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
+}
+
+.dashboard-place-map-section {
+    margin: 20px 0;
+}
+
+.dashboard-place-map-section h4 {
+    margin: 0 0 6px;
+    color: var(--dashboard-green);
+    font-size: 1rem;
+}
+
+.dashboard-place-map-section p {
+    margin: 0 0 12px;
+    color: var(--dashboard-muted);
+    font-size: .88rem;
+}
+
+.dashboard-place-map {
+    z-index: 0;
+    height: 340px;
+    overflow: hidden;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    background: #e8eee8;
+}
+
+.dashboard-place-map-status {
+    margin: 10px 0 0 !important;
+}
+
+.dashboard-place-map-status.is-error {
+    color: #8a321e;
 }
 
 .dashboard-dialog {

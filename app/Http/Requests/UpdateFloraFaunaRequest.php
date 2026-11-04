@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\BajaCaliforniaSurBoundary;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -52,6 +53,19 @@ class UpdateFloraFaunaRequest extends FormRequest
 
                 if ($tieneLatitud !== $tieneLongitud) {
                     $validator->errors()->add('ubicacion', 'La latitud y longitud deben enviarse juntas.');
+                    return;
+                }
+
+                if (
+                    $tieneLatitud
+                    && $tieneLongitud
+                    && ! $validator->errors()->hasAny(['ubicacion.latitud', 'ubicacion.longitud'])
+                    && ! app(BajaCaliforniaSurBoundary::class)->contains(
+                        $ubicacion['latitud'],
+                        $ubicacion['longitud'],
+                    )
+                ) {
+                    $validator->errors()->add('ubicacion', 'La ubicación debe estar dentro de Baja California Sur, México.');
                 }
             },
         ];

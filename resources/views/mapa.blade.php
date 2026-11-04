@@ -140,6 +140,14 @@
                      role="region"
                      aria-label="Mapa interactivo de voluntariados, lugares y especies">
                 </div>
+                <ul class="map-legend" aria-label="Leyenda de símbolos del mapa">
+                    <li><span class="map-marker-icon map-marker-icon--voluntariado" aria-hidden="true">✋</span> Voluntariado disponible</li>
+                    <li><span class="map-marker-icon map-marker-icon--lleno" aria-hidden="true">×</span> Voluntariado lleno</li>
+                    <li><span class="map-marker-icon map-marker-icon--lugar" aria-hidden="true">⌖</span> Lugar</li>
+                    <li><span class="map-marker-icon map-marker-icon--flora" aria-hidden="true">✿</span> Flora</li>
+                    <li><span class="map-marker-icon map-marker-icon--fauna" aria-hidden="true">🐾</span> Fauna</li>
+                </ul>
+                <p class="map-boundary-attribution">Límite estatal: INEGI, vía geoBoundaries (CC BY 3.0 IGO).</p>
             </div>
 
             <aside id="mapInfoPanel" class="map-info-panel" aria-label="Información del elemento seleccionado" tabindex="-1">

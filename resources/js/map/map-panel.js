@@ -22,6 +22,16 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
         addText(panel, 'p', type, 'map-panel-type');
         addText(panel, 'h2', item.titulo || item.nombre || 'Registro del mapa');
 
+        if (item.tipo === 'lugar' && item.imagen) {
+            const image = document.createElement('img');
+            image.src = item.imagen;
+            image.alt = `Imagen de ${item.nombre || 'el lugar'}`;
+            image.className = 'map-panel-image';
+            image.loading = 'lazy';
+            image.addEventListener('error', () => image.remove(), { once: true });
+            panel.appendChild(image);
+        }
+
         if (item.descripcion) addText(panel, 'p', item.descripcion);
         if (item.nombre_cientifico) addText(panel, 'p', item.nombre_cientifico);
         if (item.estado_conservacion) addText(panel, 'p', `Conservación: ${item.estado_conservacion}`);

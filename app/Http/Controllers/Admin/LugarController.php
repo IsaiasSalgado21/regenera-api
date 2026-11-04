@@ -5,27 +5,42 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lugar;
 use App\Services\AuditoriaService;
+use App\Services\BajaCaliforniaSurBoundary;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 
 class LugarController extends Controller
 {
-    public function __construct(private readonly AuditoriaService $auditoria) {}
+    private readonly BajaCaliforniaSurBoundary $boundary;
+
+    public function __construct(
+        private readonly AuditoriaService $auditoria,
+        BajaCaliforniaSurBoundary $boundary,
+        private readonly GridFsImageService $gridFsImages,
+    ) {
+        $this->boundary = $boundary;
+    }
 
     public function index()
     {
         return response()->json([
-            'data' => Lugar::query()->orderBy('nombre')->get()->map(fn (Lugar $lugar) => [
-                'id' => (string) $lugar->_id,
-                'nombre' => $lugar->nombre,
-                'descripcion' => $lugar->descripcion,
-                'municipio' => $lugar->municipio,
-                'direccion' => $lugar->direccion,
-                'latitud' => $lugar->latitud,
-                'longitud' => $lugar->longitud,
-                'tipo' => $lugar->tipo,
-                'estado' => $lugar->estado,
-                'creadoPor' => (string) $lugar->creadoPor,
-            ])->values(),
+            'data' => Lugar::query()->orderBy('nombre')->get()->map(function (Lugar $lugar): array {
+                $hasValidCoordinates = $this->boundary->contains($lugar->latitud, $lugar->longitud);
+
+                return [
+                    'id' => (string) $lugar->_id,
+                    'nombre' => $lugar->nombre,
+                    'descripcion' => $lugar->descripcion,
+                    'municipio' => $lugar->municipio,
+                    'direccion' => $lugar->direccion,
+                    'latitud' => $hasValidCoordinates ? $lugar->latitud : null,
+                    'longitud' => $hasValidCoordinates ? $lugar->longitud : null,
+                    'tipo' => $lugar->tipo,
+                    'imagen' => $this->gridFsImages->url($lugar->imagen),
+                    'estado' => $lugar->estado,
+                    'creadoPor' => (string) $lugar->creadoPor,
+                ];
+            })->values(),
             'message' => 'Todos los lugares consultados correctamente.',
         ]);
     }
@@ -48,7 +63,10 @@ class LugarController extends Controller
 
         return response()->json([
             'message' => 'Lugar publicado correctamente.',
-            'data' => $lugar,
+            'data' => [
+                'id' => (string) $lugar->_id,
+                'estado' => $lugar->estado,
+            ],
         ]);
     }
     public function archivar(Request $request, string $id)

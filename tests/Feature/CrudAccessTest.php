@@ -55,4 +55,44 @@ class CrudAccessTest extends TestCase
         ])->assertUnprocessable()
             ->assertJsonValidationErrors('creadoPor');
     }
+
+    public function test_place_and_flora_fauna_locations_must_be_inside_baja_california_sur(): void
+    {
+        $admin = new User(['rol' => 'admin']);
+        $admin->setAttribute('_id', '507f1f77bcf86cd799439011');
+        Sanctum::actingAs($admin);
+
+        $place = [
+            'nombre' => 'Lugar fuera de BCS',
+            'municipio' => 'Tijuana',
+            'tipo' => 'playa',
+            'latitud' => 32.5149,
+            'longitud' => -117.0382,
+        ];
+        $this->postJson('/api/lugares', $place)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['latitud', 'longitud']);
+        Sanctum::actingAs($admin);
+        $this->putJson('/api/lugares/507f1f77bcf86cd799439012', $place)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['latitud', 'longitud']);
+
+        $flora = [
+            'nombre' => 'Especie fuera de BCS',
+            'tipo' => 'fauna',
+            'descripcion' => 'Ubicación fuera de Baja California Sur.',
+            'ubicacion' => [
+                'latitud' => 32.5149,
+                'longitud' => -117.0382,
+            ],
+        ];
+        Sanctum::actingAs($admin);
+        $this->postJson('/api/flora-fauna', $flora)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('ubicacion');
+        Sanctum::actingAs($admin);
+        $this->putJson('/api/flora-fauna/507f1f77bcf86cd799439012', $flora)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('ubicacion');
+    }
 }

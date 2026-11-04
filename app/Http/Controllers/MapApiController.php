@@ -6,6 +6,7 @@ use App\Models\FloraFauna;
 use App\Models\Inscripcion;
 use App\Models\Lugar;
 use App\Services\GridFsImageService;
+use App\Services\BajaCaliforniaSurBoundary;
 use App\Models\Voluntariado;
 use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class MapApiController extends Controller
     public function __construct(
         private readonly FloraFaunaService $floraFaunaService,
         private readonly GridFsImageService $gridFsImages,
+        private readonly BajaCaliforniaSurBoundary $boundary,
     ) {}
 
     public function voluntariados(Request $request)
@@ -194,6 +196,7 @@ class MapApiController extends Controller
             && (float) $latitud >= -90
             && (float) $latitud <= 90
             && (float) $longitud >= -180
-            && (float) $longitud <= 180;
+            && (float) $longitud <= 180
+            && $this->boundary->contains($latitud, $longitud);
     }
 }

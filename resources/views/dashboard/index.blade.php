@@ -101,13 +101,21 @@
                     <button class="icon-button" type="button" data-cancel="place" aria-label="Cerrar formulario">×</button>
                 </div>
                 <input type="hidden" name="id">
+                <div class="dashboard-place-map-section">
+                    <div>
+                        <h4>Selecciona la ubicación</h4>
+                        <p>Haz clic en el mapa para completar las coordenadas, el nombre, el municipio, la dirección y el tipo del lugar. La imagen y la descripción se agregan manualmente.</p>
+                    </div>
+                    <div id="placeMap" class="dashboard-place-map" role="application" aria-label="Mapa para seleccionar la ubicación del lugar"></div>
+                    <p class="dashboard-place-map-status" id="placeMapStatus" role="status" aria-live="polite">Selecciona un punto dentro de Baja California Sur, México.</p>
+                </div>
                 <label>Nombre<input name="nombre" required maxlength="150"></label>
                 <label>Municipio<input name="municipio" required maxlength="100"></label>
                 <label>Tipo<select name="tipo" required><option value="playa">Playa</option><option value="parque">Parque</option><option value="reserva">Reserva</option><option value="zona_urbana">Zona urbana</option><option value="otro">Otro</option></select></label>
                 <label>Dirección<input name="direccion" maxlength="255"></label>
                 <div class="dashboard-form-row">
-                    <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
-                    <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
+                    <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90" required></label>
+                    <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180" required></label>
                 </div>
                 <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
                 <label>Descripción<textarea name="descripcion" rows="4" maxlength="2000"></textarea></label>
@@ -191,6 +199,7 @@
                 <label>Tipo<select name="tipo" required><option value="flora">Flora</option><option value="fauna">Fauna</option></select></label>
                 <label>Estado de conservación<input name="estadoConservacion" maxlength="100"></label>
                 <label>Hábitat<input name="habitat" maxlength="500"></label>
+                <p class="dashboard-location-warning">Las ubicaciones deben estar dentro de Baja California Sur, México.</p>
                 <div class="dashboard-form-row">
                     <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
                     <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
