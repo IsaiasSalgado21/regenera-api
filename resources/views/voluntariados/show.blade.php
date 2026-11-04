@@ -39,6 +39,13 @@
             <div>
                 <h3>Descripción</h3>
                 <p>{{ $voluntariado->descripcion }}</p>
+                @if (count($voluntariado->imagenes ?? []) > 1)
+                    <div class="detail-image-gallery" aria-label="Imágenes del voluntariado">
+                        @foreach ($voluntariado->imagenes as $index => $image)
+                            <img src="{{ $image }}" alt="Imagen {{ $index + 1 }} de {{ $voluntariado->titulo }}" loading="lazy">
+                        @endforeach
+                    </div>
+                @endif
 
                 @if (is_array($voluntariado->requisitos) && count($voluntariado->requisitos))
                     <h3>Requisitos</h3>

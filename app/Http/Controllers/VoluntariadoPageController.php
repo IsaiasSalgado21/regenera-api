@@ -80,7 +80,11 @@ class VoluntariadoPageController extends Controller
         }
 
         $lugar = $voluntariado->lugarId ? Lugar::find($voluntariado->lugarId) : null;
-        $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
+        $images = is_array($voluntariado->imagenes) && $voluntariado->imagenes
+            ? $voluntariado->imagenes
+            : ($voluntariado->imagen ? [$voluntariado->imagen] : []);
+        $voluntariado->setAttribute('imagenes', $this->gridFsImages->urls($images));
+        $voluntariado->imagen = $voluntariado->imagenes[0] ?? null;
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,

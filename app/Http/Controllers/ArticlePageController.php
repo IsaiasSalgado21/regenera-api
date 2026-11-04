@@ -54,18 +54,31 @@ class ArticlePageController extends Controller
             abort(404);
         }
 
-        $articulo->imagen = $this->gridFsImages->url($articulo->imagen);
+        $articuloImages = $this->imageUrls($articulo);
+        $articulo->setAttribute('imagenes', $articuloImages);
+        $articulo->imagen = $articuloImages[0] ?? null;
 
         $otros = Articulo::where('estado', 'publicado')
             ->where('_id', '!=', $articulo->_id)
             ->orderBy('fechaPublicacion', 'desc')
             ->limit(3)
             ->get();
-        $otros->each(fn (Articulo $otro) => $otro->imagen = $this->gridFsImages->url($otro->imagen));
+        $otros->each(function (Articulo $otro): void {
+            $otro->imagen = $this->imageUrls($otro)[0] ?? null;
+        });
 
         return view('articulos.show', [
             'articulo' => $articulo,
             'otros' => $otros,
         ]);
+    }
+
+    private function imageUrls(Articulo $articulo): array
+    {
+        $images = is_array($articulo->imagenes) && $articulo->imagenes
+            ? $articulo->imagenes
+            : ($articulo->imagen ? [$articulo->imagen] : []);
+
+        return $this->gridFsImages->urls($images);
     }
 }

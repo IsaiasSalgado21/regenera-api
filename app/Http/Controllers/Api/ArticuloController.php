@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Services\AuditoriaService;
 use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
 class ArticuloController extends Controller
@@ -57,11 +56,7 @@ class ArticuloController extends Controller
         $this->authorize('create', Articulo::class);
         $validated = $request->validated();
         $autorId = (string) $request->user()->getAuthIdentifier();
-
-        if ($request->hasFile('imagen')) {
-            $validated['imagen'] = Storage::disk('gridfs')
-                ->putFile('articulos', $request->file('imagen'));
-        }
+        [$validated, $removedImages] = $this->applyImageChanges($request, $validated);
 
         $articulo = Articulo::create([
             ...$validated,
@@ -70,6 +65,7 @@ class ArticuloController extends Controller
             'fechaPublicacion' => null,
             'fechaActualizacion' => now(),
         ]);
+        $this->gridFsImages->deleteStored($removedImages);
 
         if ($request->user()->rol === 'admin') {
             $this->auditoria->registrar(
@@ -104,16 +100,13 @@ class ArticuloController extends Controller
         $articulo = Articulo::findOrFail($id);
         $this->authorize('update', $articulo);
         $validated = $request->validated();
-
-        if ($request->hasFile('imagen')) {
-            $validated['imagen'] = Storage::disk('gridfs')
-                ->putFile('articulos', $request->file('imagen'));
-        }
+        [$validated, $removedImages] = $this->applyImageChanges($request, $validated, $articulo);
 
         $articulo->update([
             ...$validated,
             'fechaActualizacion' => now(),
         ]);
+        $this->gridFsImages->deleteStored($removedImages);
 
         if ($request->user()->rol === 'admin') {
             $this->auditoria->registrar(
@@ -151,6 +144,8 @@ class ArticuloController extends Controller
     {
         $autorId = (string) $articulo->autorId;
         $autor = preg_match('/^[a-f0-9]{24}$/i', $autorId) ? User::find($autorId) : null;
+        $images = $this->imagePaths($articulo);
+        $imageUrls = $this->gridFsImages->urls($images);
 
         return [
             'id' => (string) $articulo->_id,
@@ -158,12 +153,55 @@ class ArticuloController extends Controller
             'autorNombre' => $autor?->nombre,
             'titulo' => $articulo->titulo,
             'contenido' => $articulo->contenido,
-            'imagen' => $this->gridFsImages->url($articulo->imagen),
+            'imagen' => $imageUrls[0] ?? null,
+            'imagenes' => $imageUrls,
             'categoria' => $articulo->categoria,
             'estado' => $articulo->estado,
             'motivoRechazo' => $articulo->motivoRechazo,
             'fechaPublicacion' => $articulo->fechaPublicacion?->toISOString(),
             'fechaActualizacion' => $articulo->fechaActualizacion?->toISOString(),
         ];
+    }
+
+    private function applyImageChanges(Request $request, array $attributes, ?Articulo $articulo = null): array
+    {
+        unset($attributes['imagen'], $attributes['imagenes'], $attributes['imagenesEliminar']);
+        $existingImages = $articulo ? $this->imagePaths($articulo) : [];
+        $requestedRemovals = array_values(array_unique(array_map(
+            'intval',
+            $request->input('imagenesEliminar', []),
+        )));
+        $files = $request->file('imagenes', []);
+        $files = is_array($files) ? array_values(array_filter($files)) : ($files ? [$files] : []);
+        if ($request->hasFile('imagen')) {
+            $files[] = $request->file('imagen');
+        }
+
+        if ($articulo === null && ! $files && ! $requestedRemovals) {
+            $attributes['imagenes'] = [];
+            $attributes['imagen'] = null;
+            return [$attributes, []];
+        }
+        if ($articulo !== null && ! $files && ! $requestedRemovals) {
+            return [$attributes, []];
+        }
+
+        [$images, $removedImages] = $this->gridFsImages->applyCollectionChanges(
+            $existingImages,
+            $files,
+            $requestedRemovals,
+            10,
+            'articulos',
+            'artículo',
+        );
+        $attributes['imagenes'] = $images;
+        $attributes['imagen'] = $images[0] ?? null;
+
+        return [$attributes, $removedImages];
+    }
+
+    private function imagePaths(Articulo $articulo): array
+    {
+        return $this->gridFsImages->paths($articulo->imagenes, $articulo->imagen);
     }
 }

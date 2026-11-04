@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lugar;
 use App\Models\Voluntariado;
 use App\Services\AuditoriaService;
+use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use MongoDB\BSON\ObjectId;
 
 class VoluntariadoController extends Controller
@@ -50,6 +52,10 @@ class VoluntariadoController extends Controller
     {
         $validated = $request->validate($this->rules());
         $validated = $this->normalize($validated, false);
+        $lugar = $this->validatePlace($validated['lugarId']);
+        $validated['latitud'] = $lugar->latitud;
+        $validated['longitud'] = $lugar->longitud;
+        $this->validateCoordinates($validated);
         $organizadorId = (string) $request->user()->getAuthIdentifier();
         if ($request->user()->rol === 'organizador') {
             $validated['organizadorId'] = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
@@ -58,12 +64,10 @@ class VoluntariadoController extends Controller
             $validated['estado'] = 'pendiente';
         }
 
-        if ($request->hasFile('imagen')) {
-            $validated['imagen'] = Storage::disk('gridfs')
-                ->putFile('voluntariados', $request->file('imagen'));
-        }
+        [$validated, $removedImages] = $this->applyImageChanges($request, $validated);
 
         $voluntariado = Voluntariado::create($validated);
+        $this->gridFsImages->deleteStored($removedImages);
         $this->auditoria->registrar(
             $request->user(),
             'crear',
@@ -86,22 +90,22 @@ class VoluntariadoController extends Controller
     {
         $voluntariado = Voluntariado::findOrFail($id);
         $this->ensureCanManage($request, $voluntariado);
-        $imagenAnterior = $voluntariado->imagen;
         $validated = $request->validate($this->rules(true));
         $validated = $this->normalize($validated, true);
+        if (array_key_exists('lugarId', $validated)) {
+            $lugar = $this->validatePlace($validated['lugarId']);
+            $validated['latitud'] = $lugar->latitud;
+            $validated['longitud'] = $lugar->longitud;
+        }
+        $this->validateCoordinates($validated, $voluntariado);
         if ($request->user()->rol === 'organizador') {
             $validated['estado'] = 'pendiente';
         }
 
-        if ($request->hasFile('imagen')) {
-            $validated['imagen'] = Storage::disk('gridfs')
-                ->putFile('voluntariados', $request->file('imagen'));
-        }
+        [$validated, $removedImages] = $this->applyImageChanges($request, $validated, $voluntariado);
 
         $voluntariado->update($validated);
-        if (array_key_exists('imagen', $validated) && $imagenAnterior !== $validated['imagen']) {
-            $this->deleteStoredImage($imagenAnterior);
-        }
+        $this->gridFsImages->deleteStored($removedImages);
         $this->auditoria->registrar(
             $request->user(),
             'actualizar',
@@ -133,7 +137,7 @@ class VoluntariadoController extends Controller
             ['titulo' => $voluntariado->titulo],
         );
         $voluntariado->delete();
-        $this->deleteStoredImage($voluntariado->imagen);
+        $this->gridFsImages->deleteStored($this->imagePaths($voluntariado));
 
         return response()->json([
             'data' => ['id' => $id],
@@ -191,6 +195,10 @@ class VoluntariadoController extends Controller
             'materiales' => [$partial ? 'sometimes' : 'nullable', 'array'],
             'materiales.*' => ['string', 'max:255'],
             'imagen' => [$partial ? 'sometimes' : 'nullable', 'file', 'image', 'max:5120'],
+            'imagenes' => [$partial ? 'sometimes' : 'nullable', 'array', 'max:10'],
+            'imagenes.*' => ['file', 'image', 'max:5120'],
+            'imagenesEliminar' => [$partial ? 'sometimes' : 'nullable', 'array', 'max:10'],
+            'imagenesEliminar.*' => ['integer', 'min:0'],
             'estado' => [
                 $partial ? 'sometimes' : 'nullable',
                 Rule::in(['pendiente', 'publicado', 'cancelado', 'finalizado']),
@@ -227,16 +235,91 @@ class VoluntariadoController extends Controller
             'cupo' => $voluntariado->cupo,
             'requisitos' => $voluntariado->requisitos ?? [],
             'materiales' => $voluntariado->materiales ?? [],
-            'imagen' => $this->gridFsImages->url($voluntariado->imagen),
+            'imagen' => $this->gridFsImages->url($this->imagePaths($voluntariado)[0] ?? null),
+            'imagenes' => $this->gridFsImages->urls($this->imagePaths($voluntariado)),
             'estado' => $voluntariado->estado,
         ];
     }
 
-    private function deleteStoredImage(?string $path): void
+    private function imagePaths(Voluntariado $voluntariado): array
     {
-        if ($path && ! filter_var($path, FILTER_VALIDATE_URL)) {
-            Storage::disk('gridfs')->delete($path);
+        return $this->gridFsImages->paths($voluntariado->imagenes, $voluntariado->imagen);
+    }
+
+    private function applyImageChanges(Request $request, array $attributes, ?Voluntariado $voluntariado = null): array
+    {
+        unset($attributes['imagen'], $attributes['imagenes'], $attributes['imagenesEliminar']);
+        $existingImages = $voluntariado ? $this->imagePaths($voluntariado) : [];
+        $requestedRemovals = array_values(array_unique(array_map(
+            'intval',
+            $request->input('imagenesEliminar', []),
+        )));
+        $files = $request->file('imagenes', []);
+        $files = is_array($files) ? array_values(array_filter($files)) : ($files ? [$files] : []);
+        if ($request->hasFile('imagen')) {
+            $files[] = $request->file('imagen');
         }
+
+        if ($voluntariado === null && ! $files && ! $requestedRemovals) {
+            $attributes['imagenes'] = [];
+            $attributes['imagen'] = null;
+            return [$attributes, []];
+        }
+        if ($voluntariado !== null && ! $files && ! $requestedRemovals) {
+            return [$attributes, []];
+        }
+
+        [$images, $removedImages] = $this->gridFsImages->applyCollectionChanges(
+            $existingImages,
+            $files,
+            $requestedRemovals,
+            10,
+            'voluntariados',
+            'voluntariado',
+        );
+        $attributes['imagenes'] = $images;
+        $attributes['imagen'] = $images[0] ?? null;
+
+        return [$attributes, $removedImages];
+    }
+
+    private function validateCoordinates(array $attributes, ?Voluntariado $voluntariado = null): void
+    {
+        if (
+            $voluntariado !== null
+            && ! array_key_exists('latitud', $attributes)
+            && ! array_key_exists('longitud', $attributes)
+        ) {
+            return;
+        }
+
+        $latitude = array_key_exists('latitud', $attributes) ? $attributes['latitud'] : $voluntariado?->latitud;
+        $longitude = array_key_exists('longitud', $attributes) ? $attributes['longitud'] : $voluntariado?->longitud;
+
+        if (($latitude === null) !== ($longitude === null)) {
+            throw ValidationException::withMessages([
+                'latitud' => 'La latitud y longitud deben enviarse juntas.',
+                'longitud' => 'La latitud y longitud deben enviarse juntas.',
+            ]);
+        }
+        if ($latitude !== null && ! app(BajaCaliforniaSurBoundary::class)->contains($latitude, $longitude)) {
+            throw ValidationException::withMessages([
+                'latitud' => 'La ubicación debe estar dentro de Baja California Sur, México.',
+                'longitud' => 'La ubicación debe estar dentro de Baja California Sur, México.',
+            ]);
+        }
+    }
+
+    private function validatePlace(string $id): Lugar
+    {
+        $lugar = preg_match('/^[a-f0-9]{24}$/i', $id) ? Lugar::find($id) : null;
+        if (! $lugar) {
+            throw ValidationException::withMessages([
+                'lugarId' => 'Selecciona un lugar existente de la lista.',
+            ]);
+        }
+
+        return $lugar;
     }
 
     private function ensureCanManage(Request $request, Voluntariado $voluntariado): void

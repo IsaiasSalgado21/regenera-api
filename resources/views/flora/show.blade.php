@@ -89,6 +89,14 @@
         @endif
     </header>
 
+    @if (count($imagenes) > 1)
+        <section class="detail-image-gallery" aria-label="Imágenes de {{ $especie->nombre }}">
+            @foreach ($imagenes as $index => $image)
+                <img src="{{ $image }}" alt="Imagen {{ $index + 1 }} de {{ $especie->nombre }}" loading="lazy">
+            @endforeach
+        </section>
+    @endif
+
     <section class="flora-detail-content">
 
         <div class="flora-detail-intro">

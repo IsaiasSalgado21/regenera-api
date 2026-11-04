@@ -9,7 +9,6 @@ use App\Models\FloraFauna;
 use App\Services\AuditoriaService;
 use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
 class FloraFaunaController extends Controller
@@ -53,7 +52,7 @@ class FloraFaunaController extends Controller
     {
         $this->authorize('create', FloraFauna::class);
         $validated = $this->convertLugarIds($request->validated());
-        $validated = $this->storeImages($request, $validated);
+        [$validated, $removedImages] = $this->storeImages($request, $validated);
 
         // Flora/fauna is published on creation; this phase has no review workflow.
         $registro = FloraFauna::create([
@@ -61,6 +60,7 @@ class FloraFaunaController extends Controller
             'estado' => 'publicado',
             'creadoPor' => new ObjectId((string) $request->user()->getAuthIdentifier()),
         ]);
+        $this->gridFsImages->deleteStored($removedImages);
 
         if ($request->user()->rol === 'admin') {
             $this->auditoria->registrar(
@@ -99,8 +99,9 @@ class FloraFaunaController extends Controller
         $registro = FloraFauna::findOrFail($id);
         $this->authorize('update', $registro);
         $validated = $this->convertLugarIds($request->validated());
-        $validated = $this->storeImages($request, $validated);
+        [$validated, $removedImages] = $this->storeImages($request, $validated, $registro);
         $registro->update($validated);
+        $this->gridFsImages->deleteStored($removedImages);
 
         if ($request->user()->rol === 'admin') {
             $this->auditoria->registrar(
@@ -135,16 +136,32 @@ class FloraFaunaController extends Controller
         return $attributes;
     }
 
-    private function storeImages(Request $request, array $attributes): array
+    private function storeImages(Request $request, array $attributes, ?FloraFauna $registro = null): array
     {
-        if (! $request->hasFile('imagenes')) {
-            return $attributes;
+        unset($attributes['imagenesEliminar']);
+        $files = $request->file('imagenes', []);
+        $files = is_array($files) ? array_values(array_filter($files)) : ($files ? [$files] : []);
+        $requestedRemovals = $request->input('imagenesEliminar', []);
+        $existingImages = $this->gridFsImages->paths($registro?->imagenes);
+
+        if ($registro === null && ! $files && ! $requestedRemovals) {
+            $attributes['imagenes'] = [];
+            return [$attributes, []];
+        }
+        if ($registro !== null && ! $files && ! $requestedRemovals) {
+            return [$attributes, []];
         }
 
-        $attributes['imagenes'] = collect($request->file('imagenes'))
-            ->map(fn ($image) => Storage::disk('gridfs')->putFile('flora-fauna', $image))
-            ->all();
+        [$images, $removedImages] = $this->gridFsImages->applyCollectionChanges(
+            $existingImages,
+            $files,
+            $requestedRemovals,
+            5,
+            'flora-fauna',
+            'registro',
+        );
+        $attributes['imagenes'] = $images;
 
-        return $attributes;
+        return [$attributes, $removedImages];
     }
 }

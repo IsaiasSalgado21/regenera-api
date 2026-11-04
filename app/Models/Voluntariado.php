@@ -26,6 +26,7 @@ class Voluntariado extends Model
         'requisitos',
         'materiales',
         'imagen',
+        'imagenes',
         'estado',
     ];
 

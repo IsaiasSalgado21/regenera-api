@@ -15,6 +15,7 @@ class Articulo extends Model
         'titulo',
         'contenido',
         'imagen',
+        'imagenes',
         'categoria',
         'estado',
         'motivoRechazo',

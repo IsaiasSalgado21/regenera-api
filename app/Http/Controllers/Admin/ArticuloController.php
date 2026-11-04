@@ -157,7 +157,9 @@ class ArticuloController extends Controller
             $request,
             ['estado_anterior' => 'borrador'],
         );
+        $images = $this->gridFsImages->paths($articulo->imagenes, $articulo->imagen);
         $articulo->delete();
+        $this->gridFsImages->deleteStored($images);
 
         return response()->json([
             'data' => ['id' => $id],

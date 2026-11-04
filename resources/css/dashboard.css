@@ -543,6 +543,401 @@
     color: var(--dashboard-muted);
 }
 
+.dashboard-image-field,
+.dashboard-location-picker,
+.dashboard-choice-field {
+    margin: 18px 0;
+}
+
+.dashboard-image-help,
+.dashboard-choice-field legend,
+.dashboard-choice-legend {
+    color: var(--dashboard-muted);
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.dashboard-image-help {
+    margin: -4px 0 10px;
+    font-weight: 400;
+}
+
+.dashboard-image-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.dashboard-image-preview {
+    position: relative;
+    width: 112px;
+    height: 100px;
+    overflow: hidden;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+    background: #e8eee8;
+}
+
+.dashboard-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dashboard-image-preview[data-removed="true"] {
+    opacity: .4;
+}
+
+.dashboard-image-preview button {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    border: 0;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: #fff;
+    color: #81351f;
+    cursor: pointer;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.dashboard-location-picker {
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-location-summary {
+    margin: -4px 0 16px;
+    border-left: 3px solid var(--dashboard-green-light);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    background: #eaf3ec;
+    color: var(--dashboard-green);
+    font-size: .86rem;
+}
+
+.dashboard-location-picker [data-location-query] {
+    padding-right: 42px;
+    background-image: linear-gradient(45deg, transparent 50%, #547264 50%), linear-gradient(135deg, #547264 50%, transparent 50%);
+    background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%;
+    background-repeat: no-repeat;
+    background-size: 5px 5px;
+}
+
+.dashboard-location-suggestions {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% - 13px);
+    right: 0;
+    left: 0;
+    max-height: 260px;
+    overflow: auto;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgb(20 32 27 / 14%);
+}
+
+.dashboard-location-suggestions button {
+    display: grid;
+    width: 100%;
+    gap: 3px;
+    border: 0;
+    border-bottom: 1px solid #edf1ed;
+    padding: 10px 12px;
+    background: #fff;
+    color: var(--dashboard-text);
+    cursor: pointer;
+    text-align: left;
+}
+
+.dashboard-location-suggestions button:hover,
+.dashboard-location-suggestions button:focus-visible {
+    background: #eef5ef;
+}
+
+.dashboard-location-suggestions small,
+.dashboard-location-no-results {
+    color: var(--dashboard-muted);
+    font-size: .78rem;
+}
+
+.dashboard-location-no-results {
+    margin: 0;
+    padding: 12px;
+}
+
+.dashboard-location-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 8px;
+}
+
+.dashboard-location-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: #e5f0e7;
+    color: var(--dashboard-green);
+    font-size: .82rem;
+}
+
+.dashboard-location-tag button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.dashboard-capacity-field {
+    margin: 18px 0;
+}
+
+.dashboard-capacity-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 8px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 14px;
+    padding: 8px 12px;
+    background: #fff;
+}
+
+.dashboard-capacity-icon {
+    font-size: 1.6rem;
+}
+
+.dashboard-form .dashboard-capacity-control input[name="cupo"] {
+    width: 82px;
+    border: 0;
+    padding: 0;
+    color: var(--dashboard-green);
+    font-size: 1.7rem;
+    font-weight: 800;
+    text-align: center;
+    appearance: textfield;
+}
+
+.dashboard-capacity-control input[name="cupo"]::-webkit-inner-spin-button,
+.dashboard-capacity-control input[name="cupo"]::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
+.dashboard-capacity-step {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 0;
+    border-radius: 10px;
+    background: #e8f1e9;
+    color: var(--dashboard-green);
+    cursor: pointer;
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.dashboard-capacity-step:hover {
+    background: #d7e8da;
+}
+
+.dashboard-capacity-unit {
+    color: var(--dashboard-muted);
+    font-size: .88rem;
+}
+
+.dashboard-token-field {
+    position: relative;
+    margin: 18px 0;
+}
+
+.dashboard-token-field > label {
+    display: block;
+    margin: 0 0 7px;
+    color: var(--dashboard-text);
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+.dashboard-token-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 8px;
+}
+
+.dashboard-token-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #c9decf;
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: #eaf3ec;
+    color: var(--dashboard-green);
+    font-size: .83rem;
+    font-weight: 600;
+}
+
+.dashboard-token-chip button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.dashboard-token-suggestions {
+    position: absolute;
+    z-index: 21;
+    top: calc(100% - 13px);
+    right: 0;
+    left: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgb(20 32 27 / 14%);
+}
+
+.dashboard-token-suggestions button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #edf1ed;
+    padding: 10px 12px;
+    background: #fff;
+    color: var(--dashboard-text);
+    cursor: pointer;
+    text-align: left;
+}
+
+.dashboard-token-suggestions button:hover,
+.dashboard-token-suggestions button:focus-visible {
+    background: #eef5ef;
+}
+
+.dashboard-token-suggestions p {
+    margin: 0;
+    padding: 12px;
+    color: var(--dashboard-muted);
+    font-size: .82rem;
+}
+
+.dashboard-choice-field {
+    min-width: 0;
+    border: 0;
+    padding: 0;
+}
+
+.dashboard-choice-field legend {
+    margin-bottom: 9px;
+    padding: 0;
+}
+
+.dashboard-choice-legend {
+    display: block;
+    margin-bottom: 9px;
+}
+
+.dashboard-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-form .dashboard-choice-card {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 4px;
+    margin: 0;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    padding: 13px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.dashboard-choice-card input {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: auto;
+}
+
+.dashboard-choice-card > span {
+    font-size: 1.4rem;
+}
+
+.dashboard-choice-card small {
+    color: var(--dashboard-muted);
+    font-weight: 400;
+}
+
+.dashboard-choice-card.is-selected {
+    border-color: var(--dashboard-green-light);
+    background: #eaf3ec;
+    box-shadow: 0 0 0 2px rgb(47 128 100 / 12%);
+}
+
+.dashboard-chip-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.dashboard-chip-options > button,
+.dashboard-form .dashboard-chip-options > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 999px;
+    padding: 8px 11px;
+    background: #fff;
+    color: var(--dashboard-text);
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.dashboard-chip-options > button.is-selected {
+    border-color: var(--dashboard-green-light);
+    background: #e5f0e7;
+    color: var(--dashboard-green);
+}
+
+.dashboard-form .dashboard-chip-options > label.is-selected {
+    border-color: var(--dashboard-green-light);
+    background: #e5f0e7;
+    color: var(--dashboard-green);
+    box-shadow: 0 0 0 2px rgb(47 128 100 / 10%);
+}
+
+.dashboard-chip-options input {
+    width: auto;
+    margin: 0;
+}
+
 @media (max-width: 640px) {
     .dashboard-shell {
         width: min(100% - 28px, 1180px);
@@ -577,6 +972,10 @@
     .dashboard-form-row {
         grid-template-columns: 1fr;
         gap: 0;
+    }
+
+    .dashboard-choice-grid {
+        grid-template-columns: 1fr;
     }
 }
 /* Modal de confirmación */

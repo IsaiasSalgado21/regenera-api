@@ -71,7 +71,12 @@
                 <input type="hidden" name="id">
                 <label>Título<input name="titulo" required maxlength="200"></label>
                 <label>Categoría<input name="categoria" required maxlength="100"></label>
-                <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
+                <div class="dashboard-image-field" data-image-field data-max-images="10">
+                    <label>Imágenes del artículo (hasta 10)<input name="imagenes[]" type="file" accept="image/*" multiple data-image-input></label>
+                    <p class="dashboard-image-help">Puedes conservar las imágenes actuales, quitar alguna o agregar más.</p>
+                    <div class="dashboard-image-previews" data-image-previews aria-live="polite"></div>
+                    <div data-image-removals></div>
+                </div>
                 <label>Contenido<textarea name="contenido" rows="8" required></textarea></label>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar borrador</button>
@@ -124,7 +129,12 @@
                     </div>
                     <div class="location-selector-coordinates" aria-hidden="true"></div>
                 </div>
-                <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
+                <div class="dashboard-image-field" data-image-field data-max-images="1">
+                    <label>Imagen del lugar<input name="imagen" type="file" accept="image/*" data-image-input></label>
+                    <p class="dashboard-image-help">Puedes conservar la imagen actual o reemplazarla.</p>
+                    <div class="dashboard-image-previews" data-image-previews aria-live="polite"></div>
+                    <div data-image-removals></div>
+                </div>
                 <label>Descripción<textarea name="descripcion" rows="4" maxlength="2000"></textarea></label>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar lugar</button>
@@ -156,7 +166,14 @@
                 <input type="hidden" name="id">
                 <label>Título<input name="titulo" required maxlength="150"></label>
                 <label>Categoría<input name="categoria" required maxlength="100"></label>
-                <label>Lugar (ID)<input name="lugarId" required maxlength="100"></label>
+                <div class="dashboard-location-picker" data-location-picker data-mode="single">
+                    <label>Ubicación
+                        <input type="search" data-location-query placeholder="Buscar lugar por nombre o municipio" autocomplete="off" required>
+                    </label>
+                    <div class="dashboard-location-suggestions" data-location-suggestions role="listbox" hidden></div>
+                    <div class="dashboard-location-selected" data-location-selected></div>
+                    <div data-location-values></div>
+                </div>
                 <label>Organizador (ID, solo admin)<input name="organizadorId" maxlength="100"></label>
                 <div class="dashboard-form-row">
                     <label>Fecha de inicio<input name="fechaInicio" type="date" required></label>
@@ -166,22 +183,40 @@
                     <label>Hora de inicio<input name="horaInicio" type="time" required></label>
                     <label>Hora de fin<input name="horaFin" type="time" required></label>
                 </div>
-                <div class="dashboard-form-row">
-                    <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
-                    <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
-                </div>
-                <div class="location-selector">
-                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
-                    <div class="location-selector-map" data-location-map>
-                        <div class="location-selector-pin" aria-hidden="true"></div>
+                <input type="hidden" name="latitud">
+                <input type="hidden" name="longitud">
+                <p class="dashboard-location-summary" data-location-summary role="status">Selecciona un lugar registrado para usar su ubicación.</p>
+                <div class="dashboard-capacity-field">
+                    <span class="dashboard-choice-legend">Cupo de participantes</span>
+                    <div class="dashboard-capacity-control">
+                        <span class="dashboard-capacity-icon" aria-hidden="true">👤</span>
+                        <button type="button" class="dashboard-capacity-step" data-capacity-step="-1" aria-label="Disminuir cupo">−</button>
+                        <input name="cupo" type="number" min="1" max="10000" value="10" inputmode="numeric" required aria-label="Número de participantes">
+                        <button type="button" class="dashboard-capacity-step" data-capacity-step="1" aria-label="Aumentar cupo">+</button>
+                        <span class="dashboard-capacity-unit">personas</span>
                     </div>
-                    <div class="location-selector-coordinates" aria-hidden="true"></div>
                 </div>
-                <label>Cupo<input name="cupo" type="number" min="1" max="10000" required></label>
                 <label>Estado<select name="estado" required><option value="pendiente">Pendiente</option><option value="publicado">Publicado</option><option value="cancelado">Cancelado</option><option value="finalizado">Finalizado</option></select></label>
-                <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
-                <label>Requisitos (separados por coma)<input name="requisitos" placeholder="Uso de bloqueador, puntualidad"></label>
-                <label>Materiales (separados por coma)<input name="materiales" placeholder="Guantes, agua"></label>
+                <div class="dashboard-image-field" data-image-field data-max-images="10">
+                    <label>Imágenes del voluntariado (hasta 10)<input name="imagenes[]" type="file" accept="image/*" multiple data-image-input></label>
+                    <p class="dashboard-image-help">Puedes conservar las imágenes actuales, quitar alguna o agregar más.</p>
+                    <div class="dashboard-image-previews" data-image-previews aria-live="polite"></div>
+                    <div data-image-removals></div>
+                </div>
+                <div class="dashboard-token-field" data-token-field="requisitos">
+                    <label for="volunteerRequirementsQuery">Requisitos</label>
+                    <div class="dashboard-token-selected" data-token-selected></div>
+                    <input id="volunteerRequirementsQuery" type="search" data-token-query placeholder="Buscar o agregar requisito…" autocomplete="off">
+                    <div class="dashboard-token-suggestions" data-token-suggestions hidden></div>
+                    <div data-token-values></div>
+                </div>
+                <div class="dashboard-token-field" data-token-field="materiales">
+                    <label for="volunteerMaterialsQuery">Materiales necesarios</label>
+                    <div class="dashboard-token-selected" data-token-selected></div>
+                    <input id="volunteerMaterialsQuery" type="search" data-token-query placeholder="Buscar o agregar material…" autocomplete="off">
+                    <div class="dashboard-token-suggestions" data-token-suggestions hidden></div>
+                    <div data-token-values></div>
+                </div>
                 <label>Descripción<textarea name="descripcion" rows="5" required maxlength="3000"></textarea></label>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar voluntariado</button>
@@ -214,26 +249,65 @@
                 <input type="hidden" name="zonaAproximada">
                 <label>Nombre<input name="nombre" required maxlength="150"></label>
                 <label>Nombre científico<input name="nombreCientifico" maxlength="150"></label>
-                <label>Tipo<select name="tipo" required><option value="flora">Flora</option><option value="fauna">Fauna</option></select></label>
-                <label>Estado de conservación<input name="estadoConservacion" maxlength="100"></label>
-                <label>Hábitat<input name="habitat" maxlength="500"></label>
-                <p class="dashboard-location-warning">Las ubicaciones deben estar dentro de Baja California Sur, México.</p>
-                <div class="dashboard-form-row">
-                    <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
-                    <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
-                </div>
-                <div class="location-selector">
-                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
-                    <div class="location-selector-map" data-location-map>
-                        <div class="location-selector-pin" aria-hidden="true"></div>
+                <fieldset class="dashboard-choice-field">
+                    <legend>Tipo de registro</legend>
+                    <div class="dashboard-choice-grid">
+                        <label class="dashboard-choice-card"><input type="radio" name="tipo" value="flora" required><span aria-hidden="true">🌿</span><strong>Flora</strong><small>Plantas y vegetación</small></label>
+                        <label class="dashboard-choice-card"><input type="radio" name="tipo" value="fauna" required><span aria-hidden="true">🐾</span><strong>Fauna</strong><small>Animales y vida silvestre</small></label>
                     </div>
-                    <div class="location-selector-coordinates" aria-hidden="true"></div>
+                </fieldset>
+                <div class="dashboard-choice-field">
+                    <span class="dashboard-choice-legend">Estado de conservación</span>
+                    <input type="hidden" name="estadoConservacion">
+                    <div class="dashboard-chip-options" data-single-choice="estadoConservacion">
+                        <button type="button" data-option-value="Protección especial">🛡️ Protección especial</button>
+                        <button type="button" data-option-value="en_peligro">🚨 En peligro</button>
+                        <button type="button" data-option-value="en_peligro_critico">🔴 En peligro crítico</button>
+                        <button type="button" data-option-value="vulnerable">⚠️ Vulnerable</button>
+                        <button type="button" data-option-value="Casi amenazada">🟠 Casi amenazada</button>
+                        <button type="button" data-option-value="Preocupación menor">🟢 Preocupación menor</button>
+                        <button type="button" data-option-value="No evaluada">❔ No evaluada</button>
+                    </div>
+                    <label>Otro estado (opcional)<input type="text" data-choice-custom="estadoConservacion" maxlength="100" placeholder="Escribe otro estado"></label>
                 </div>
+                <div class="dashboard-choice-field">
+                    <span class="dashboard-choice-legend">Hábitat (puedes elegir varios)</span>
+                    <input type="hidden" name="habitat">
+                    <div class="dashboard-chip-options" data-multiple-choice="habitat">
+                        <label><input type="checkbox" value="Matorral xerófilo"><span>🌵 Matorral xerófilo</span></label>
+                        <label><input type="checkbox" value="Desierto"><span>🏜️ Desierto</span></label>
+                        <label><input type="checkbox" value="Manglar"><span>🌳 Manglar</span></label>
+                        <label><input type="checkbox" value="Estero y humedal"><span>🪷 Estero y humedal</span></label>
+                        <label><input type="checkbox" value="Dunas costeras"><span>🏖️ Dunas costeras</span></label>
+                        <label><input type="checkbox" value="Playas y costas"><span>🌊 Playas y costas</span></label>
+                        <label><input type="checkbox" value="Aguas costeras y bahías"><span>🐠 Aguas costeras y bahías</span></label>
+                        <label><input type="checkbox" value="Arrecife"><span>🪸 Arrecife</span></label>
+                        <label><input type="checkbox" value="Bosque de pino-encino"><span>🌲 Bosque de pino-encino</span></label>
+                        <label><input type="checkbox" value="Zona intermareal"><span>🦀 Zona intermareal</span></label>
+                    </div>
+                    <label>Otro hábitat (opcional)<input type="text" data-choice-custom="habitat" maxlength="500" placeholder="Escribe otro hábitat"></label>
+                </div>
+                <p class="dashboard-location-warning">Las ubicaciones deben estar dentro de Baja California Sur, México.</p>
                 <p class="dashboard-location-warning" id="approximateLocationNotice" hidden>
                     Esta especie requiere una ubicación aproximada. Al guardar otros cambios se conservará su ubicación original sin exponerla.
                 </p>
-                <label>Lugares relacionados (IDs separados por coma)<input name="lugaresRelacionados" placeholder="ID de lugar, ID de lugar"></label>
-                <label>Imágenes<input name="imagenes[]" type="file" accept="image/*" multiple></label>
+                <div class="dashboard-location-picker" data-location-picker data-mode="multiple">
+                    <label>Lugares relacionados
+                        <input type="search" data-location-query placeholder="Buscar lugares por nombre o municipio" autocomplete="off">
+                    </label>
+                    <div class="dashboard-location-suggestions" data-location-suggestions role="listbox" hidden></div>
+                    <div class="dashboard-location-selected" data-location-selected></div>
+                    <div data-location-values></div>
+                </div>
+                <input type="hidden" name="latitud">
+                <input type="hidden" name="longitud">
+                <p class="dashboard-location-summary" data-location-summary role="status">La ubicación del registro se tomará del primer lugar relacionado que tenga coordenadas.</p>
+                <div class="dashboard-image-field" data-image-field data-max-images="5">
+                    <label>Imágenes (hasta 5)<input name="imagenes[]" type="file" accept="image/*" multiple data-image-input></label>
+                    <p class="dashboard-image-help">Puedes conservar las imágenes actuales, quitar alguna o agregar más.</p>
+                    <div class="dashboard-image-previews" data-image-previews aria-live="polite"></div>
+                    <div data-image-removals></div>
+                </div>
                 <label>Fuente de información<input name="fuenteInformacion" maxlength="255"></label>
                 <label>Descripción<textarea name="descripcion" rows="4" required maxlength="2000"></textarea></label>
                 <div class="dashboard-form-actions">

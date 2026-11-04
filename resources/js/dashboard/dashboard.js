@@ -15,6 +15,28 @@ function initializeDashboard() {
     const routeRole = root.dataset.dashboardRole;
     const cache = { articles: [], places: [], flora: [], voluntariados: [], pending: [], notifications: [] };
     const byId = id => document.getElementById(id);
+    const volunteerTokenOptions = {
+        requisitos: [
+            ['🧴', 'Usar bloqueador biodegradable'],
+            ['👟', 'Usar calzado cómodo'],
+            ['💧', 'Llevar agua suficiente'],
+            ['🧢', 'Llevar gorra o sombrero'],
+            ['🧤', 'Seguir indicaciones del equipo'],
+            ['♻️', 'Separar y recoger residuos'],
+            ['🪪', 'Ser mayor de edad'],
+            ['🤝', 'Participar en equipo'],
+        ],
+        materiales: [
+            ['🧤', 'Guantes de trabajo'],
+            ['🧴', 'Bloqueador biodegradable'],
+            ['💧', 'Agua potable'],
+            ['🧢', 'Gorra o sombrero'],
+            ['🧹', 'Bolsas para residuos'],
+            ['🛠️', 'Herramientas de trabajo'],
+            ['🦺', 'Chaleco de seguridad'],
+            ['🩹', 'Botiquín de primeros auxilios'],
+        ],
+    };
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
     }[character]));
@@ -508,6 +530,17 @@ function initializeDashboard() {
         const form = byId(formNames[type]);
         form.reset();
         form.elements.id.value = '';
+        form.querySelectorAll('[data-location-picker]').forEach(picker => {
+            picker.locationSelection = [];
+            renderLocationPicker(picker);
+        });
+        form.querySelectorAll('[data-image-field]').forEach(field => {
+            field.imageRecord = [];
+            field.stagedFiles = [];
+            field.removedImageIndices = new Set();
+            field.querySelector('[data-image-input]').value = '';
+            renderImagePreviews(field);
+        });
         if (type === 'place') {
             geocodeController?.abort();
             geocodeRequest += 1;
@@ -515,8 +548,314 @@ function initializeDashboard() {
         form.hidden = true;
     }
 
+    function renderLocationPicker(picker) {
+        const selected = picker.locationSelection || [];
+        const isMultiple = picker.dataset.mode === 'multiple';
+        const selectedContainer = picker.querySelector('[data-location-selected]');
+        const suggestions = picker.querySelector('[data-location-suggestions]');
+        const values = picker.querySelector('[data-location-values]');
+        const query = picker.querySelector('[data-location-query]');
+
+        selectedContainer.replaceChildren();
+        values.replaceChildren();
+        selected.forEach(place => {
+            const tag = document.createElement('span');
+            tag.className = 'dashboard-location-tag';
+            const name = document.createElement('span');
+            name.textContent = `${place.nombre}${place.municipio ? ` · ${place.municipio}` : ''}`;
+            tag.append(name);
+
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = isMultiple ? 'lugaresRelacionados[]' : 'lugarId';
+            hidden.value = place.id;
+            values.append(hidden);
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.dataset.removeLocation = place.id;
+            remove.setAttribute('aria-label', `Quitar ${place.nombre}`);
+            remove.textContent = '×';
+            tag.append(remove);
+            selectedContainer.append(tag);
+        });
+        if (!isMultiple) query.value = selected[0]?.nombre || '';
+        suggestions.hidden = true;
+        suggestions.replaceChildren();
+        syncLocationSummary(picker);
+    }
+
+    function syncLocationSummary(picker) {
+        const form = picker.closest('form');
+        const selected = picker.locationSelection || [];
+        const place = picker.dataset.mode === 'multiple'
+            ? selected.find(item => item.latitud != null && item.longitud != null)
+            : selected[0];
+        const latitude = form.elements.namedItem('latitud');
+        const longitude = form.elements.namedItem('longitud');
+        const summary = picker.parentElement.querySelector('[data-location-summary]');
+
+        if (latitude && longitude) {
+            latitude.value = place?.latitud ?? '';
+            longitude.value = place?.longitud ?? '';
+        }
+        if (!summary) return;
+        if (!place) {
+            summary.textContent = picker.dataset.mode === 'multiple'
+                ? 'La ubicación del registro se tomará del primer lugar relacionado que tenga coordenadas.'
+                : 'Selecciona un lugar registrado para usar su ubicación.';
+        } else if (place.latitud == null || place.longitud == null) {
+            summary.textContent = `${place.nombre} no tiene coordenadas registradas. Elige otro lugar para asociar una ubicación.`;
+        } else {
+            summary.textContent = `Ubicación seleccionada: ${place.nombre}${place.municipio ? ` · ${place.municipio}` : ''} (${Number(place.latitud).toFixed(5)}, ${Number(place.longitud).toFixed(5)}).`;
+        }
+    }
+
+    function renderTokenField(field, showSuggestions = false) {
+        const type = field.dataset.tokenField;
+        const selected = field.tokenSelection || [];
+        const query = field.querySelector('[data-token-query]');
+        const selectedContainer = field.querySelector('[data-token-selected]');
+        const values = field.querySelector('[data-token-values]');
+        const suggestions = field.querySelector('[data-token-suggestions]');
+        const normalizedQuery = query.value.trim().toLocaleLowerCase();
+        const options = volunteerTokenOptions[type];
+
+        selectedContainer.replaceChildren();
+        values.replaceChildren();
+        selected.forEach(value => {
+            const option = options.find(item => item[1] === value);
+            const chip = document.createElement('span');
+            chip.className = 'dashboard-token-chip';
+            const label = document.createElement('span');
+            label.textContent = `${option?.[0] || '✦'} ${value}`;
+            chip.append(label);
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = `${type}[]`;
+            hidden.value = value;
+            values.append(hidden);
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.dataset.removeToken = value;
+            remove.setAttribute('aria-label', `Quitar ${value}`);
+            remove.textContent = '×';
+            chip.append(remove);
+            selectedContainer.append(chip);
+        });
+
+        suggestions.replaceChildren();
+        if (!showSuggestions) {
+            suggestions.hidden = true;
+            return;
+        }
+
+        const matches = options.filter(([, label]) =>
+            !selected.includes(label)
+            && (!normalizedQuery || label.toLocaleLowerCase().includes(normalizedQuery)),
+        );
+        matches.forEach(([icon, label]) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.addToken = label;
+            button.innerHTML = `<span aria-hidden="true">${icon}</span><span>${escapeHtml(label)}</span>`;
+            suggestions.append(button);
+        });
+
+        const exactMatch = options.some(([, label]) => label.toLocaleLowerCase() === normalizedQuery);
+        const customValue = query.value.trim();
+        if (customValue && !exactMatch && !selected.some(value => value.toLocaleLowerCase() === normalizedQuery)) {
+            const addCustom = document.createElement('button');
+            addCustom.type = 'button';
+            addCustom.dataset.addToken = customValue;
+            addCustom.innerHTML = `<span aria-hidden="true">＋</span><span>Agregar “${escapeHtml(customValue)}”</span>`;
+            suggestions.append(addCustom);
+        }
+        if (!suggestions.childElementCount) {
+            const empty = document.createElement('p');
+            empty.textContent = 'No hay más opciones para agregar.';
+            suggestions.append(empty);
+        }
+        suggestions.hidden = false;
+    }
+
+    function initializeTokenFields(form, record = null) {
+        form.querySelectorAll('[data-token-field]').forEach(field => {
+            const type = field.dataset.tokenField;
+            const values = Array.isArray(record?.[type])
+                ? record[type]
+                : String(record?.[type] || '').split(',').map(value => value.trim()).filter(Boolean);
+            field.tokenSelection = [...new Set(values)];
+            field.querySelector('[data-token-query]').value = '';
+            renderTokenField(field);
+        });
+    }
+
+    function initializeLocationPicker(form, record) {
+        form.querySelectorAll('[data-location-picker]').forEach(picker => {
+            const multiple = picker.dataset.mode === 'multiple';
+            const selectedIds = multiple
+                ? (record?.lugaresRelacionados || []).map(String)
+                : (record?.lugarId ? [String(record.lugarId)] : []);
+            picker.locationSelection = selectedIds
+                .map(id => cache.places.find(place => String(place.id) === id)
+                    || { id, nombre: `Ubicación guardada (${id.slice(-6)})`, municipio: '' });
+            renderLocationPicker(picker);
+        });
+    }
+
+    function renderLocationSuggestions(picker) {
+        const query = picker.querySelector('[data-location-query]').value.trim().toLocaleLowerCase();
+        const suggestions = picker.querySelector('[data-location-suggestions]');
+        const selectedIds = new Set((picker.locationSelection || []).map(place => String(place.id)));
+        const matches = cache.places
+            .filter(place => !selectedIds.has(String(place.id)))
+            .filter(place => !query || `${place.nombre} ${place.municipio || ''} ${place.direccion || ''}`.toLocaleLowerCase().includes(query))
+            .slice(0, 7);
+
+        suggestions.replaceChildren();
+        if (!matches.length) {
+            const empty = document.createElement('p');
+            empty.className = 'dashboard-location-no-results';
+            empty.textContent = query ? 'No se encontraron lugares. Selecciona uno de los lugares registrados.' : 'No hay más lugares disponibles.';
+            suggestions.append(empty);
+        } else {
+            matches.forEach(place => {
+                const option = document.createElement('button');
+                option.type = 'button';
+                option.setAttribute('role', 'option');
+                option.dataset.locationChoice = place.id;
+                const name = document.createElement('strong');
+                name.textContent = place.nombre;
+                const details = document.createElement('small');
+                details.textContent = [place.municipio, place.tipo].filter(Boolean).join(' · ');
+                option.append(name, details);
+                suggestions.append(option);
+            });
+        }
+        suggestions.hidden = false;
+    }
+
+    function renderImagePreviews(field) {
+        const previews = field.querySelector('[data-image-previews]');
+        const removals = field.querySelector('[data-image-removals]');
+        const input = field.querySelector('[data-image-input]');
+        const existingImages = field.imageRecord || [];
+        const removedImages = field.removedImageIndices || new Set();
+        const files = field.stagedFiles || [...input.files];
+        const maximum = Number(field.dataset.maxImages);
+
+        previews.replaceChildren();
+        removals.replaceChildren();
+        existingImages.forEach((url, index) => {
+            const item = document.createElement('div');
+            item.className = 'dashboard-image-preview';
+            item.dataset.imageIndex = String(index);
+            if (removedImages.has(index)) item.dataset.removed = 'true';
+            const image = document.createElement('img');
+            image.src = url;
+            image.alt = `Imagen guardada ${index + 1}`;
+            item.append(image);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.removeExistingImage = String(index);
+            button.textContent = 'Quitar';
+            item.append(button);
+            previews.append(item);
+        });
+        files.forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = 'dashboard-image-preview is-new';
+            item.dataset.fileIndex = String(index);
+            const image = document.createElement('img');
+            image.src = URL.createObjectURL(file);
+            image.alt = `Vista previa de ${file.name}`;
+            image.onload = () => URL.revokeObjectURL(image.src);
+            item.append(image);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.removeNewImage = String(index);
+            button.textContent = 'Quitar';
+            item.append(button);
+            previews.append(item);
+        });
+        existingImages.forEach((_, index) => {
+            const item = previews.querySelector(`[data-image-index="${index}"]`);
+            if (removedImages.has(index)) {
+                const removed = document.createElement('input');
+                removed.type = 'hidden';
+                removed.name = field.dataset.maxImages === '1' ? 'imagenEliminar' : 'imagenesEliminar[]';
+                removed.value = String(index);
+                removals.append(removed);
+            }
+        });
+        const activeExistingCount = existingImages.length - removedImages.size;
+        field.querySelector('.dashboard-image-help').textContent =
+            `${activeExistingCount + files.length} de ${maximum} imágenes. Quita una actual para reemplazarla o agrega nuevas.`;
+    }
+
+    function initializeImagePreviews(form, record) {
+        form.querySelectorAll('[data-image-field]').forEach(field => {
+            const input = field.querySelector('[data-image-input]');
+            const recordImages = Array.isArray(record?.imagenes) ? record.imagenes : [];
+            const legacyImage = record?.imagen ? [record.imagen] : [];
+            field.imageRecord = recordImages.length ? recordImages : legacyImage;
+            field.stagedFiles = [];
+            field.removedImageIndices = new Set();
+            input.value = '';
+            renderImagePreviews(field);
+        });
+    }
+
+    function syncChoiceFields(form, record) {
+        const typeOptions = [...form.querySelectorAll('input[name="tipo"][type="radio"]')];
+        typeOptions.forEach(option => {
+            option.checked = option.value === (record?.tipo || 'flora');
+            option.closest('.dashboard-choice-card').classList.toggle('is-selected', option.checked);
+        });
+
+        const conservation = record?.estadoConservacion || '';
+        const conservationGroup = form.querySelector('[data-single-choice="estadoConservacion"]');
+        const conservationOptions = [...conservationGroup.querySelectorAll('[data-option-value]')];
+        const matchedConservation = conservationOptions.some(option => option.dataset.optionValue === conservation);
+        conservationOptions.forEach(option => {
+            option.classList.toggle('is-selected', option.dataset.optionValue === conservation);
+        });
+        form.querySelector('[data-choice-custom="estadoConservacion"]').value = matchedConservation ? '' : conservation;
+        form.elements.estadoConservacion.value = conservation;
+
+        const habitats = String(record?.habitat || '').split(/[,;]/).map(value => value.trim()).filter(Boolean);
+        const habitatOptions = [...form.querySelectorAll('[data-multiple-choice="habitat"] input[type="checkbox"]')];
+        habitatOptions.forEach(option => {
+            option.checked = habitats.includes(option.value);
+            option.closest('label').classList.toggle('is-selected', option.checked);
+        });
+        const knownHabitats = new Set(habitatOptions.map(option => option.value));
+        form.querySelector('[data-choice-custom="habitat"]').value =
+            habitats.filter(value => !knownHabitats.has(value)).join(', ');
+        form.elements.habitat.value = habitats.join(', ');
+    }
+
+    function updateChoiceValue(form, name) {
+        if (name === 'estadoConservacion') {
+            const custom = form.querySelector('[data-choice-custom="estadoConservacion"]').value.trim();
+            const selected = form.querySelector('[data-single-choice="estadoConservacion"] .is-selected');
+            form.elements.estadoConservacion.value = custom || selected?.dataset.optionValue || '';
+            return;
+        }
+        const selected = [...form.querySelectorAll('[data-multiple-choice="habitat"] input:checked')]
+            .map(option => option.value);
+        const custom = form.querySelector('[data-choice-custom="habitat"]').value
+            .split(',')
+            .map(value => value.trim())
+            .filter(Boolean);
+        form.elements.habitat.value = [...selected, ...custom].join(', ');
+    }
+
     function openForm(type, record = null) {
         const form = byId(formNames[type]);
+        form.reset();
+        form.elements.id.value = '';
         form.hidden = false;
         const locationSelector = initializeLocationSelector(form);
         locationSelector?.refresh();
@@ -533,6 +872,10 @@ function initializeDashboard() {
                         : 'Nuevo voluntariado';
 
         if (!record) {
+            initializeLocationPicker(form, null);
+            initializeImagePreviews(form, null);
+            if (type === 'voluntariado') initializeTokenFields(form);
+            if (type === 'flora') syncChoiceFields(form, null);
             locationSelector?.setCoordinates(null, null);
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
@@ -540,14 +883,21 @@ function initializeDashboard() {
 
         for (const [name, value] of Object.entries(record)) {
             const field = form.elements.namedItem(name);
-            if (field && field.type !== 'file') field.value = value ?? '';
+            const isFloraChoice = type === 'flora'
+                && ['tipo', 'estadoConservacion', 'habitat', 'lugaresRelacionados'].includes(name);
+            if (field && field.type !== 'file' && !isFloraChoice) {
+                field.value = value ?? '';
+            }
         }
         if (type === 'flora') {
             form.elements.latitud.value = record.ubicacion?.latitud ?? '';
             form.elements.longitud.value = record.ubicacion?.longitud ?? '';
-            form.elements.lugaresRelacionados.value = (record.lugaresRelacionados || []).join(', ');
+            syncChoiceFields(form, record);
         }
-        if (type === 'place' || type === 'voluntariado') {
+        initializeLocationPicker(form, record);
+        initializeImagePreviews(form, record);
+        if (type === 'voluntariado') initializeTokenFields(form, record);
+        if (type === 'place') {
             locationSelector?.setCoordinates(record.latitud, record.longitud);
         }
         if (type === 'flora') {
@@ -556,71 +906,44 @@ function initializeDashboard() {
                 record.ubicacion?.longitud,
             );
         }
-        if (type === 'voluntariado') {
-            form.elements.requisitos.value = (record.requisitos || []).join(', ');
-            form.elements.materiales.value = (record.materiales || []).join(', ');
-        }
         if (type === 'place') initializePlaceMap(record);
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function formPayload(type, form) {
-        const values = Object.fromEntries(new FormData(form).entries());
-        const isExistingRecord = Boolean(values.id);
-        delete values.id;
-
-        if (type === 'article' || type === 'place' || type === 'flora' || type === 'voluntariado') {
-            const payload = new FormData();
-            for (const [name, value] of new FormData(form).entries()) {
-                if (name === 'id' || name === 'zonaAproximada') continue;
-                if (name === 'imagenes[]') {
-                    if (value instanceof File && value.size > 0) payload.append(name, value);
-                    continue;
-                }
-                if (name === 'lugaresRelacionados') {
-                    value.split(',').map(item => item.trim()).filter(Boolean)
-                        .forEach(item => payload.append('lugaresRelacionados[]', item));
-                    continue;
-                }
-                if (type === 'voluntariado' && ['requisitos', 'materiales'].includes(name)) {
-                    value.split(',').map(item => item.trim()).filter(Boolean)
-                        .forEach(item => payload.append(`${name}[]`, item));
-                    continue;
-                }
-                if (name === 'imagenes') continue;
-                payload.append(name, value);
-            }
-            return payload;
+        const payload = new FormData();
+        for (const [name, value] of new FormData(form).entries()) {
+            if (['id', 'zonaAproximada', 'requisitos', 'materiales'].includes(name)) continue;
+            if (value instanceof File && !value.name) continue;
+            payload.append(name, value);
         }
-
+        if (type === 'place') {
+            payload.delete('imagenEliminar');
+            if (form.querySelector('[data-image-removals] input[name="imagenEliminar"]')) {
+                payload.append('imagenEliminar', '1');
+            }
+        }
         if (type === 'flora') {
-            const lat = values.latitud;
-            const lng = values.longitud;
-            const locationIsApproximate = values.zonaAproximada === 'true';
-            delete values.zonaAproximada;
-            delete values.latitud;
-            delete values.longitud;
-            if (!(isExistingRecord && locationIsApproximate)) {
-                values.ubicacion = lat === '' && lng === ''
-                    ? null
-                    : { latitud: Number(lat), longitud: Number(lng) };
-            } else {
-                delete values.ubicacion;
+            const locationPicker = form.querySelector('[data-location-picker][data-mode="multiple"]');
+            if (!locationPicker.locationSelection.length) {
+                payload.append('lugaresRelacionados[]', '');
             }
-            values.lugaresRelacionados = values.lugaresRelacionados
-                .split(',')
-                .map(value => value.trim())
-                .filter(Boolean);
-            values.imagenes = values.imagenes.split(',').map(value => value.trim()).filter(Boolean);
-            if (!values.estadoConservacion) values.estadoConservacion = null;
-            if (!values.nombreCientifico) values.nombreCientifico = null;
-            if (!values.habitat) values.habitat = null;
-            if (!values.fuenteInformacion) values.fuenteInformacion = null;
-        } else if (!values.imagen) {
-            values.imagen = null;
+            const lat = form.elements.latitud.value;
+            const lng = form.elements.longitud.value;
+            const isExistingRecord = Boolean(form.elements.id.value);
+            const locationIsApproximate = form.elements.zonaAproximada.value === 'true';
+            payload.delete('latitud');
+            payload.delete('longitud');
+            if (!(isExistingRecord && locationIsApproximate)) {
+                payload.append('ubicacion[latitud]', lat);
+                payload.append('ubicacion[longitud]', lng);
+            }
+            if (!form.elements.estadoConservacion.value) payload.set('estadoConservacion', '');
+            if (!form.elements.nombreCientifico.value) payload.set('nombreCientifico', '');
+            if (!form.elements.habitat.value) payload.set('habitat', '');
+            if (!form.elements.fuenteInformacion.value) payload.set('fuenteInformacion', '');
         }
-
-        return values;
+        return payload;
     }
 
     async function handleAction(button) {
@@ -837,7 +1160,179 @@ function initializeDashboard() {
         });
     });
 
+    root.addEventListener('input', event => {
+        const query = event.target.closest('[data-location-query]');
+        if (query) renderLocationSuggestions(query.closest('[data-location-picker]'));
+
+        const tokenQuery = event.target.closest('[data-token-query]');
+        if (tokenQuery) renderTokenField(tokenQuery.closest('[data-token-field]'), true);
+
+        const customChoice = event.target.closest('[data-choice-custom]');
+        if (customChoice) {
+            const form = customChoice.closest('form');
+            updateChoiceValue(form, customChoice.dataset.choiceCustom);
+            if (customChoice.dataset.choiceCustom === 'estadoConservacion') {
+                form.querySelectorAll('[data-single-choice="estadoConservacion"] [data-option-value]')
+                    .forEach(option => option.classList.remove('is-selected'));
+            }
+        }
+    });
+
+    root.addEventListener('focusin', event => {
+        const query = event.target.closest('[data-location-query]');
+        if (query) renderLocationSuggestions(query.closest('[data-location-picker]'));
+
+        const tokenQuery = event.target.closest('[data-token-query]');
+        if (tokenQuery) renderTokenField(tokenQuery.closest('[data-token-field]'), true);
+    });
+
+    document.addEventListener('pointerdown', event => {
+        root.querySelectorAll('[data-location-suggestions], [data-token-suggestions]').forEach(suggestions => {
+            const picker = suggestions.closest('[data-location-picker], [data-token-field]');
+            if (!picker?.contains(event.target)) suggestions.hidden = true;
+        });
+    });
+
+    root.addEventListener('keydown', event => {
+        const query = event.target.closest('[data-token-query]');
+        if (!query) return;
+        const field = query.closest('[data-token-field]');
+        const options = field.querySelectorAll('[data-token-suggestions] button');
+        if (event.key === 'Escape') {
+            field.querySelector('[data-token-suggestions]').hidden = true;
+        } else if (event.key === 'Enter' && query.value.trim()) {
+            event.preventDefault();
+            if (options.length) options[0].click();
+        } else if (event.key === 'Backspace' && !query.value && field.tokenSelection.length) {
+            field.tokenSelection.pop();
+            renderTokenField(field);
+        }
+    });
+
+    root.addEventListener('change', event => {
+        const imageInput = event.target.closest('[data-image-input]');
+        if (imageInput) {
+            const field = imageInput.closest('[data-image-field]');
+            const existingCount = field.imageRecord.length - field.removedImageIndices.size;
+            const isSingleImage = field.dataset.maxImages === '1';
+            const selectedFiles = isSingleImage
+                ? [...imageInput.files]
+                : [...field.stagedFiles, ...imageInput.files];
+            let activeExistingCount = existingCount;
+            if (isSingleImage && imageInput.files.length && existingCount) {
+                field.removedImageIndices.add(0);
+                activeExistingCount -= 1;
+            }
+            if (activeExistingCount + selectedFiles.length > Number(field.dataset.maxImages)) {
+                showNotice(`Puedes conservar hasta ${field.dataset.maxImages} imágenes en este registro. Quita alguna imagen actual para agregar otras.`, 'error');
+            } else {
+                field.stagedFiles = selectedFiles;
+            }
+            const transfer = new DataTransfer();
+            field.stagedFiles.forEach(file => transfer.items.add(file));
+            imageInput.files = transfer.files;
+            renderImagePreviews(field);
+        }
+
+        const habitatOption = event.target.closest('[data-multiple-choice="habitat"] input[type="checkbox"]');
+        if (habitatOption) {
+            habitatOption.closest('label').classList.toggle('is-selected', habitatOption.checked);
+            updateChoiceValue(habitatOption.closest('form'), 'habitat');
+        }
+
+        const typeOption = event.target.closest('input[name="tipo"][type="radio"]');
+        if (typeOption) {
+            typeOption.form.querySelectorAll('.dashboard-choice-card')
+                .forEach(card => card.classList.toggle('is-selected', card.contains(typeOption) && typeOption.checked));
+        }
+    });
+
     root.addEventListener('click', async event => {
+        const capacityStep = event.target.closest('[data-capacity-step]');
+        if (capacityStep) {
+            const input = capacityStep.closest('.dashboard-capacity-control').querySelector('[name="cupo"]');
+            const current = Number(input.value) || 1;
+            input.value = String(Math.min(10000, Math.max(1, current + Number(capacityStep.dataset.capacityStep))));
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
+        }
+
+        const tokenAdd = event.target.closest('[data-add-token]');
+        if (tokenAdd) {
+            const field = tokenAdd.closest('[data-token-field]');
+            const value = tokenAdd.dataset.addToken.trim();
+            if (value && !field.tokenSelection.some(item => item.toLocaleLowerCase() === value.toLocaleLowerCase())) {
+                field.tokenSelection.push(value);
+            }
+            field.querySelector('[data-token-query]').value = '';
+            renderTokenField(field, true);
+            field.querySelector('[data-token-query]').focus();
+            return;
+        }
+
+        const tokenRemove = event.target.closest('[data-remove-token]');
+        if (tokenRemove) {
+            const field = tokenRemove.closest('[data-token-field]');
+            field.tokenSelection = field.tokenSelection.filter(value => value !== tokenRemove.dataset.removeToken);
+            renderTokenField(field);
+            return;
+        }
+
+        const locationChoice = event.target.closest('[data-location-choice]');
+        if (locationChoice) {
+            const picker = locationChoice.closest('[data-location-picker]');
+            const place = cache.places.find(item => String(item.id) === String(locationChoice.dataset.locationChoice));
+            if (place) {
+                picker.locationSelection = picker.dataset.mode === 'multiple'
+                    ? [...picker.locationSelection, place]
+                    : [place];
+                renderLocationPicker(picker);
+                picker.querySelector('[data-location-query]').focus();
+            }
+            return;
+        }
+
+        const locationRemoval = event.target.closest('[data-remove-location]');
+        if (locationRemoval) {
+            const picker = locationRemoval.closest('[data-location-picker]');
+            picker.locationSelection = picker.locationSelection
+                .filter(place => String(place.id) !== String(locationRemoval.dataset.removeLocation));
+            renderLocationPicker(picker);
+            return;
+        }
+
+        const removeExistingImage = event.target.closest('[data-remove-existing-image]');
+        if (removeExistingImage) {
+            const field = removeExistingImage.closest('[data-image-field]');
+            field.removedImageIndices.add(Number(removeExistingImage.dataset.removeExistingImage));
+            renderImagePreviews(field);
+            return;
+        }
+
+        const removeNewImage = event.target.closest('[data-remove-new-image]');
+        if (removeNewImage) {
+            const field = removeNewImage.closest('[data-image-field]');
+            const input = field.querySelector('[data-image-input]');
+            const transfer = new DataTransfer();
+            field.stagedFiles.forEach((file, index) => {
+                if (index !== Number(removeNewImage.dataset.removeNewImage)) transfer.items.add(file);
+            });
+            field.stagedFiles = [...transfer.files];
+            input.files = transfer.files;
+            renderImagePreviews(field);
+            return;
+        }
+
+        const conservationOption = event.target.closest('[data-single-choice="estadoConservacion"] [data-option-value]');
+        if (conservationOption) {
+            const form = conservationOption.closest('form');
+            form.querySelectorAll('[data-single-choice="estadoConservacion"] [data-option-value]')
+                .forEach(option => option.classList.toggle('is-selected', option === conservationOption));
+            form.querySelector('[data-choice-custom="estadoConservacion"]').value = '';
+            updateChoiceValue(form, 'estadoConservacion');
+            return;
+        }
+
         const carouselButton = event.target.closest('[data-carousel-step]');
         if (carouselButton) {
             const carousel = carouselButton.closest('[data-place-carousel]');
@@ -894,6 +1389,24 @@ function initializeDashboard() {
                 }
             }
             if (type === 'flora') {
+                const latitude = form.elements.latitud.value;
+                const longitude = form.elements.longitud.value;
+                if ((latitude === '') !== (longitude === '')) {
+                    showNotice('Captura latitud y longitud juntas.', 'error');
+                    return;
+                }
+                if (latitude !== '' && !isInsideBajaCaliforniaSur(Number(latitude), Number(longitude))) {
+                    showNotice('La ubicación debe estar dentro de Baja California Sur, México.', 'error');
+                    return;
+                }
+            }
+            if (type === 'voluntariado') {
+                const picker = form.querySelector('[data-location-picker]');
+                const selectedPlace = picker.locationSelection?.[0];
+                if (!selectedPlace || picker.querySelector('[data-location-query]').value !== selectedPlace.nombre) {
+                    showNotice('Selecciona una ubicación existente de las predicciones.', 'error');
+                    return;
+                }
                 const latitude = form.elements.latitud.value;
                 const longitude = form.elements.longitud.value;
                 if ((latitude === '') !== (longitude === '')) {

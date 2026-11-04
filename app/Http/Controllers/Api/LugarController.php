@@ -103,11 +103,22 @@ class LugarController extends Controller
         $lugar = Lugar::findOrFail($id);
         $this->authorize('update', $lugar);
         $validated = $request->validated();
+        $imagenAnterior = $lugar->imagen;
+        $eliminarImagen = filter_var(
+            $validated['imagenEliminar'] ?? false,
+            FILTER_VALIDATE_BOOLEAN,
+        );
+        unset($validated['imagenEliminar']);
         if ($request->hasFile('imagen')) {
             $validated['imagen'] = Storage::disk('gridfs')
                 ->putFile('lugares', $request->file('imagen'));
+        } elseif ($eliminarImagen) {
+            $validated['imagen'] = null;
         }
         $lugar->update($validated);
+        if (array_key_exists('imagen', $validated) && $imagenAnterior !== $validated['imagen']) {
+            $this->deleteStoredImage($imagenAnterior);
+        }
 
         if ($request->user()->rol === 'admin') {
             $this->auditoria->registrar(
@@ -143,5 +154,12 @@ class LugarController extends Controller
             'estado' => $lugar->estado,
             'creadoPor' => $mostrarCreador ? (string) $lugar->creadoPor : null,
         ];
+    }
+
+    private function deleteStoredImage(?string $path): void
+    {
+        if ($path && ! filter_var($path, FILTER_VALIDATE_URL)) {
+            Storage::disk('gridfs')->delete($path);
+        }
     }
 }

@@ -39,6 +39,13 @@
                 {!! nl2br(e($articulo->contenido)) !!}
             </div>
         </article>
+        @if (count($articulo->imagenes ?? []) > 1)
+            <section class="detail-image-gallery" aria-label="Imágenes del artículo">
+                @foreach ($articulo->imagenes as $index => $image)
+                    <img src="{{ $image }}" alt="Imagen {{ $index + 1 }} de {{ $articulo->titulo }}" loading="lazy">
+                @endforeach
+            </section>
+        @endif
 
         {{-- OTROS ARTÍCULOS --}}
         @if ($otros->count())

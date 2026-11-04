@@ -8,6 +8,19 @@ use Illuminate\Validation\Rule;
 
 class UpdateFloraFaunaRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $lugares = $this->input('lugaresRelacionados');
+        if (is_array($lugares)) {
+            $this->merge([
+                'lugaresRelacionados' => array_values(array_filter(
+                    $lugares,
+                    fn ($id) => $id !== '',
+                )),
+            ]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -22,8 +35,10 @@ class UpdateFloraFaunaRequest extends FormRequest
             'descripcion' => ['sometimes', 'required', 'string', 'max:2000'],
             'habitat' => ['sometimes', 'nullable', 'string', 'max:500'],
             'estadoConservacion' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'imagenes' => ['sometimes', 'nullable', 'array'],
+            'imagenes' => ['sometimes', 'nullable', 'array', 'max:5'],
             'imagenes.*' => ['file', 'image', 'max:5120'],
+            'imagenesEliminar' => ['sometimes', 'nullable', 'array', 'max:5'],
+            'imagenesEliminar.*' => ['integer', 'min:0'],
             'ubicacion' => ['sometimes', 'nullable', 'array:nombre,latitud,longitud'],
             'ubicacion.nombre' => ['nullable', 'string', 'max:255'],
             'ubicacion.latitud' => ['nullable', 'numeric', 'between:-90,90'],

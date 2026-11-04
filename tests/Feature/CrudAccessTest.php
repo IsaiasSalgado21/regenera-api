@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class CrudAccessTest extends TestCase
@@ -92,5 +93,58 @@ class CrudAccessTest extends TestCase
         $this->putJson('/api/flora-fauna/507f1f77bcf86cd799439012', $flora)
             ->assertUnprocessable()
             ->assertJsonValidationErrors('ubicacion');
+    }
+
+    public function test_image_upload_limits_are_enforced_for_articles_flora_and_volunteering(): void
+    {
+        $admin = new User(['rol' => 'admin']);
+        $admin->setAttribute('_id', '507f1f77bcf86cd799439011');
+        Sanctum::actingAs($admin);
+        $this->withHeader('Accept', 'application/json');
+
+        $articleImages = array_map(
+            fn ($index) => UploadedFile::fake()->image("article-{$index}.jpg"),
+            range(1, 11),
+        );
+        $this->post('/api/articulos', [
+            'titulo' => 'Artículo de prueba',
+            'contenido' => 'Contenido de prueba.',
+            'categoria' => 'Conservación',
+            'imagenes' => $articleImages,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('imagenes');
+
+        Sanctum::actingAs($admin);
+        $floraImages = array_map(
+            fn ($index) => UploadedFile::fake()->image("flora-{$index}.jpg"),
+            range(1, 6),
+        );
+        $this->post('/api/flora-fauna', [
+            'nombre' => 'Especie de prueba',
+            'tipo' => 'flora',
+            'descripcion' => 'Descripción de prueba.',
+            'imagenes' => $floraImages,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('imagenes');
+
+        Sanctum::actingAs($admin);
+        $volunteerImages = array_map(
+            fn ($index) => UploadedFile::fake()->image("volunteer-{$index}.jpg"),
+            range(1, 11),
+        );
+        $this->post('/api/admin/voluntariados', [
+            'titulo' => 'Voluntariado de prueba',
+            'descripcion' => 'Descripción de prueba.',
+            'categoria' => 'Conservación',
+            'lugarId' => '507f1f77bcf86cd799439012',
+            'organizadorId' => '507f1f77bcf86cd799439013',
+            'fechaInicio' => '2026-06-01',
+            'fechaFin' => '2026-06-01',
+            'horaInicio' => '09:00',
+            'horaFin' => '10:00',
+            'cupo' => 10,
+            'imagenes' => $volunteerImages,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('imagenes');
     }
 }
