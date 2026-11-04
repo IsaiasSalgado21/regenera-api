@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Lugar;
 use App\Models\Voluntariado;
+use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class VoluntariadoPageController extends Controller
 {
-    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+    public function __construct(
+        private readonly GridFsImageService $gridFsImages,
+        private readonly BajaCaliforniaSurBoundary $boundary,
+    ) {}
 
     /**
      * Lista pública de voluntariados, con filtros del lado del servidor.
@@ -51,6 +55,7 @@ class VoluntariadoPageController extends Controller
                 'lugar' => $lugar?->nombre,
                 'fecha' => $v->fechaInicio?->format('d/m/Y'),
                 'fecha_iso' => $v->fechaInicio?->format('Y-m-d'),
+                'fecha_fin' => $v->fechaFin?->format('d/m/Y'),
                 'hora_inicio' => $v->horaInicio,
                 'hora_fin' => $v->horaFin,
                 'cupo' => $v->cupo,
@@ -85,10 +90,21 @@ class VoluntariadoPageController extends Controller
             : ($voluntariado->imagen ? [$voluntariado->imagen] : []);
         $voluntariado->setAttribute('imagenes', $this->gridFsImages->urls($images));
         $voluntariado->imagen = $voluntariado->imagenes[0] ?? null;
+        $latitude = $lugar?->latitud;
+        $longitude = $lugar?->longitud;
+        if (! $this->boundary->contains($latitude, $longitude)) {
+            $latitude = $voluntariado->latitud;
+            $longitude = $voluntariado->longitud;
+        }
+        $hasValidLocation = $this->boundary->contains($latitude, $longitude);
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
             'lugar' => $lugar,
+            'ubicacion' => $hasValidLocation ? [
+                'latitud' => (float) $latitude,
+                'longitud' => (float) $longitude,
+            ] : null,
         ]);
     }
 }

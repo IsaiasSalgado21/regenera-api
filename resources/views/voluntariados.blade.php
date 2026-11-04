@@ -100,47 +100,51 @@
         <div class="volunteer-grid">
             @forelse ($voluntariados as $voluntariado)
                 <article class="volunteer-card">
-                    <div class="volunteer-image" style="background-image:url('{{ $voluntariado['imagen'] }}')">
-                        @if ($voluntariado['fecha'])
-                            <span class="volunteer-date">{{ $voluntariado['fecha'] }}</span>
-                        @endif
-                    </div>
-
-                    <div class="volunteer-card-content">
-                        @if ($voluntariado['categoria'])
-                            <span class="volunteer-category">{{ ucfirst(str_replace('-', ' ', $voluntariado['categoria'])) }}</span>
-                        @endif
-
-                        <h3>{{ $voluntariado['titulo'] }}</h3>
-
-                        <div class="volunteer-meta">
+                    <a class="volunteer-card-link" href="{{ url('/voluntariados/' . $voluntariado['id']) }}" aria-label="Ver voluntariado: {{ $voluntariado['titulo'] }}">
+                        <div class="volunteer-image" style="background-image:url('{{ $voluntariado['imagen'] }}')">
                             @if ($voluntariado['fecha'])
-                                <span>📅 {{ $voluntariado['fecha'] }}</span>
-                            @endif
-                            @if ($voluntariado['hora_inicio'])
-                                <span>🕐 {{ $voluntariado['hora_inicio'] }}@if ($voluntariado['hora_fin'])–{{ $voluntariado['hora_fin'] }}@endif</span>
-                            @endif
-                            @if ($voluntariado['lugar'])
-                                <span>📍 {{ $voluntariado['lugar'] }}</span>
-                            @endif
-                            @if ($voluntariado['cupo'])
-                                <span>👥 Cupo: {{ $voluntariado['cupo'] }}</span>
+                                <span class="volunteer-date">
+                                    {{ $voluntariado['fecha'] }}@if ($voluntariado['fecha_fin'] && $voluntariado['fecha_fin'] !== $voluntariado['fecha']) – {{ $voluntariado['fecha_fin'] }}@endif
+                                </span>
                             @endif
                         </div>
 
-                        <p>{{ $voluntariado['descripcion'] }}</p>
+                        <div class="volunteer-card-content">
+                            @if ($voluntariado['categoria'])
+                                <span class="volunteer-category">{{ ucfirst(str_replace('-', ' ', $voluntariado['categoria'])) }}</span>
+                            @endif
 
-                        <a class="volunteer-link" href="{{ url('/voluntariados/' . $voluntariado['id']) }}">
-                            Ver voluntariado <span>→</span>
+                            <h3>{{ $voluntariado['titulo'] }}</h3>
+
+                            <div class="volunteer-meta">
+                                @if ($voluntariado['fecha'])
+                                    <span>📅 {{ $voluntariado['fecha'] }}@if ($voluntariado['fecha_fin'] && $voluntariado['fecha_fin'] !== $voluntariado['fecha']) – {{ $voluntariado['fecha_fin'] }}@endif</span>
+                                @endif
+                                @if ($voluntariado['hora_inicio'])
+                                    <span>🕐 {{ $voluntariado['hora_inicio'] }}@if ($voluntariado['hora_fin'])–{{ $voluntariado['hora_fin'] }}@endif</span>
+                                @endif
+                                @if ($voluntariado['lugar'])
+                                    <span>📍 {{ $voluntariado['lugar'] }}</span>
+                                @endif
+                                @if ($voluntariado['cupo'])
+                                    <span>👥 Cupo: {{ $voluntariado['cupo'] }}</span>
+                                @endif
+                            </div>
+
+                            <p>{{ $voluntariado['descripcion'] }}</p>
+
+                            <span class="volunteer-link">
+                                Ver voluntariado <span aria-hidden="true">→</span>
+                            </span>
+                        </div>
                         </a>
-                    </div>
                 </article>
             @empty
                 <p class="empty-state">
                     No se encontraron voluntariados con esos filtros.
                     <a href="{{ url('/voluntariados') }}">Limpiar filtros</a>
                 </p>
-            @endforelse}
+            @endforelse
         </div>
 
     </section>

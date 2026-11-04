@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthLabel = document.getElementById('calendarMonth');
     const daysContainer = document.getElementById('calendarDays');
     const selectedDateLabel = document.getElementById('calendarSelectedDate');
-    const dayButton = document.createElement('button');
     if (
         !previousButton ||
         !nextButton ||
@@ -29,24 +28,24 @@ document.addEventListener('DOMContentLoaded', () => {
         1
     );
 
-    const rawEventDate = calendar.dataset.eventDate;
-    let eventDate = null;
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(rawEventDate || '')) {
-        const [year, month, day] = rawEventDate.split('-').map(Number);
-
-        eventDate = new Date(year, month - 1, day);
-        eventDate.setHours(0, 0, 0, 0);
+    function parseDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null;
+        const [year, month, day] = value.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        date.setHours(0, 0, 0, 0);
+        return date;
     }
 
-    let displayedMonth = eventDate
-        ? new Date(eventDate.getFullYear(), eventDate.getMonth(), 1)
-        : new Date(currentMonth);
-
-    // Nunca comenzar en un mes anterior al actual.
-    if (displayedMonth < currentMonth) {
-        displayedMonth = new Date(currentMonth);
-    }
+    const eventStart = parseDate(calendar.dataset.eventDate);
+    const parsedEventEnd = parseDate(calendar.dataset.eventEnd);
+    const eventEnd = parsedEventEnd && eventStart && parsedEventEnd >= eventStart
+        ? parsedEventEnd
+        : eventStart;
+    let displayedMonth = new Date(
+        (eventStart || today).getFullYear(),
+        (eventStart || today).getMonth(),
+        1
+    );
 
     const monthFormatter = new Intl.DateTimeFormat('es-MX', {
         month: 'long',
@@ -59,14 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
         year: 'numeric'
     });
 
-    function sameDate(a, b) {
-        return Boolean(
-            a &&
-            b &&
-            a.getFullYear() === b.getFullYear() &&
-            a.getMonth() === b.getMonth() &&
-            a.getDate() === b.getDate()
-        );
+    function isEventDay(date) {
+        return Boolean(eventStart && eventEnd && date >= eventStart && date <= eventEnd);
     }
 
     function renderCalendar() {
@@ -96,17 +89,18 @@ document.addEventListener('DOMContentLoaded', () => {
             dayButton.textContent = day;
             dayButton.disabled = true;
 
-            if (sameDate(date, today)) {
+            if (date.getTime() === today.getTime()) {
                 dayButton.classList.add('calendar-today');
                 dayButton.setAttribute('aria-label', `${day}, hoy`);
             }
 
-            if (sameDate(date, eventDate)) {
+            if (isEventDay(date)) {
                 dayButton.classList.add('calendar-event');
-                dayButton.setAttribute(
-                    'aria-label',
-                    `${day}, fecha del voluntariado`
-                );
+                const isStart = date.getTime() === eventStart.getTime();
+                const isEnd = date.getTime() === eventEnd.getTime();
+                dayButton.classList.toggle('calendar-event-start', isStart);
+                dayButton.classList.toggle('calendar-event-end', isEnd);
+                dayButton.setAttribute('aria-label', `${day}, ${isStart ? 'inicio del' : isEnd ? 'fin del' : 'día del'} voluntariado`);
             }
             
             const eventLegend = document.querySelector('.calendar-legend-event');
@@ -124,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            if (sameDate(date, today)) {
+            if (date.getTime() === today.getTime()) {
                 dayButton.addEventListener('mouseenter', () => {
                     highlightLegend(dayButton, todayLegend, true);
                 });
@@ -142,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            if (sameDate(date, eventDate)) {
+            if (isEventDay(date)) {
                 dayButton.addEventListener('mouseenter', () => {
                     highlightLegend(dayButton, eventLegend, true);
                 });
@@ -163,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
             daysContainer.appendChild(dayButton);
         }
 
-        // Bloquear navegación hacia meses anteriores al actual.
         previousButton.disabled = displayedMonth <= currentMonth;
     }
 
@@ -189,8 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCalendar();
     });
 
-    selectedDateLabel.textContent = eventDate
-        ? dateFormatter.format(eventDate)
+    selectedDateLabel.textContent = eventStart && eventEnd
+        ? eventStart.getTime() === eventEnd.getTime()
+            ? dateFormatter.format(eventStart)
+            : `${dateFormatter.format(eventStart)} – ${dateFormatter.format(eventEnd)}`
         : 'Sin fecha programada';
 
     renderCalendar();
