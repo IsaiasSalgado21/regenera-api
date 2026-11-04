@@ -92,11 +92,8 @@ Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
         Route::get('/lugares', [AdminLugarController::class, 'index']);
-        Route::get('/voluntariados', [AdminVoluntariadoController::class, 'index']);
-        Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
-        Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
-        Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
-        Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);
+        Route::patch('/voluntariados/{id}/aprobar', [AdminVoluntariadoController::class, 'aprobar']);
+        Route::patch('/voluntariados/{id}/rechazar', [AdminVoluntariadoController::class, 'rechazar']);
         Route::patch('/lugares/{id}/archivar', [AdminLugarController::class, 'archivar']);
         Route::get('/flora-fauna', [AdminFloraFaunaController::class, 'index']);
         Route::patch('/flora-fauna/{id}/archivar', [AdminFloraFaunaController::class, 'archivar']);
@@ -111,6 +108,16 @@ Route::prefix('admin')
         Route::get('/auditoria/{id}', [AuditoriaController::class, 'show']);
         Route::patch('/articulos/{id}/publicar', [AdminArticuloController::class, 'publicar']);    
         });
+
+Route::prefix('admin')
+    ->middleware(['auth:sanctum', 'role:admin,organizador'])
+    ->group(function () {
+        Route::get('/voluntariados', [AdminVoluntariadoController::class, 'index']);
+        Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
+        Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
+        Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
+        Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);
+    });
 
 Route::get('/articulos', [ArticuloController::class, 'index'])->middleware('auth.optional');
 Route::post('/articulos', [ArticuloController::class, 'store'])->middleware('auth:sanctum');

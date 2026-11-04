@@ -6,20 +6,35 @@ use App\Http\Controllers\Controller;
 use App\Models\Voluntariado;
 use App\Services\AuditoriaService;
 use App\Services\GridFsImageService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use MongoDB\BSON\ObjectId;
 
 class VoluntariadoController extends Controller
 {
     public function __construct(
         private readonly AuditoriaService $auditoria,
         private readonly GridFsImageService $gridFsImages,
+        private readonly NotificationService $notificaciones,
     ) {}
 
     public function index()
     {
-        $data = Voluntariado::query()
+        $query = Voluntariado::query();
+        $request = request();
+        if ($request->user()->rol !== 'admin') {
+            $organizadorId = (string) $request->user()->getAuthIdentifier();
+            $query->where(function ($voluntariados) use ($organizadorId): void {
+                $voluntariados->where('organizadorId', $organizadorId);
+                if (preg_match('/^[a-f0-9]{24}$/i', $organizadorId)) {
+                    $voluntariados->orWhere('organizadorId', new ObjectId($organizadorId));
+                }
+            });
+        }
+
+        $data = $query
             ->orderBy('fechaInicio')
             ->get()
             ->map(fn (Voluntariado $voluntariado) => $this->present($voluntariado))
@@ -35,6 +50,13 @@ class VoluntariadoController extends Controller
     {
         $validated = $request->validate($this->rules());
         $validated = $this->normalize($validated, false);
+        $organizadorId = (string) $request->user()->getAuthIdentifier();
+        if ($request->user()->rol === 'organizador') {
+            $validated['organizadorId'] = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
+                ? new ObjectId($organizadorId)
+                : $organizadorId;
+            $validated['estado'] = 'pendiente';
+        }
 
         if ($request->hasFile('imagen')) {
             $validated['imagen'] = Storage::disk('gridfs')
@@ -50,6 +72,9 @@ class VoluntariadoController extends Controller
             $request,
             ['campos' => array_keys($validated)],
         );
+        if ($request->user()->rol === 'organizador') {
+            $this->notificaciones->voluntariadoEnviado($voluntariado);
+        }
 
         return response()->json([
             'data' => $this->present($voluntariado),
@@ -60,9 +85,13 @@ class VoluntariadoController extends Controller
     public function update(Request $request, string $id)
     {
         $voluntariado = Voluntariado::findOrFail($id);
+        $this->ensureCanManage($request, $voluntariado);
         $imagenAnterior = $voluntariado->imagen;
         $validated = $request->validate($this->rules(true));
         $validated = $this->normalize($validated, true);
+        if ($request->user()->rol === 'organizador') {
+            $validated['estado'] = 'pendiente';
+        }
 
         if ($request->hasFile('imagen')) {
             $validated['imagen'] = Storage::disk('gridfs')
@@ -81,6 +110,9 @@ class VoluntariadoController extends Controller
             $request,
             ['campos' => array_keys($validated)],
         );
+        if ($request->user()->rol === 'organizador') {
+            $this->notificaciones->voluntariadoEnviado($voluntariado);
+        }
 
         return response()->json([
             'data' => $this->present($voluntariado->fresh()),
@@ -91,6 +123,7 @@ class VoluntariadoController extends Controller
     public function destroy(Request $request, string $id)
     {
         $voluntariado = Voluntariado::findOrFail($id);
+        $this->ensureCanManage($request, $voluntariado);
         $this->auditoria->registrar(
             $request->user(),
             'eliminar',
@@ -108,6 +141,29 @@ class VoluntariadoController extends Controller
         ]);
     }
 
+    public function aprobar(Request $request, string $id)
+    {
+        $voluntariado = Voluntariado::findOrFail($id);
+        $voluntariado->update(['estado' => 'publicado']);
+        $voluntariado = $voluntariado->fresh();
+        $this->notificaciones->voluntariadoAprobado($voluntariado);
+        $this->auditoria->registrar($request->user(), 'aprobar', 'voluntariado', (string) $voluntariado->_id, $request);
+
+        return response()->json(['data' => $this->present($voluntariado), 'message' => 'Voluntariado aprobado y publicado.']);
+    }
+
+    public function rechazar(Request $request, string $id)
+    {
+        $validated = $request->validate(['motivo' => ['required', 'string', 'min:5', 'max:1000']]);
+        $voluntariado = Voluntariado::findOrFail($id);
+        $voluntariado->update(['estado' => 'rechazado']);
+        $voluntariado = $voluntariado->fresh();
+        $this->notificaciones->voluntariadoRechazado($voluntariado, $validated['motivo']);
+        $this->auditoria->registrar($request->user(), 'rechazar', 'voluntariado', (string) $voluntariado->_id, $request, ['motivo' => $validated['motivo']]);
+
+        return response()->json(['data' => $this->present($voluntariado), 'message' => 'Voluntariado rechazado y el organizador fue notificado.']);
+    }
+
     private function rules(bool $partial = false): array
     {
         $required = $partial ? 'sometimes|required' : 'required';
@@ -117,7 +173,14 @@ class VoluntariadoController extends Controller
             'descripcion' => [$required, 'string', 'max:3000'],
             'categoria' => [$required, 'string', 'max:100'],
             'lugarId' => [$required, 'string', 'max:100'],
-            'organizadorId' => [$required, 'string', 'max:100'],
+            'organizadorId' => [
+                Rule::requiredIf(fn () => request()->user()?->rol === 'admin'),
+                'nullable',
+                'string',
+                'max:100',
+            ],
+            'latitud' => [$partial ? 'sometimes' : 'nullable', 'nullable', 'numeric', 'between:-90,90'],
+            'longitud' => [$partial ? 'sometimes' : 'nullable', 'nullable', 'numeric', 'between:-180,180'],
             'fechaInicio' => [$required, 'date'],
             'fechaFin' => [$required, 'date', 'after_or_equal:fechaInicio'],
             'horaInicio' => [$required, 'date_format:H:i'],
@@ -155,6 +218,8 @@ class VoluntariadoController extends Controller
             'categoria' => $voluntariado->categoria,
             'lugarId' => (string) $voluntariado->lugarId,
             'organizadorId' => (string) $voluntariado->organizadorId,
+            'latitud' => $voluntariado->latitud,
+            'longitud' => $voluntariado->longitud,
             'fechaInicio' => $voluntariado->fechaInicio?->toDateString(),
             'fechaFin' => $voluntariado->fechaFin?->toDateString(),
             'horaInicio' => $voluntariado->horaInicio,
@@ -172,5 +237,17 @@ class VoluntariadoController extends Controller
         if ($path && ! filter_var($path, FILTER_VALIDATE_URL)) {
             Storage::disk('gridfs')->delete($path);
         }
+    }
+
+    private function ensureCanManage(Request $request, Voluntariado $voluntariado): void
+    {
+        if ($request->user()->rol === 'admin') {
+            return;
+        }
+
+        abort_unless(
+            (string) $voluntariado->organizadorId === (string) $request->user()->getAuthIdentifier(),
+            403,
+        );
     }
 }

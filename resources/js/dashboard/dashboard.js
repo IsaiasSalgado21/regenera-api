@@ -6,6 +6,7 @@ import {
     isInsideBajaCaliforniaSur,
 } from '../geo/baja-california-sur';
 import { dashboardApi } from './dashboard-api';
+import { initializeLocationSelector } from '../map-selector';
 
 const root = document.getElementById('dashboardRoot');
 if (root) initializeDashboard();
@@ -204,13 +205,24 @@ function initializeDashboard() {
 
         byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
             const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
+            let actions = '';
+            if (user.rol === 'admin') {
+                actions += action('Editar', 'edit-voluntariado', voluntariado.id);
+                if (voluntariado.estado === 'pendiente') {
+                    actions += action('Aprobar', 'approve-voluntariado', voluntariado.id, 'primary');
+                    actions += action('Rechazar', 'reject-voluntariado', voluntariado.id, 'danger');
+                }
+                actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
+            } else if (['pendiente', 'rechazado'].includes(voluntariado.estado)) {
+                actions += action('Editar y reenviar', 'edit-voluntariado', voluntariado.id);
+                actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
+            }
             return card({
                 title: voluntariado.titulo,
                 description: voluntariado.descripcion,
                 meta,
                 id: voluntariado.id,
-                actions: action('Editar', 'edit-voluntariado', voluntariado.id)
-                    + action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger'),
+                actions,
             });
         }).join('');
         showResourceState('voluntariados', list.length ? 'ready' : 'empty');
@@ -506,6 +518,8 @@ function initializeDashboard() {
     function openForm(type, record = null) {
         const form = byId(formNames[type]);
         form.hidden = false;
+        const locationSelector = initializeLocationSelector(form);
+        locationSelector?.refresh();
         form.elements.id.value = record?.id || '';
         if (type === 'flora') {
             form.elements.zonaAproximada.value = record?.zonaAproximada ? 'true' : '';
@@ -519,7 +533,7 @@ function initializeDashboard() {
                         : 'Nuevo voluntariado';
 
         if (!record) {
-            if (type === 'place') initializePlaceMap();
+            locationSelector?.setCoordinates(null, null);
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
@@ -532,6 +546,15 @@ function initializeDashboard() {
             form.elements.latitud.value = record.ubicacion?.latitud ?? '';
             form.elements.longitud.value = record.ubicacion?.longitud ?? '';
             form.elements.lugaresRelacionados.value = (record.lugaresRelacionados || []).join(', ');
+        }
+        if (type === 'place' || type === 'voluntariado') {
+            locationSelector?.setCoordinates(record.latitud, record.longitud);
+        }
+        if (type === 'flora') {
+            locationSelector?.setCoordinates(
+                record.ubicacion?.latitud,
+                record.ubicacion?.longitud,
+            );
         }
         if (type === 'voluntariado') {
             form.elements.requisitos.value = (record.requisitos || []).join(', ');
@@ -612,8 +635,9 @@ function initializeDashboard() {
             return;
         }
 
-        if (actionName === 'reject-article') {
+        if (['reject-article', 'reject-voluntariado'].includes(actionName)) {
             rejectArticleId = id;
+            rejectResource = actionName === 'reject-voluntariado' ? 'voluntariado' : 'article';
             byId('rejectReason').value = '';
             byId('rejectDialog').showModal();
             return;
@@ -682,6 +706,10 @@ function initializeDashboard() {
                     await dashboardApi.deleteVoluntariado(id);
                     break;
 
+                case 'approve-voluntariado':
+                    await dashboardApi.approveVoluntariado(id);
+                    break;
+
                 case 'read-notification':
                     await dashboardApi.markNotificationRead(id);
                     break;
@@ -716,6 +744,7 @@ function initializeDashboard() {
     let activeSection = 'articles';
     let user;
     let rejectArticleId = null;
+    let rejectResource = 'article';
     let pendingAction = null;
     function openActionConfirmation(actionName, id) {
     const configurations = {
@@ -910,10 +939,16 @@ function initializeDashboard() {
         const submit = event.currentTarget.querySelector('[type="submit"]');
         submit.disabled = true;
         try {
-            await dashboardApi.rejectArticle(rejectArticleId, reason);
+            if (rejectResource === 'voluntariado') {
+                await dashboardApi.rejectVoluntariado(rejectArticleId, reason);
+            } else {
+                await dashboardApi.rejectArticle(rejectArticleId, reason);
+            }
             byId('rejectDialog').close();
-            showNotice('Artículo rechazado; se notificó al autor.');
-            await loadResource('articles');
+            showNotice(rejectResource === 'voluntariado'
+                ? 'Voluntariado rechazado; se notificó al organizador.'
+                : 'Artículo rechazado; se notificó al autor.');
+            await loadResource(rejectResource === 'voluntariado' ? 'voluntariados' : 'articles');
         } catch (error) {
             showNotice(error.message, 'error');
         } finally {
@@ -989,9 +1024,7 @@ function initializeDashboard() {
             });
             await loadResource('articles');
             await Promise.all([loadResource('places'), loadResource('flora')]);
-            if (user.rol === 'admin') {
-                await loadResource('voluntariados');
-            }
+            await loadResource('voluntariados');
             await loadNotifications();
             window.setInterval(() => loadNotifications(), 60_000);
         } catch (error) {

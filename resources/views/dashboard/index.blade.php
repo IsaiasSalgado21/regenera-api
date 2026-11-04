@@ -45,7 +45,7 @@
             <button type="button" class="dashboard-tab is-active" data-section="articles">Artículos</button>
             <button type="button" class="dashboard-tab" data-section="places">Lugares</button>
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
-            <button type="button" class="dashboard-tab" data-section="voluntariados" data-admin-only>Voluntariados</button>
+            <button type="button" class="dashboard-tab" data-section="voluntariados">Voluntariados</button>
         </nav>
 
         <section class="dashboard-section is-active" id="section-articles" data-resource="articles">
@@ -117,6 +117,13 @@
                     <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90" required></label>
                     <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180" required></label>
                 </div>
+                <div class="location-selector">
+                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
+                    <div class="location-selector-map" data-location-map>
+                        <div class="location-selector-pin" aria-hidden="true"></div>
+                    </div>
+                    <div class="location-selector-coordinates" aria-hidden="true"></div>
+                </div>
                 <label>Imagen<input name="imagen" type="file" accept="image/*"></label>
                 <label>Descripción<textarea name="descripcion" rows="4" maxlength="2000"></textarea></label>
                 <div class="dashboard-form-actions">
@@ -132,7 +139,7 @@
                     <span class="dashboard-eyebrow">PARTICIPACIÓN AMBIENTAL</span>
                     <h2>Voluntariados</h2>
                 </div>
-                <button type="button" class="button button-primary" data-new="voluntariado" data-admin-only>Crear voluntariado</button>
+                <button type="button" class="button button-primary" data-new="voluntariado">Crear voluntariado</button>
             </div>
             <div class="dashboard-error" data-error="voluntariados" hidden>
                 <p>No se pudieron cargar los voluntariados.</p>
@@ -150,7 +157,7 @@
                 <label>Título<input name="titulo" required maxlength="150"></label>
                 <label>Categoría<input name="categoria" required maxlength="100"></label>
                 <label>Lugar (ID)<input name="lugarId" required maxlength="100"></label>
-                <label>Organizador (ID)<input name="organizadorId" required maxlength="100"></label>
+                <label>Organizador (ID, solo admin)<input name="organizadorId" maxlength="100"></label>
                 <div class="dashboard-form-row">
                     <label>Fecha de inicio<input name="fechaInicio" type="date" required></label>
                     <label>Fecha de fin<input name="fechaFin" type="date" required></label>
@@ -158,6 +165,17 @@
                 <div class="dashboard-form-row">
                     <label>Hora de inicio<input name="horaInicio" type="time" required></label>
                     <label>Hora de fin<input name="horaFin" type="time" required></label>
+                </div>
+                <div class="dashboard-form-row">
+                    <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
+                    <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
+                </div>
+                <div class="location-selector">
+                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
+                    <div class="location-selector-map" data-location-map>
+                        <div class="location-selector-pin" aria-hidden="true"></div>
+                    </div>
+                    <div class="location-selector-coordinates" aria-hidden="true"></div>
                 </div>
                 <label>Cupo<input name="cupo" type="number" min="1" max="10000" required></label>
                 <label>Estado<select name="estado" required><option value="pendiente">Pendiente</option><option value="publicado">Publicado</option><option value="cancelado">Cancelado</option><option value="finalizado">Finalizado</option></select></label>
@@ -203,6 +221,13 @@
                 <div class="dashboard-form-row">
                     <label>Latitud<input name="latitud" type="number" step="any" min="-90" max="90"></label>
                     <label>Longitud<input name="longitud" type="number" step="any" min="-180" max="180"></label>
+                </div>
+                <div class="location-selector">
+                    <p class="location-selector-help">Arrastra el mapa para ubicar el pin exactamente donde se encuentra el lugar.</p>
+                    <div class="location-selector-map" data-location-map>
+                        <div class="location-selector-pin" aria-hidden="true"></div>
+                    </div>
+                    <div class="location-selector-coordinates" aria-hidden="true"></div>
                 </div>
                 <p class="dashboard-location-warning" id="approximateLocationNotice" hidden>
                     Esta especie requiere una ubicación aproximada. Al guardar otros cambios se conservará su ubicación original sin exponerla.

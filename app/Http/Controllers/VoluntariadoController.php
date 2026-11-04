@@ -34,6 +34,8 @@ class VoluntariadoController extends Controller
             'descripcion' => 'required|string|max:3000',
             'lugarId' => 'required|string|max:100',
             'organizadorId' => 'required|string|max:100',
+            'latitud' => 'nullable|numeric|between:-90,90',
+            'longitud' => 'nullable|numeric|between:-180,180',
             'fechaInicio' => 'required|date',
             'fechaFin' => 'required|date|after_or_equal:fechaInicio',
             'horaInicio' => [
@@ -115,6 +117,8 @@ class VoluntariadoController extends Controller
             'descripcion' => 'sometimes|required|string|max:3000',
             'lugarId' => 'sometimes|required|string|max:100',
             'organizadorId' => 'sometimes|required|string|max:100',
+            'latitud' => 'sometimes|nullable|numeric|between:-90,90',
+            'longitud' => 'sometimes|nullable|numeric|between:-180,180',
             'fechaInicio' => 'sometimes|required|date',
             'fechaFin' => 'sometimes|required|date|after_or_equal:fechaInicio',
             'horaInicio' => 'sometimes|required|date_format:H:i',
