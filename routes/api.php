@@ -76,12 +76,16 @@ Route::put('/voluntariados/{id}', [VoluntariadoController::class, 'update']);
 Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update']);
 Route::delete('/voluntariados/{id}', [VoluntariadoController::class, 'destroy']);
 
-Route::get('/inscripciones', [InscripcionController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/inscripciones', [InscripcionController::class, 'index']);
+    Route::get('/inscripciones/voluntariado/{voluntariadoId}/mia', [InscripcionController::class, 'mia']);
+    Route::post('/inscripciones/{id}/cancelar', [InscripcionController::class, 'cancelar']);
+    Route::get('/inscripciones/{id}', [InscripcionController::class, 'show']);
+    Route::put('/inscripciones/{id}', [InscripcionController::class, 'update']);
+    Route::patch('/inscripciones/{id}', [InscripcionController::class, 'update']);
+    Route::delete('/inscripciones/{id}', [InscripcionController::class, 'destroy']);
+});
 Route::post('/inscripciones', [InscripcionController::class, 'store'])->middleware('auth:sanctum');
-Route::get('/inscripciones/{id}', [InscripcionController::class, 'show']);
-Route::put('/inscripciones/{id}', [InscripcionController::class, 'update']);
-Route::patch('/inscripciones/{id}', [InscripcionController::class, 'update']);
-Route::delete('/inscripciones/{id}', [InscripcionController::class, 'destroy']);
 
 Route::get('/flora-fauna', [FloraFaunaController::class, 'index'])->middleware('auth.optional');
 Route::post('/flora-fauna', [FloraFaunaController::class, 'store'])->middleware('auth:sanctum');
@@ -107,8 +111,8 @@ Route::prefix('admin')
         Route::patch('/flora-fauna/{id}/publicar', [AdminFloraFaunaController::class, 'publicar']);
         Route::get('/auditoria', [AuditoriaController::class, 'index']);
         Route::get('/auditoria/{id}', [AuditoriaController::class, 'show']);
-        Route::patch('/articulos/{id}/publicar', [AdminArticuloController::class, 'publicar']);    
-        });
+        Route::patch('/articulos/{id}/publicar', [AdminArticuloController::class, 'publicar']);
+    });
 
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin,organizador'])

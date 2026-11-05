@@ -139,6 +139,12 @@
 
                 button.textContent = "Inscripción registrada";
                 message.textContent = data.message || "Inscripción registrada correctamente.";
+                document.dispatchEvent(new CustomEvent("regenera:inscription-created", {
+                    detail: {
+                        voluntariadoId: button.dataset.voluntariadoId,
+                        inscripcionId: data.inscripcion?.id || data.inscripcion?._id || "",
+                    },
+                }));
             } catch (error) {
                 console.error("No se pudo completar la inscripción.", error);
                 message.textContent = error.message;

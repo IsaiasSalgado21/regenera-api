@@ -95,7 +95,10 @@
             </article>
 
             <aside class="volunteer-detail-aside">
-                <section class="volunteer-detail-card">
+                <section class="volunteer-detail-card"
+                    data-volunteer-id="{{ (string) $voluntariado->_id }}"
+                    data-event-start-at="{{ $inicioFechaHora?->toIso8601String() ?? '' }}"
+                    data-event-end-at="{{ $finFechaHora?->toIso8601String() ?? '' }}">
                     <span class="volunteer-detail-card-kicker">ÚNETE A LA ACCIÓN</span>
                     <h2>Tu participación importa.</h2>
                     <div class="volunteer-detail-facts">
@@ -136,29 +139,41 @@
                         @endif
                     </div>
 
-                    <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
-                        class="volunteer-cta"
-                        data-voluntariado-id="{{ (string) $voluntariado->_id }}">
-                        <span aria-hidden="true">🙌</span> Quiero participar
-                        <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
-                    </a>
-                    <p class="volunteer-cta-note">Súmate y forma parte del cambio en Baja California Sur.</p>
+                    <div class="volunteer-enrollment-actions" data-enrollment-actions>
+                        <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
+                            class="volunteer-cta"
+                            data-voluntariado-id="{{ (string) $voluntariado->_id }}">
+                            <span aria-hidden="true">🙌</span> Quiero participar
+                            <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
+                        </a>
+                        <button type="button" class="volunteer-cancel-cta" data-enrollment-cancel hidden>
+                            Cancelar participación
+                        </button>
+                    </div>
+                    <p class="volunteer-cta-note" data-enrollment-note>Súmate y forma parte del cambio en Baja California Sur.</p>
                     <p id="enrollmentMessage" class="volunteer-enrollment-message" role="status" aria-live="polite"></p>
                 </section>
 
-                @php
-                    $voluntariadoEndDate = $voluntariado->fechaFin ?? $voluntariado->fechaInicio;
-                    $voluntariadoAlreadyEnded = $voluntariadoEndDate
-                        && $voluntariadoEndDate->copy()->startOfDay()->lt(now()->startOfDay());
-                @endphp
-                @if ($voluntariadoAlreadyEnded)
-                    <div class="volunteer-ended-notice" role="status">
+                @if ($finFechaHora)
+                    <div class="volunteer-ended-notice" role="status" @unless ($voluntariadoFinalizado) hidden @endunless>
                         <span class="volunteer-ended-notice-icon" aria-hidden="true">✓</span>
                         <span>
                             <strong>Este voluntariado ya finalizó</strong>
                             <small>La fecha de esta actividad ya pasó.</small>
                         </span>
                     </div>
+                @endif
+                @if ($inicioFechaHora && $finFechaHora)
+                    <section class="volunteer-countdown" data-volunteer-countdown
+                        data-countdown-start="{{ $inicioFechaHora->toIso8601String() }}"
+                        data-countdown-end="{{ $finFechaHora->toIso8601String() }}"
+                        aria-label="Cuenta regresiva de la actividad" hidden>
+                        <strong data-countdown-title></strong>
+                        <div class="volunteer-countdown-times">
+                            <p data-countdown-start-row hidden>Inicia en <time data-countdown-start-value></time></p>
+                            <p data-countdown-end-row hidden>Finaliza en <time data-countdown-end-value></time></p>
+                        </div>
+                    </section>
                 @endif
 
                 <section class="volunteer-calendar-card"

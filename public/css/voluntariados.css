@@ -848,6 +848,42 @@
     opacity: .75;
 }
 
+.volunteer-cta[hidden],
+.volunteer-cancel-cta[hidden] {
+    display: none;
+}
+
+.volunteer-enrollment-actions {
+    display: grid;
+    gap: 10px;
+}
+
+.volunteer-cancel-cta {
+    min-height: 48px;
+    border: 1px solid #b65349;
+    border-radius: 12px;
+    background: #fff;
+    color: #9b3028;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    transition: background .2s ease, color .2s ease;
+}
+
+.volunteer-cancel-cta:hover {
+    background: #fff0ed;
+}
+
+.volunteer-cancel-cta:focus-visible {
+    outline: 3px solid #e5a19a;
+    outline-offset: 3px;
+}
+
+.volunteer-cancel-cta:disabled {
+    cursor: wait;
+    opacity: .7;
+}
+
 .volunteer-cta-arrow {
     margin-left: auto;
     font-size: 1.35rem;
@@ -881,6 +917,10 @@
     color: #46564d;
 }
 
+.volunteer-ended-notice[hidden] {
+    display: none;
+}
+
 .volunteer-ended-notice-icon {
     display: grid;
     width: 36px;
@@ -910,6 +950,45 @@
 .volunteer-calendar-card {
     margin-top: 18px;
     padding: 20px;
+}
+
+.volunteer-countdown {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #c8dacf;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f0f7f1, #fff);
+    color: #164f3d;
+}
+
+.volunteer-countdown[hidden] {
+    display: none;
+}
+
+.volunteer-countdown > strong {
+    font-size: .95rem;
+}
+
+.volunteer-countdown-times {
+    display: grid;
+    gap: 5px;
+}
+
+.volunteer-countdown-times p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0;
+    color: #53665b;
+    font-size: .85rem;
+}
+
+.volunteer-countdown-times time {
+    color: #164f3d;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
 }
 
 .volunteer-calendar-card h3 {

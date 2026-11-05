@@ -6,6 +6,7 @@ use App\Models\Lugar;
 use App\Models\Voluntariado;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
+use App\Services\VoluntariadoHorario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -14,6 +15,7 @@ class VoluntariadoPageController extends Controller
     public function __construct(
         private readonly GridFsImageService $gridFsImages,
         private readonly BajaCaliforniaSurBoundary $boundary,
+        private readonly VoluntariadoHorario $horario,
     ) {}
 
     /**
@@ -32,8 +34,8 @@ class VoluntariadoPageController extends Controller
         if ($request->filled('q')) {
             $termino = $request->q;
             $query->where(function ($sub) use ($termino) {
-                $sub->where('titulo', 'like', '%' . $termino . '%')
-                    ->orWhere('descripcion', 'like', '%' . $termino . '%');
+                $sub->where('titulo', 'like', '%'.$termino.'%')
+                    ->orWhere('descripcion', 'like', '%'.$termino.'%');
             });
         }
 
@@ -46,6 +48,7 @@ class VoluntariadoPageController extends Controller
 
         $voluntariados = $query->orderBy('fechaInicio', 'asc')->get()->map(function ($v) use ($lugares) {
             $lugar = $lugares->firstWhere('_id', (string) $v->lugarId);
+
             return [
                 'id' => (string) $v->_id,
                 'titulo' => $v->titulo,
@@ -80,7 +83,7 @@ class VoluntariadoPageController extends Controller
     {
         $voluntariado = Voluntariado::find($id);
 
-        if (!$voluntariado || $voluntariado->estado !== 'publicado') {
+        if (! $voluntariado || $voluntariado->estado !== 'publicado') {
             abort(404);
         }
 
@@ -97,10 +100,15 @@ class VoluntariadoPageController extends Controller
             $longitude = $voluntariado->longitud;
         }
         $hasValidLocation = $this->boundary->contains($latitude, $longitude);
+        $inicioFechaHora = $this->horario->inicio($voluntariado);
+        $finFechaHora = $this->horario->fin($voluntariado);
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
             'lugar' => $lugar,
+            'inicioFechaHora' => $inicioFechaHora,
+            'finFechaHora' => $finFechaHora,
+            'voluntariadoFinalizado' => $finFechaHora?->isPast() ?? false,
             'ubicacion' => $hasValidLocation ? [
                 'latitud' => (float) $latitude,
                 'longitud' => (float) $longitude,

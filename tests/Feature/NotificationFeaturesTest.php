@@ -25,6 +25,18 @@ class NotificationFeaturesTest extends TestCase
         $this->postJson('/api/notificaciones/push/suscripcion', [])->assertUnauthorized();
     }
 
+    public function test_enrollment_read_and_write_endpoints_require_authentication(): void
+    {
+        $this->getJson('/api/inscripciones')->assertUnauthorized();
+        $this->getJson('/api/inscripciones/voluntariado/507f1f77bcf86cd799439011/mia')->assertUnauthorized();
+        $this->getJson('/api/inscripciones/507f1f77bcf86cd799439011')->assertUnauthorized();
+        $this->patchJson('/api/inscripciones/507f1f77bcf86cd799439011', [
+            'estado' => 'cancelada',
+        ])->assertUnauthorized();
+        $this->postJson('/api/inscripciones/507f1f77bcf86cd799439011/cancelar')->assertUnauthorized();
+        $this->deleteJson('/api/inscripciones/507f1f77bcf86cd799439011')->assertUnauthorized();
+    }
+
     public function test_admins_cannot_set_participant_reminder_preferences(): void
     {
         $admin = new User(['rol' => 'admin']);
