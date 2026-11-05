@@ -135,6 +135,11 @@ Route::middleware('auth:sanctum')->prefix('notificaciones')->group(function () {
     Route::get('/', [NotificacionController::class, 'index']);
     Route::get('/no-leidas', [NotificacionController::class, 'noLeidas']);
     Route::patch('/marcar-todas-leidas', [NotificacionController::class, 'marcarTodasLeidas']);
+    Route::get('/preferencias', [NotificacionController::class, 'preferencias']);
+    Route::patch('/preferencias', [NotificacionController::class, 'actualizarPreferencias']);
+    Route::get('/push/clave-publica', [NotificacionController::class, 'clavePublicaPush']);
+    Route::post('/push/suscripcion', [NotificacionController::class, 'guardarSuscripcionPush']);
+    Route::delete('/push/suscripcion', [NotificacionController::class, 'eliminarSuscripcionPush']);
     Route::patch('/{id}/leida', [NotificacionController::class, 'marcarLeida']);
     Route::delete('/{id}', [NotificacionController::class, 'destroy']);
 });

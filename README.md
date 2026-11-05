@@ -21,6 +21,17 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Notificaciones push
+
+Las notificaciones internas se conservan en el centro de notificaciones. Para habilitar también las push del navegador:
+
+1. Genera las claves VAPID con `php artisan notifications:vapid-keys`.
+2. Configura `WEBPUSH_SUBJECT` (por ejemplo, `mailto:admin@regenerabcs.com`), `WEBPUSH_PUBLIC_KEY` y `WEBPUSH_PRIVATE_KEY` en el entorno del servidor. No compartas ni subas la clave privada.
+3. En producción, sirve el sitio mediante HTTPS. En desarrollo, los navegadores permiten el service worker en `localhost`.
+4. Programa `php artisan schedule:run` cada minuto en el servidor. En desarrollo puedes usar `php artisan schedule:work` para que se envíen los recordatorios programados.
+
+Cada usuario activa las push desde su perfil; el permiso del navegador solo se solicita al pulsar el botón de activación. Los usuarios no administradores pueden elegir no recibir recordatorios, recibirlos un día y una hora antes, o recibir uno diario antes del inicio.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

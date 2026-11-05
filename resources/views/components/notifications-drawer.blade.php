@@ -15,9 +15,10 @@
             <button type="button" data-notification-filter="unread">No leídas</button>
         </div>
         <button type="button" class="notification-mark-all" data-notification-mark-all>
-            Marcar todas como leídas
+            Marcar mis notificaciones como leídas
         </button>
     </div>
+    <a class="notification-center-link" href="{{ route('notifications.index') }}">Ver todas las notificaciones</a>
     <p class="notification-drawer-status" data-notification-status role="status" aria-live="polite"></p>
     <div class="notification-drawer-list" data-notification-list></div>
 </aside>

@@ -34,6 +34,7 @@ class User extends Authenticatable
         'organizadorVerificado',
         'fechaRegistro',
         'estado',
+        'recordatorioFrecuencia',
     ];
 
     /**

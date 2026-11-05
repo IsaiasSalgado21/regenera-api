@@ -22,6 +22,10 @@ if (drawer) {
         check: '✓', x: '!', calendar: '◷', bell: '♩', heart: '♥',
         'file-check': '✓', 'file-x': '!', shield: '◆', info: 'i',
     };
+    const formatDate = value => value ? new Intl.DateTimeFormat('es-MX', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(new Date(value)) : '';
 
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
@@ -47,6 +51,8 @@ if (drawer) {
                 <span class="notification-item-content">
                     <strong>${escapeHtml(item.titulo)}</strong>
                     <span>${escapeHtml(item.mensaje)}</span>
+                    ${item.destinatario ? `<small>Para: ${escapeHtml(item.destinatario.nombre)} · ${escapeHtml(item.destinatario.rol)}</small>` : ''}
+                    <time datetime="${escapeHtml(item.fechaCreacion)}">${escapeHtml(formatDate(item.fechaCreacion))}</time>
                 </span>
                 ${item.leida ? '' : '<span class="notification-unread-dot" aria-label="No leída"></span>'}
             </button>
@@ -99,8 +105,8 @@ if (drawer) {
     drawer.querySelector('[data-notification-mark-all]').addEventListener('click', async () => {
         try {
             await axios.patch('/api/notificaciones/marcar-todas-leidas', {}, { headers: tokenHeaders() });
-            notifications = notifications.map(item => ({ ...item, leida: true }));
-            updateBadge(0);
+            notifications = notifications.map(item => item.esPropia ? { ...item, leida: true } : item);
+            updateBadge(notifications.filter(item => !item.leida).length);
             render();
         } catch {
             status.textContent = 'No se pudieron marcar como leídas.';
@@ -110,6 +116,10 @@ if (drawer) {
         const item = event.target.closest('[data-notification-id]');
         if (!item) return;
         const notification = notifications.find(value => value.id === item.dataset.notificationId);
+        if (!notification?.esPropia) {
+            if (notification?.url) window.location.assign(notification.url);
+            return;
+        }
         try {
             await axios.patch(`/api/notificaciones/${encodeURIComponent(item.dataset.notificationId)}/leida`, {}, { headers: tokenHeaders() });
             if (notification) notification.leida = true;

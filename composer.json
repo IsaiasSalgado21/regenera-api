@@ -11,6 +11,7 @@
         "laravel/sanctum": "4.*",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-gridfs": "^3.31",
+        "minishlink/web-push": "9.0",
         "mongodb/laravel-mongodb": "^5.11"
     },
     "require-dev": {

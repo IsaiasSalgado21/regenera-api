@@ -13,6 +13,8 @@ class NotificationService
 {
     private const PRIORITY_NORMAL = 'normal';
 
+    public function __construct(private readonly WebPushService $webPush) {}
+
     public function articuloAprobado(Articulo $articulo): Notificacion
     {
         return $this->crearParaAutor(
@@ -38,19 +40,15 @@ class NotificationService
     public function voluntariadoEnviado(Voluntariado $voluntariado): void
     {
         foreach (User::query()->where('rol', 'admin')->get() as $admin) {
-            Notificacion::create([
-                'usuarioId' => new ObjectId((string) $admin->getAuthIdentifier()),
-                'tipo' => 'sistema',
-                'titulo' => 'Hay un voluntariado pendiente de revisión',
-                'mensaje' => 'El voluntariado «'.$voluntariado->titulo.'» espera tu revisión en el panel de control.',
-                'entidad' => ['tipo' => 'voluntariado', 'id' => (string) $voluntariado->_id],
-                'prioridad' => 'normal',
-                'leida' => false,
-                'fechaCreacion' => now(),
-                'fechaLectura' => null,
-                'fechaExpiracion' => null,
-                'datos' => ['estado' => 'pendiente', 'url' => url('/admin/dashboard')],
-            ]);
+            $this->crear(
+                (string) $admin->getAuthIdentifier(),
+                'sistema',
+                'Hay un voluntariado pendiente de revisión',
+                'El voluntariado «'.$voluntariado->titulo.'» espera tu revisión en el panel de control.',
+                'voluntariado',
+                (string) $voluntariado->_id,
+                ['estado' => 'pendiente', 'url' => url('/admin/dashboard')],
+            );
         }
     }
 
@@ -130,6 +128,19 @@ class NotificationService
         );
     }
 
+    public function recordatorioVoluntariado(string $usuarioId, Voluntariado $voluntariado, string $clave): Notificacion
+    {
+        return $this->crear(
+            $usuarioId,
+            'recordatorio_voluntariado',
+            'Próximo voluntariado',
+            '«'.$voluntariado->titulo.'» está por comenzar.',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            ['recordatorioClave' => $clave],
+        );
+    }
+
     private function crear(
         string $usuarioId,
         string $tipo,
@@ -139,7 +150,7 @@ class NotificationService
         string $entidadId,
         array $datos = [],
     ): Notificacion {
-        return Notificacion::create([
+        return $this->guardarNotificacion([
             'usuarioId' => preg_match('/^[a-f0-9]{24}$/i', $usuarioId) ? new ObjectId($usuarioId) : $usuarioId,
             'tipo' => $tipo,
             'titulo' => $titulo,
@@ -163,7 +174,7 @@ class NotificationService
     ): Notificacion {
         $autorId = (string) $articulo->autorId;
 
-        return Notificacion::create([
+        return $this->guardarNotificacion([
             'usuarioId' => preg_match('/^[a-f0-9]{24}$/i', $autorId) ? new ObjectId($autorId) : $autorId,
             'tipo' => $tipo,
             'titulo' => $titulo,
@@ -187,7 +198,7 @@ class NotificationService
     ): Notificacion {
         $organizadorId = (string) $voluntariado->organizadorId;
 
-        return Notificacion::create([
+        return $this->guardarNotificacion([
             'usuarioId' => preg_match('/^[a-f0-9]{24}$/i', $organizadorId) ? new ObjectId($organizadorId) : $organizadorId,
             'tipo' => $tipo,
             'titulo' => $titulo,
@@ -200,5 +211,13 @@ class NotificationService
             'fechaExpiracion' => null,
             'datos' => $datos,
         ]);
+    }
+
+    private function guardarNotificacion(array $attributes): Notificacion
+    {
+        $notification = Notificacion::create($attributes);
+        $this->webPush->sendToNotification($notification);
+
+        return $notification;
     }
 }

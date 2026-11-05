@@ -27,6 +27,7 @@
         if (!user) return;
 
         document.querySelectorAll(".nav, .mobile-menu").forEach(nav => {
+            nav.querySelectorAll("[data-auth-required]").forEach(link => { link.hidden = false; });
             const existingDashboard = nav.querySelector("[data-auth-dashboard]");
             if (existingDashboard) existingDashboard.remove();
 
@@ -42,15 +43,26 @@
 
             const loginLink = nav.querySelector("[data-auth-login]");
             if (loginLink) {
-                const userLabel = document.createElement("span");
+                const userLabel = document.createElement("a");
+                userLabel.href = "/perfil";
                 userLabel.className = "user-nav";
                 userLabel.dataset.authUser = "";
                 userLabel.textContent = user.nombre;
                 loginLink.replaceWith(userLabel);
             }
 
-            const userLabel = nav.querySelector("[data-auth-user]");
-            if (userLabel) userLabel.textContent = user.nombre;
+            let userLabel = nav.querySelector("[data-auth-user]");
+            if (userLabel) {
+                if (userLabel.tagName !== "A") {
+                    const profileLink = document.createElement("a");
+                    profileLink.href = "/perfil";
+                    profileLink.className = userLabel.className;
+                    profileLink.dataset.authUser = "";
+                    userLabel.replaceWith(profileLink);
+                    userLabel = profileLink;
+                }
+                userLabel.textContent = user.nombre;
+            }
 
             if (!nav.querySelector("[data-auth-logout]")) {
                 const logoutLink = document.createElement("a");

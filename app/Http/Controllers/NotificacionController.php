@@ -3,32 +3,44 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notificacion;
+use App\Models\PushSubscription;
+use App\Models\User;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use MongoDB\BSON\ObjectId;
 
 class NotificacionController extends Controller
 {
     public function index(Request $request)
     {
-        $notificaciones = $this->queryVigentes((string) $request->user()->getAuthIdentifier())
+        $usuario = $request->user();
+        $query = $usuario->rol === 'admin'
+            ? Notificacion::query()
+            : $this->queryForUser((string) $usuario->getAuthIdentifier());
+        $notificaciones = $query
             ->orderBy('fechaCreacion', 'desc')
             ->get();
 
         return response()->json([
-            'data' => $notificaciones->map(fn (Notificacion $notificacion) => $this->present($notificacion))->values(),
+            'data' => $this->presentMany($notificaciones, $usuario),
             'message' => 'Notificaciones consultadas correctamente.',
         ]);
     }
 
     public function noLeidas(Request $request)
     {
-        $notificaciones = $this->queryVigentes((string) $request->user()->getAuthIdentifier())
+        $usuario = $request->user();
+        $query = $usuario->rol === 'admin'
+            ? Notificacion::query()
+            : $this->queryForUser((string) $usuario->getAuthIdentifier());
+        $notificaciones = $query
             ->where('leida', false)
             ->orderBy('fechaCreacion', 'desc')
             ->get();
 
         return response()->json([
-            'data' => $notificaciones->map(fn (Notificacion $notificacion) => $this->present($notificacion))->values(),
+            'data' => $this->presentMany($notificaciones, $usuario),
             'count' => $notificaciones->count(),
             'message' => 'Notificaciones no leídas consultadas correctamente.',
         ]);
@@ -38,7 +50,9 @@ class NotificacionController extends Controller
     {
         $notificacion = Notificacion::findOrFail($id);
         abort_unless($this->perteneceAlUsuario($notificacion, (string) $request->user()->getAuthIdentifier()), 403);
-        $notificacion->update(['leida' => true, 'fechaLectura' => now()]);
+        if (! $notificacion->leida) {
+            $notificacion->update(['leida' => true, 'fechaLectura' => now()]);
+        }
 
         return response()->json([
             'data' => $this->present($notificacion->fresh()),
@@ -56,6 +70,88 @@ class NotificacionController extends Controller
             'data' => [],
             'message' => 'Todas las notificaciones fueron marcadas como leídas.',
         ]);
+    }
+
+    public function preferencias(Request $request)
+    {
+        $usuario = $request->user();
+
+        return response()->json([
+            'data' => [
+                'recordatorioFrecuencia' => $usuario->rol === 'admin'
+                    ? null
+                    : ($usuario->recordatorioFrecuencia ?: 'milestones'),
+                'pushActivo' => PushSubscription::query()
+                    ->where('usuarioId', $this->storedUserId((string) $usuario->getAuthIdentifier()))
+                    ->exists(),
+                'pushDisponible' => app(WebPushService::class)->available(),
+            ],
+        ]);
+    }
+
+    public function actualizarPreferencias(Request $request)
+    {
+        abort_if($request->user()->rol === 'admin', 403, 'Los recordatorios de voluntariados son para participantes y organizadores.');
+
+        $validated = $request->validate([
+            'recordatorioFrecuencia' => ['required', Rule::in(['none', 'milestones', 'daily'])],
+        ]);
+        $request->user()->update($validated);
+
+        return response()->json([
+            'data' => ['recordatorioFrecuencia' => $request->user()->recordatorioFrecuencia],
+            'message' => 'Preferencias de notificación guardadas.',
+        ]);
+    }
+
+    public function clavePublicaPush()
+    {
+        $webPush = app(WebPushService::class);
+        abort_unless($webPush->available(), 503, 'Las notificaciones push no están configuradas en el servidor.');
+
+        return response()->json(['data' => ['publicKey' => $webPush->publicKey()]]);
+    }
+
+    public function guardarSuscripcionPush(Request $request)
+    {
+        $webPush = app(WebPushService::class);
+        abort_unless($webPush->available(), 503, 'Las notificaciones push no están configuradas en el servidor.');
+
+        $validated = $request->validate([
+            'endpoint' => ['required', 'url', 'max:2048'],
+            'keys.p256dh' => ['required', 'string', 'max:255'],
+            'keys.auth' => ['required', 'string', 'max:255'],
+            'contentEncoding' => ['nullable', Rule::in(['aes128gcm', 'aesgcm'])],
+        ]);
+        $usuarioId = $this->storedUserId((string) $request->user()->getAuthIdentifier());
+
+        $subscription = PushSubscription::query()->firstOrNew(['endpoint' => $validated['endpoint']]);
+        abort_if(
+            $subscription->exists && (string) $subscription->usuarioId !== (string) $request->user()->getAuthIdentifier(),
+            403,
+            'Esta suscripción push ya está asociada a otro perfil.',
+        );
+        $subscription->fill([
+            'usuarioId' => $usuarioId,
+            'publicKey' => $validated['keys']['p256dh'],
+            'authToken' => $validated['keys']['auth'],
+            'contentEncoding' => $validated['contentEncoding'] ?? 'aes128gcm',
+            'fechaActualizacion' => now(),
+        ]);
+        $subscription->save();
+
+        return response()->json(['message' => 'Notificaciones push activadas en este dispositivo.']);
+    }
+
+    public function eliminarSuscripcionPush(Request $request)
+    {
+        $validated = $request->validate(['endpoint' => ['required', 'url', 'max:2048']]);
+        PushSubscription::query()
+            ->where('usuarioId', $this->storedUserId((string) $request->user()->getAuthIdentifier()))
+            ->where('endpoint', $validated['endpoint'])
+            ->delete();
+
+        return response()->json(['message' => 'Notificaciones push desactivadas en este dispositivo.']);
     }
 
     public function destroy(Request $request, string $id)
@@ -81,18 +177,35 @@ class NotificacionController extends Controller
         });
     }
 
-    private function queryVigentes(string $usuarioId)
+    private function presentMany($notifications, $currentUser): array
     {
-        return $this->queryForUser($usuarioId)
-            ->where(function ($query): void {
-                $query->whereNull('fechaExpiracion')
-                    ->orWhere('fechaExpiracion', '>=', now());
-            })
-            ->where(function ($query): void {
-                $query->where('leida', false)
-                    ->orWhereNull('fechaLectura')
-                    ->orWhere('fechaLectura', '>=', now()->subDays(30));
-            });
+        $recipientIds = $currentUser->rol === 'admin'
+            ? $notifications->pluck('usuarioId')->map(fn ($id) => (string) $id)->unique()->values()
+            : collect();
+        $objectIds = $recipientIds
+            ->filter(fn (string $id) => preg_match('/^[a-f0-9]{24}$/i', $id))
+            ->map(fn (string $id) => new ObjectId($id))
+            ->all();
+        $recipients = $objectIds
+            ? User::query()->whereIn('_id', $objectIds)->get(['_id', 'nombre', 'correo', 'rol'])->keyBy(fn (User $user) => (string) $user->getAuthIdentifier())
+            : collect();
+
+        return $notifications->map(function (Notificacion $notification) use ($currentUser, $recipients): array {
+            $item = $this->present($notification);
+            $item['esPropia'] = (string) $notification->usuarioId === (string) $currentUser->getAuthIdentifier();
+
+            if ($currentUser->rol === 'admin') {
+                $recipient = $recipients->get((string) $notification->usuarioId);
+                $item['destinatario'] = $recipient ? [
+                    'id' => (string) $recipient->getAuthIdentifier(),
+                    'nombre' => $recipient->nombre,
+                    'correo' => $recipient->correo,
+                    'rol' => $recipient->rol,
+                ] : null;
+            }
+
+            return $item;
+        })->values()->all();
     }
 
     private function present(Notificacion $notificacion): array
@@ -111,9 +224,9 @@ class NotificacionController extends Controller
         ];
         $entity = is_array($notificacion->entidad) ? $notificacion->entidad : [];
         $url = data_get($notificacion->datos, 'url');
-        if (!$url && ($entity['tipo'] ?? null) === 'voluntariado') {
+        if (! $url && ($entity['tipo'] ?? null) === 'voluntariado') {
             $url = url('/voluntariados/'.($entity['id'] ?? ''));
-        } elseif (!$url && ($entity['tipo'] ?? null) === 'articulo') {
+        } elseif (! $url && ($entity['tipo'] ?? null) === 'articulo') {
             $url = url('/articulos/'.($entity['id'] ?? ''));
         }
 
@@ -137,5 +250,10 @@ class NotificacionController extends Controller
     private function perteneceAlUsuario(Notificacion $notificacion, string $usuarioId): bool
     {
         return (string) $notificacion->usuarioId === $usuarioId;
+    }
+
+    private function storedUserId(string $usuarioId): string|ObjectId
+    {
+        return preg_match('/^[a-f0-9]{24}$/i', $usuarioId) ? new ObjectId($usuarioId) : $usuarioId;
     }
 }

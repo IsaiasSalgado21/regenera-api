@@ -18,6 +18,8 @@ Route::get('/admin/dashboard', fn () => view('dashboard.index', ['dashboardRole'
     ->name('dashboard.admin');
 Route::get('/organizador/dashboard', fn () => view('dashboard.index', ['dashboardRole' => 'organizador']))
     ->name('dashboard.organizador');
+Route::get('/notificaciones', fn () => view('notifications.index'))->name('notifications.index');
+Route::get('/perfil', fn () => view('profile.show'))->name('profile.show');
 
 // Voluntariados
 Route::get('/voluntariados', [VoluntariadoPageController::class, 'index'])->name('voluntariados.index');

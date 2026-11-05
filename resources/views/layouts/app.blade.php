@@ -41,6 +41,7 @@
                 <a href="{{ url('/voluntariados') }}">Voluntariados</a>
                 <a href="{{ route('mapa') }}">Mapa</a>
                 <a href="{{ url('/articulos') }}">Artículos</a>
+                <a href="{{ route('notifications.index') }}" class="user-nav" data-auth-required hidden>Centro de notificaciones</a>
                 <button type="button" class="notification-nav-button" data-notification-toggle
                     aria-label="Abrir notificaciones" aria-expanded="false" hidden>
                     <span aria-hidden="true">♧</span> Notificaciones
@@ -67,6 +68,7 @@
             <a href="{{ url('/voluntariados') }}">Voluntariados</a>
             <a href="{{ route('mapa') }}">Mapa</a>
             <a href="{{ url('/articulos') }}">Artículos</a>
+            <a href="{{ route('notifications.index') }}" class="user-nav" data-auth-required hidden>Centro de notificaciones</a>
 
             @auth
                 <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}</a>
