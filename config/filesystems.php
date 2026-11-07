@@ -50,6 +50,7 @@ return [
         'gridfs' => [
             'driver' => 'gridfs',
             'connection' => 'mongodb',
+            'database' => env('DB_DATABASE', 'regenera_bcs'),
             'bucket' => env('GRIDFS_BUCKET', 'fs'),
             'throw' => true,
         ],

@@ -4,7 +4,6 @@ use Illuminate\Support\Str;
 use Pdo\Mysql;
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Default Database Connection Name
@@ -31,7 +30,6 @@ return [
     */
 
     'connections' => [
-
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
@@ -100,16 +98,6 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
-            'mongodb' => [
-            'driver'   => 'mongodb',
-            'dsn'      => env('DB_URI', ''),
-            'host'     => env('DB_HOST', '127.0.0.1'),
-            'port'     => env('DB_PORT', 27017),
-            'database' => env('DB_DATABASE', 'regenera_bcs'),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
-        ],
-
     ],
 
     /*
@@ -140,7 +128,6 @@ return [
     */
 
     'redis' => [
-
         'client' => env('REDIS_CLIENT', 'phpredis'),
 
         'options' => [
@@ -174,7 +161,5 @@ return [
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
-
     ],
-
 ];

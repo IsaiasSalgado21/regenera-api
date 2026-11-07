@@ -12,7 +12,10 @@ use App\Models\Notificacion;
 use App\Models\User;
 use App\Models\Voluntariado;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
 
 class RegeneraBCSSeeder extends Seeder
@@ -199,6 +202,13 @@ class RegeneraBCSSeeder extends Seeder
             ]
         );
 
+        DB::purge('mongodb');
+        DB::reconnect('mongodb');
+
+        $this->replaceImage($limpieza, 'limpieza-playa.png', 'voluntariados');
+        $this->replaceImage($reforestacion, 'reforestacion-manglar.png', 'voluntariados');
+        $this->replaceImage($educacion, 'limpieza-playa.png', 'voluntariados');
+
         /*
         |--------------------------------------------------------------------------
         | 4. Inscripciones
@@ -248,7 +258,7 @@ class RegeneraBCSSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        FloraFauna::firstOrCreate(
+        $mangleRojo = FloraFauna::firstOrCreate(
             ['nombre' => 'Mangle Rojo'],
             [
                 'creadoPor' => new ObjectId((string) $organizador->_id),
@@ -269,7 +279,7 @@ class RegeneraBCSSeeder extends Seeder
             ]
         );
 
-        FloraFauna::firstOrCreate(
+        $tortugaNegra = FloraFauna::firstOrCreate(
             ['nombre' => 'Tortuga Negra'],
             [
                 'creadoPor' => new ObjectId((string) $organizador->_id),
@@ -290,6 +300,9 @@ class RegeneraBCSSeeder extends Seeder
             ]
         );
 
+        $this->replaceImages($mangleRojo, 'manglar-rojo.png', 'flora-fauna');
+        $this->replaceImages($tortugaNegra, 'tortuga-negra.png', 'flora-fauna');
+
         /*
         |--------------------------------------------------------------------------
         | 6. Artículos Ambientales
@@ -309,7 +322,7 @@ class RegeneraBCSSeeder extends Seeder
             ]
         );
 
-        Articulo::firstOrCreate(
+        $articulo2 = Articulo::firstOrCreate(
             ['titulo' => 'Guía práctica para reducir residuos plásticos en las playas de BCS'],
             [
                 'autorId' => (string) $organizador->_id,
@@ -321,6 +334,9 @@ class RegeneraBCSSeeder extends Seeder
                 'fechaActualizacion' => now(),
             ]
         );
+
+        $this->replaceImage($articulo1, 'manglar.png', 'articulos');
+        $this->replaceImage($articulo2, 'costas-lapaz.jpg', 'articulos');
 
         /*
         |--------------------------------------------------------------------------
@@ -456,5 +472,67 @@ class RegeneraBCSSeeder extends Seeder
 
         $this->command?->info('Seeder de Regenera BCS ejecutado correctamente.');
         $this->command?->info('Se verificaron usuarios, lugares, voluntariados e inscripciones de prueba.');
+    }
+
+    private function replaceImage(object $model, string $filename, string $directory): void
+    {
+        $imagePath = database_path('seeders/imagenes/'.$filename);
+
+        if (! is_file($imagePath)) {
+            throw new \RuntimeException("No se encontró la imagen del seeder: {$imagePath}");
+        }
+
+        $previousPath = $model->imagen;
+        $newPath = $this->uploadImage($imagePath, $filename, $directory);
+
+        $model->imagen = $newPath;
+        $model->save();
+
+        if (
+            is_string($previousPath)
+            && $previousPath !== ''
+            && ! filter_var($previousPath, FILTER_VALIDATE_URL)
+            && $previousPath !== $newPath
+        ) {
+            Storage::disk('gridfs')->delete($previousPath);
+        }
+    }
+
+    private function replaceImages(object $model, string $filename, string $directory): void
+    {
+        $storedImages = $model->imagenes ?? null;
+        $previousPaths = is_array($storedImages)
+            ? $storedImages
+            : (is_iterable($storedImages) ? iterator_to_array($storedImages) : []);
+        $previousPaths = array_values(array_filter(
+            $previousPaths,
+            fn ($path) => is_string($path) && $path !== '',
+        ));
+        $imagePath = database_path('seeders/imagenes/'.$filename);
+
+        if (! is_file($imagePath)) {
+            throw new \RuntimeException("No se encontró la imagen del seeder: {$imagePath}");
+        }
+
+        $newPath = $this->uploadImage($imagePath, $filename, $directory);
+        $model->imagenes = [$newPath];
+        $model->save();
+
+        foreach ($previousPaths as $previousPath) {
+            if (! filter_var($previousPath, FILTER_VALIDATE_URL) && $previousPath !== $newPath) {
+                Storage::disk('gridfs')->delete($previousPath);
+            }
+        }
+    }
+
+    private function uploadImage(string $imagePath, string $filename, string $directory): string
+    {
+        $newPath = Storage::disk('gridfs')->putFile($directory, new File($imagePath));
+
+        if (! is_string($newPath)) {
+            throw new \RuntimeException("No se pudo subir la imagen del seeder: {$filename}");
+        }
+
+        return $newPath;
     }
 }
