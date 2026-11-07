@@ -13,7 +13,7 @@ if (root) initializeDashboard();
 
 function initializeDashboard() {
     const routeRole = root.dataset.dashboardRole;
-    const cache = { articles: [], places: [], flora: [], voluntariados: [], organizers: [], pending: [], notifications: [] };
+    const cache = { articles: [], places: [], flora: [], voluntariados: [], users: [], organizers: [], pending: [], notifications: [] };
     const byId = id => document.getElementById(id);
     const volunteerTokenOptions = {
         requisitos: [
@@ -351,6 +351,25 @@ function initializeDashboard() {
         showResourceState('voluntariados', list.length ? 'ready' : 'empty');
     }
 
+    function renderUsers() {
+        const users = cache.users;
+        byId('userCards').innerHTML = users.map(usuario => {
+            const meta = `<span class="status-pill status-${escapeHtml(usuario.estado)}">${escapeHtml(usuario.estado)}</span><span>${escapeHtml(usuario.rol)}</span>`;
+            const verification = usuario.rol === 'organizador' && usuario.organizadorVerificado
+                ? '<span>Verificado</span>'
+                : '';
+            return card({
+                title: usuario.nombre,
+                description: `${usuario.correo}${usuario.fechaRegistro ? ` · Registro: ${new Date(usuario.fechaRegistro).toLocaleDateString('es-MX')}` : ''}`,
+                meta: `${meta}${verification}`,
+                id: usuario.id,
+                actions: action('Editar', 'edit-user', usuario.id)
+                    + action('Eliminar', 'delete-user', usuario.id, 'danger'),
+            });
+        }).join('');
+        showResourceState('users', users.length ? 'ready' : 'empty');
+    }
+
     async function loadResource(resource) {
         showResourceState(resource, 'loading');
         try {
@@ -373,6 +392,9 @@ function initializeDashboard() {
             } else if (resource === 'voluntariados') {
                 cache.voluntariados = (await dashboardApi.listVoluntariados()).data;
                 renderVoluntariados();
+            } else if (resource === 'users') {
+                cache.users = (await dashboardApi.listUsers()).data;
+                renderUsers();
             }
         } catch (error) {
             showResourceState(resource, 'error');
@@ -410,6 +432,7 @@ function initializeDashboard() {
         place: 'placeForm',
         flora: 'floraForm',
         voluntariado: 'voluntariadoForm',
+        user: 'userForm',
     };
     let placeMap = null;
     let placePreviewMaps = new Map();
@@ -970,7 +993,14 @@ function initializeDashboard() {
             : type === 'article' ? 'Nuevo artículo'
                 : type === 'place' ? 'Nuevo lugar'
                     : type === 'flora' ? 'Nuevo registro'
-                        : 'Nuevo voluntariado';
+                        : type === 'voluntariado' ? 'Nuevo voluntariado'
+                            : 'Nuevo usuario';
+        if (type === 'user') {
+            form.elements.password.required = !record;
+            byId('userForm').querySelector('[data-user-password-help]').textContent = record
+                ? '(déjala vacía para conservarla)'
+                : '(mínimo 8 caracteres)';
+        }
 
         if (!record) {
             initializeLocationPicker(form, null);
@@ -992,7 +1022,11 @@ function initializeDashboard() {
             const isFloraChoice = type === 'flora'
                 && ['tipo', 'estadoConservacion', 'habitat', 'lugaresRelacionados'].includes(name);
             if (field && field.type !== 'file' && !isFloraChoice) {
-                field.value = value ?? '';
+                if (field.type === 'checkbox') {
+                    field.checked = Boolean(value);
+                } else {
+                    field.value = value ?? '';
+                }
             }
         }
         if (type === 'flora') {
@@ -1028,6 +1062,12 @@ function initializeDashboard() {
             if (value instanceof File && !value.name) continue;
             payload.append(name, value);
         }
+        if (type === 'user' && !form.elements.password.value) {
+            payload.delete('password');
+        }
+        if (type === 'user') {
+            payload.set('organizadorVerificado', form.elements.organizadorVerificado.checked ? '1' : '0');
+        }
         if (type === 'place') {
             payload.delete('imagenEliminar');
             if (form.querySelector('[data-image-removals] input[name="imagenEliminar"]')) {
@@ -1061,7 +1101,7 @@ function initializeDashboard() {
         const id = button.dataset.id;
         const actionName = button.dataset.action;
 
-        const record = [...cache.articles, ...cache.places, ...cache.flora, ...cache.voluntariados]
+        const record = [...cache.articles, ...cache.places, ...cache.flora, ...cache.voluntariados, ...cache.users]
             .find(item => String(item.id) === String(id));
 
         if (actionName.startsWith('edit-')) {
@@ -1086,6 +1126,7 @@ function initializeDashboard() {
             'archive-flora',
             'delete-article',
             'delete-voluntariado',
+            'delete-user',
         ];
 
         if (confirmationActions.includes(actionName)) {
@@ -1138,6 +1179,10 @@ function initializeDashboard() {
 
                 case 'delete-voluntariado':
                     await dashboardApi.deleteVoluntariado(id);
+                    break;
+
+                case 'delete-user':
+                    await dashboardApi.deleteUser(id);
                     break;
 
                 case 'approve-voluntariado':
@@ -1235,6 +1280,13 @@ function initializeDashboard() {
                 title: 'Eliminar voluntariado',
                 message: 'Esta acción eliminará permanentemente el voluntariado y no podrás recuperarlo.',
                 button: 'Eliminar voluntariado',
+                icon: '!',
+                style: 'is-danger',
+            },
+            'delete-user': {
+                title: 'Eliminar usuario',
+                message: 'Esta acción eliminará permanentemente al usuario y no podrás recuperarlo.',
+                button: 'Eliminar usuario',
                 icon: '!',
                 style: 'is-danger',
             },
@@ -1593,13 +1645,15 @@ function initializeDashboard() {
                 if (type === 'place') await dashboardApi.savePlace(id, payload);
                 if (type === 'flora') await dashboardApi.saveFlora(id, payload);
                 if (type === 'voluntariado') await dashboardApi.saveVoluntariado(id, payload);
+                if (type === 'user') await dashboardApi.saveUser(id, Object.fromEntries(payload.entries()));
                 closeForm(type);
                 showNotice('Los cambios se guardaron correctamente.');
                 await loadResource(
                     type === 'article' ? 'articles'
                         : type === 'place' ? 'places'
                             : type === 'flora' ? 'flora'
-                                : 'voluntariados',
+                                : type === 'voluntariado' ? 'voluntariados'
+                                    : 'users',
                 );
             } catch (error) {
                 showNotice(error.message, 'error');
@@ -1711,6 +1765,7 @@ function initializeDashboard() {
             await loadResource('articles');
             await Promise.all([loadResource('places'), loadResource('flora')]);
             await loadResource('voluntariados');
+            if (user.rol === 'admin') await loadResource('users');
             await loadNotifications();
             window.setInterval(() => loadNotifications(), 60_000);
         } catch (error) {

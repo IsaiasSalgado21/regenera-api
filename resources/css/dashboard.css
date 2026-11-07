@@ -464,6 +464,16 @@
     font-weight: 700;
 }
 
+.dashboard-form .dashboard-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.dashboard-form .dashboard-checkbox-label input {
+    width: auto;
+}
+
 .dashboard-form input,
 .dashboard-form textarea,
 .dashboard-form select,

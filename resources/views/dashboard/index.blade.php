@@ -46,6 +46,7 @@
             <button type="button" class="dashboard-tab" data-section="places">Lugares</button>
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
             <button type="button" class="dashboard-tab" data-section="voluntariados">Voluntariados</button>
+            <button type="button" class="dashboard-tab" data-section="users" data-admin-only hidden>Usuarios</button>
         </nav>
 
         <section class="dashboard-section is-active" id="section-articles" data-resource="articles">
@@ -364,6 +365,42 @@
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar registro</button>
                     <button class="button button-secondary" type="button" data-cancel="flora">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="dashboard-section" id="section-users" data-resource="users" data-admin-only hidden>
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-eyebrow">ADMINISTRACIÓN DEL SISTEMA</span>
+                    <h2>Usuarios</h2>
+                </div>
+                <button type="button" class="button button-primary" data-new="user">Crear usuario</button>
+            </div>
+            <div class="dashboard-error" data-error="users" hidden>
+                <p>No se pudieron cargar los usuarios.</p>
+                <button type="button" class="button button-secondary" data-retry="users">Reintentar</button>
+            </div>
+            <div class="dashboard-loading" data-loading="users">Cargando usuarios…</div>
+            <div class="dashboard-card-grid" id="userCards"></div>
+            <p class="dashboard-empty" data-empty="users" hidden>No hay usuarios registrados.</p>
+            <form class="dashboard-form" id="userForm" hidden>
+                <div class="dashboard-form-heading">
+                    <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="user">Nuevo usuario</h3></div>
+                    <button class="icon-button" type="button" data-cancel="user" aria-label="Cerrar formulario">×</button>
+                </div>
+                <input type="hidden" name="id">
+                <label>Nombre<input name="nombre" required maxlength="150"></label>
+                <label>Correo electrónico<input name="correo" type="email" required maxlength="255"></label>
+                <label>Contraseña <span data-user-password-help>(mínimo 8 caracteres)</span><input name="password" type="password" minlength="8" autocomplete="new-password"></label>
+                <div class="dashboard-form-row">
+                    <label>Rol<select name="rol" required><option value="usuario">Usuario</option><option value="organizador">Organizador</option><option value="admin">Administrador</option></select></label>
+                    <label>Estado<select name="estado" required><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></label>
+                </div>
+                <label class="dashboard-checkbox-label"><input name="organizadorVerificado" type="checkbox" value="1"> Organizador verificado</label>
+                <div class="dashboard-form-actions">
+                    <button class="button button-primary" type="submit">Guardar usuario</button>
+                    <button class="button button-secondary" type="button" data-cancel="user">Cancelar</button>
                 </div>
             </form>
         </section>

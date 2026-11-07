@@ -12,11 +12,11 @@ class UserController extends Controller
 {
     public function index(): JsonResponse
     {
-        $usuarios = User::query()->get();
+        $usuarios = User::query()->orderBy('nombre')->get();
 
         return response()->json([
             'success' => true,
-            'data' => $usuarios->makeHidden(['password']),
+            'data' => $usuarios->map(fn (User $usuario) => $this->present($usuario))->values(),
         ]);
     }
 
@@ -49,13 +49,14 @@ class UserController extends Controller
             $validated['organizadorVerificado'] ?? false;
         $validated['fechaRegistro'] = now();
         $validated['estado'] = $validated['estado'] ?? 'activo';
+        $validated['correo'] = strtolower(trim($validated['correo']));
 
         $usuario = User::create($validated);
 
         return response()->json([
             'success' => true,
             'message' => 'Usuario creado correctamente.',
-            'data' => $usuario->makeHidden(['password']),
+            'data' => $this->present($usuario),
         ], 201);
     }
 
@@ -72,7 +73,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $usuario->makeHidden(['password']),
+            'data' => $this->present($usuario),
         ]);
     }
 
@@ -112,6 +113,9 @@ class UserController extends Controller
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         }
+        if (isset($validated['correo'])) {
+            $validated['correo'] = strtolower(trim($validated['correo']));
+        }
 
         $usuario->fill($validated);
         $usuario->save();
@@ -123,7 +127,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $usuario = User::find($id);
 
@@ -134,11 +138,32 @@ class UserController extends Controller
             ], 404);
         }
 
+        if ((string) $usuario->getAuthIdentifier() === (string) $request->user()->getAuthIdentifier()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No puedes eliminar tu propia cuenta de administrador.',
+            ], 422);
+        }
+
         $usuario->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Usuario eliminado correctamente.',
         ]);
+    }
+
+    private function present(User $usuario): array
+    {
+        return [
+            'id' => (string) $usuario->getAuthIdentifier(),
+            'nombre' => $usuario->nombre,
+            'correo' => $usuario->correo,
+            'foto' => $usuario->foto,
+            'rol' => $usuario->rol,
+            'organizadorVerificado' => (bool) $usuario->organizadorVerificado,
+            'fechaRegistro' => $usuario->fechaRegistro?->toISOString(),
+            'estado' => $usuario->estado,
+        ];
     }
 }

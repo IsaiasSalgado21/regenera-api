@@ -57,13 +57,6 @@ Route::prefix('v1/mapa')->group(function () {
     Route::get('/flora-fauna', [MapApiController::class, 'floraFauna']);
 });
 
-Route::get('/usuarios', [UserController::class, 'index']);
-Route::post('/usuarios', [UserController::class, 'store']);
-Route::get('/usuarios/{id}', [UserController::class, 'show']);
-Route::put('/usuarios/{id}', [UserController::class, 'update']);
-Route::patch('/usuarios/{id}', [UserController::class, 'update']);
-Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
-
 Route::get('/lugares', [LugarController::class, 'index'])->middleware('auth.optional');
 Route::post('/lugares', [LugarController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/lugares/{id}', [LugarController::class, 'show'])->middleware('auth.optional');
@@ -95,6 +88,12 @@ Route::put('/flora-fauna/{id}', [FloraFaunaController::class, 'update'])->middle
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
+        Route::get('/usuarios', [UserController::class, 'index']);
+        Route::post('/usuarios', [UserController::class, 'store']);
+        Route::get('/usuarios/{id}', [UserController::class, 'show']);
+        Route::put('/usuarios/{id}', [UserController::class, 'update']);
+        Route::patch('/usuarios/{id}', [UserController::class, 'update']);
+        Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
         Route::get('/voluntariados/organizadores', [AdminVoluntariadoController::class, 'organizadores']);
         Route::get('/lugares', [AdminLugarController::class, 'index']);
         Route::patch('/voluntariados/{id}/aprobar', [AdminVoluntariadoController::class, 'aprobar']);
