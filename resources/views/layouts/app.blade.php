@@ -28,7 +28,7 @@
 
             <a href="{{ url('/') }}" class="logo">
                 <span class="logo-mark">
-                    <img src="{{ asset('img/logo.svg') }}" alt="Logo Regenera BCS">
+                    <img src="{{ asset('img/path152221.png') }}" alt="Logo Regenera BCS">
                 </span>
                 <span>
                     Regenera<span>BCS</span>
@@ -41,7 +41,6 @@
                 <a href="{{ url('/voluntariados') }}">Voluntariados</a>
                 <a href="{{ route('mapa') }}">Mapa</a>
                 <a href="{{ url('/articulos') }}">Artículos</a>
-                <a href="{{ route('notifications.index') }}" class="user-nav" data-auth-required hidden>Centro de notificaciones</a>
                 <button type="button" class="notification-nav-button" data-notification-toggle
                     aria-label="Abrir notificaciones" aria-expanded="false" hidden>
                     <span aria-hidden="true">♧</span> Notificaciones

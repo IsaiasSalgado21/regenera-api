@@ -3,11 +3,17 @@ import axios from 'axios';
 const page = document.querySelector('[data-notification-center]');
 if (page) {
     const list = page.querySelector('[data-center-list]');
+    const adminColumns = page.querySelector('[data-admin-columns]');
+    const adminLists = {
+        admins: page.querySelector('[data-admin-list="admins"]'),
+        general: page.querySelector('[data-admin-list="general"]'),
+    };
     const status = page.querySelector('[data-center-status]');
     const markAll = page.querySelector('[data-center-mark-all]');
     const token = sessionStorage.getItem('regenera_access_token');
     let notifications = [];
     let filter = 'all';
+    let isAdmin = false;
 
     const headers = {
         Accept: 'application/json',
@@ -23,12 +29,30 @@ if (page) {
 
     function render() {
         const visible = filter === 'unread' ? notifications.filter(item => !item.leida) : notifications;
-        if (!visible.length) {
-            list.innerHTML = '<div class="notification-empty"><span aria-hidden="true">✓</span><p>No hay notificaciones en esta sección.</p></div>';
+        if (isAdmin) {
+            const adminNotifications = visible.filter(item => item.destinatario?.rol === 'admin');
+            const generalNotifications = visible.filter(item => item.destinatario?.rol !== 'admin');
+            list.hidden = true;
+            adminColumns.hidden = false;
+            renderList(adminLists.admins, adminNotifications, 'No hay notificaciones dirigidas a administradores.');
+            renderList(adminLists.general, generalNotifications, 'No hay notificaciones generales para mostrar.');
+            page.querySelector('[data-admin-count="admins"]').textContent = String(adminNotifications.length);
+            page.querySelector('[data-admin-count="general"]').textContent = String(generalNotifications.length);
             return;
         }
 
-        list.innerHTML = visible.map(item => `
+        list.hidden = false;
+        adminColumns.hidden = true;
+        renderList(list, visible, 'No hay notificaciones en esta sección.');
+    }
+
+    function renderList(target, visible, emptyMessage) {
+        if (!visible.length) {
+            target.innerHTML = `<div class="notification-empty"><span aria-hidden="true">✓</span><p>${escapeHtml(emptyMessage)}</p></div>`;
+            return;
+        }
+
+        target.innerHTML = visible.map(item => `
             <article class="notification-center-item ${item.leida ? '' : 'is-unread'}">
                 <div class="notification-center-item-content">
                     <div class="notification-center-item-heading">
@@ -56,6 +80,7 @@ if (page) {
         try {
             const response = await axios.get('/api/notificaciones', { headers });
             notifications = response.data.data ?? [];
+            isAdmin = response.data.esAdmin === true;
             const openedNotificationId = new URLSearchParams(window.location.search).get('pushNotification');
             const openedNotification = notifications.find(item => item.id === openedNotificationId);
             if (openedNotification?.esPropia && !openedNotification.leida) {
@@ -80,7 +105,7 @@ if (page) {
         });
     });
 
-    list.addEventListener('click', async event => {
+    page.addEventListener('click', async event => {
         const button = event.target.closest('[data-center-read]');
         if (!button) return;
         button.disabled = true;

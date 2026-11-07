@@ -24,6 +24,7 @@ class NotificacionController extends Controller
 
         return response()->json([
             'data' => $this->presentMany($notificaciones, $usuario),
+            'esAdmin' => $usuario->rol === 'admin',
             'message' => 'Notificaciones consultadas correctamente.',
         ]);
     }
@@ -42,6 +43,7 @@ class NotificacionController extends Controller
         return response()->json([
             'data' => $this->presentMany($notificaciones, $usuario),
             'count' => $notificaciones->count(),
+            'esAdmin' => $usuario->rol === 'admin',
             'message' => 'Notificaciones no leídas consultadas correctamente.',
         ]);
     }

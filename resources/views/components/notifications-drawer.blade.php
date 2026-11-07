@@ -18,6 +18,11 @@
             Marcar mis notificaciones como leídas
         </button>
     </div>
+    <div class="notification-recipient-filters" data-notification-recipient-filters role="group"
+        aria-label="Filtrar por destinatario" hidden>
+        <button type="button" class="is-active" data-recipient-filter="mine">Del admin</button>
+        <button type="button" data-recipient-filter="others">De otros usuarios</button>
+    </div>
     <a class="notification-center-link" href="{{ route('notifications.index') }}">Ver todas las notificaciones</a>
     <p class="notification-drawer-status" data-notification-status role="status" aria-live="polite"></p>
     <div class="notification-drawer-list" data-notification-list></div>

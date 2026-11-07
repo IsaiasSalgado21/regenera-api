@@ -5,9 +5,12 @@ if (drawer) {
     const toggles = [...document.querySelectorAll('[data-notification-toggle]')];
     const list = drawer.querySelector('[data-notification-list]');
     const status = drawer.querySelector('[data-notification-status]');
+    const recipientFilters = drawer.querySelector('[data-notification-recipient-filters]');
     const badges = [...document.querySelectorAll('[data-notification-badge]')];
     let notifications = [];
     let filter = 'all';
+    let recipientFilter = 'mine';
+    let isAdmin = false;
     let lastFocused = null;
 
     const tokenHeaders = () => {
@@ -39,7 +42,12 @@ if (drawer) {
     }
 
     function render() {
-        const visible = filter === 'unread' ? notifications.filter(item => !item.leida) : notifications;
+        const recipientFiltered = isAdmin
+            ? notifications.filter(item => recipientFilter === 'mine' ? item.esPropia : !item.esPropia)
+            : notifications;
+        const visible = filter === 'unread'
+            ? recipientFiltered.filter(item => !item.leida)
+            : recipientFiltered;
         if (!visible.length) {
             list.innerHTML = '<div class="notification-empty"><span aria-hidden="true">✓</span><p>¡Estás al día!<br>No tienes notificaciones pendientes.</p></div>';
             return;
@@ -67,6 +75,8 @@ if (drawer) {
         try {
             const response = await axios.get('/api/notificaciones', { headers: tokenHeaders() });
             notifications = response.data.data ?? [];
+            isAdmin = response.data.esAdmin === true;
+            recipientFilters.hidden = !isAdmin;
             updateBadge(notifications.filter(item => !item.leida).length);
             render();
             status.textContent = '';
@@ -99,6 +109,15 @@ if (drawer) {
         button.addEventListener('click', () => {
             filter = button.dataset.notificationFilter;
             drawer.querySelectorAll('[data-notification-filter]').forEach(item => item.classList.toggle('is-active', item === button));
+            render();
+        });
+    });
+    drawer.querySelectorAll('[data-recipient-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+            recipientFilter = button.dataset.recipientFilter;
+            drawer.querySelectorAll('[data-recipient-filter]').forEach(item => {
+                item.classList.toggle('is-active', item === button);
+            });
             render();
         });
     });

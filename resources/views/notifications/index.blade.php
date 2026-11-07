@@ -27,6 +27,24 @@
         </div>
         <p class="notification-center-status" data-center-status role="status" aria-live="polite"></p>
         <div class="notification-center-list" data-center-list aria-live="polite"></div>
+        <div class="notification-admin-columns" data-admin-columns hidden>
+            <section class="notification-admin-column notification-admin-column--admins">
+                <header>
+                    <h2>Dirigidas a administradores</h2>
+                    <span data-admin-count="admins">0</span>
+                </header>
+                <p>Avisos enviados a perfiles de administración.</p>
+                <div class="notification-center-list" data-admin-list="admins" aria-live="polite"></div>
+            </section>
+            <section class="notification-admin-column notification-admin-column--general">
+                <header>
+                    <h2>Notificaciones generales</h2>
+                    <span data-admin-count="general">0</span>
+                </header>
+                <p>Avisos dirigidos a usuarios y organizadores.</p>
+                <div class="notification-center-list" data-admin-list="general" aria-live="polite"></div>
+            </section>
+        </div>
     </section>
 </main>
 @endsection
