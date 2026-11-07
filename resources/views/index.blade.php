@@ -6,13 +6,14 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pages.css') }}">
     <link rel="stylesheet" href="{{ asset('css/contenido.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/home.css') }}">
 @endpush
 
 @section('content')
-<main id="inicio">
+<main id="inicio" class="home-page">
 
     <section class="intro">
-        <div class="section-label">REGENERA BCS</div>
+        <div class="section-label">BAJA CALIFORNIA SUR · CONSERVACIÓN EN COMUNIDAD</div>
 
         <h2>
             Pequeñas acciones,<br>
@@ -20,21 +21,17 @@
         </h2>
 
         <p>
-            Una plataforma para conectar a las personas con iniciativas ambientales
-            en Baja California Sur. Encuentra voluntariados, participa en jornadas
-            de limpieza y conservación, y colabora con organizaciones y comunidades
-            que buscan cuidar nuestro entorno. Cada acción cuenta cuando trabajamos
-            juntos por un estado más limpio, consciente y comprometido con su riqueza
-            natural.
+            Conecta con iniciativas ambientales, descubre la biodiversidad del estado
+            y encuentra formas concretas de participar en el cuidado de nuestro entorno.
         </p>
 
         <div class="home-actions">
             <a class="home-primary-link" href="{{ url('/voluntariados') }}">
-                Encuentra un voluntariado <span>→</span>
+                Encuentra dónde participar <span aria-hidden="true">↗</span>
             </a>
 
             <a class="home-secondary-link" href="{{ url('/flora') }}">
-                Conoce nuestro entorno
+                Descubre la biodiversidad <span aria-hidden="true">↗</span>
             </a>
         </div>
     </section>
@@ -132,7 +129,7 @@
                 <p class="hero-small">NUESTRO PATRIMONIO NATURAL</p>
 
                 <h2>
-                    Conoce. <span>Protege.</span> Regenera.
+                    Conoce. <span>Explora.</span> Regenera.
                 </h2>
 
                 <p class="hero-description">
@@ -143,6 +140,9 @@
 
                 <a href="{{ url('/flora') }}" class="panel-button">
                     Explorar flora y fauna <span>→</span>
+                </a>
+                <a href="{{ url('/voluntariados') }}" class="hero-volunteer-link">
+                    Participa en una iniciativa <span aria-hidden="true">↗</span>
                 </a>
             </div>
 
@@ -190,10 +190,45 @@
         </div>
     </section>
 
+    <section class="impact-section" id="impacto">
+        <div class="impact-intro">
+            <span class="home-section-kicker">02 / IMPACTO CONSCIENTE</span>
+            <h2>Participar empieza por saber dónde y cómo.</h2>
+            <p>
+                Cada iniciativa comparte la información disponible para que puedas
+                conocer su fecha, lugar, cupo y descripción antes de sumarte.
+                Sin promesas vacías: acciones claras, en comunidad.
+            </p>
+            <a class="impact-link" href="{{ url('/voluntariados') }}">
+                Conoce las iniciativas <span aria-hidden="true">↗</span>
+            </a>
+        </div>
+        <div class="impact-steps" aria-label="Cómo participar">
+            <a href="{{ url('/voluntariados') }}" class="impact-step">
+                <span>01</span>
+                <strong>Encuentra una actividad</strong>
+                <small>Explora las iniciativas ambientales publicadas.</small>
+                <span class="impact-step-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a href="{{ route('mapa') }}" class="impact-step">
+                <span>02</span>
+                <strong>Ubica el lugar</strong>
+                <small>Consulta los espacios y puntos de interés del estado.</small>
+                <span class="impact-step-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a href="{{ url('/flora') }}" class="impact-step">
+                <span>03</span>
+                <strong>Conoce qué protegemos</strong>
+                <small>Acércate a la flora, fauna y ecosistemas de BCS.</small>
+                <span class="impact-step-arrow" aria-hidden="true">↗</span>
+            </a>
+        </div>
+    </section>
+
     <section class="articles-section" id="articulos">
         <div class="section-heading">
             <div>
-                <span>03 / COMUNIDAD</span>
+                <span>03 / IDEAS Y COMUNIDAD</span>
                 <h2>
                     <a href="{{ url('/articulos') }}">Ideas que generan cambios</a>
                 </h2>
@@ -235,10 +270,25 @@
         </div>
     </section>
 
+    <section class="home-closing">
+        <div class="closing-orbit closing-orbit--one" aria-hidden="true"></div>
+        <div class="closing-orbit closing-orbit--two" aria-hidden="true"></div>
+        <span class="home-section-kicker">EL SIGUIENTE PASO ES TUYO</span>
+        <h2>Conoce el lugar.<br><em>Súmate al cambio.</em></h2>
+        <p>Explora Baja California Sur y encuentra una forma de participar.</p>
+        <div class="home-actions">
+            <a class="home-primary-link" href="{{ url('/voluntariados') }}">
+                Ver voluntariados <span aria-hidden="true">↗</span>
+            </a>
+            <a class="closing-secondary-link" href="{{ route('mapa') }}">
+                Explorar el mapa
+            </a>
+        </div>
+    </section>
 
 </main>
 
-<footer>
+<footer class="home-footer">
     <div class="footer-logo">
         Regenera<span>BCS</span>
     </div>
