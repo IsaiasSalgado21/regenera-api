@@ -1,0 +1,439 @@
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --green-light: #83c8a7;
+    --cream: #101915;
+    --white: #1b2822;
+    --black: #e7eee9;
+    --gray: #aab8b0;
+    --home-ink: #e7eee9;
+    --home-muted: #aab8b0;
+    --home-line: rgb(223 237 228 / 16%);
+    --dashboard-cream: #101915;
+    --dashboard-text: #e7eee9;
+    --dashboard-muted: #aab8b0;
+    --dashboard-border: #35473d;
+    background: #101915;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] body {
+    background: #101915;
+    color: #e7eee9;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+.theme-toggle {
+    display: inline-grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    place-items: center;
+    border: 1px solid rgba(20, 32, 27, .14);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .68);
+    color: #164f3d;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.theme-toggle:hover {
+    background: #fff;
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid #2f8064;
+    outline-offset: 3px;
+}
+
+html[data-theme="dark"] .topbar {
+    border-color: rgb(231 238 233 / 12%);
+    background: rgb(16 25 21 / 90%);
+}
+
+html[data-theme="dark"] .nav a,
+html[data-theme="dark"] .nav .notification-nav-button {
+    color: #d3ded7;
+}
+
+html[data-theme="dark"] .mobile-menu {
+    border-color: rgb(231 238 233 / 12%);
+    background: #141f19;
+}
+
+html[data-theme="dark"] .mobile-menu a,
+html[data-theme="dark"] .menu-button {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .theme-toggle {
+    border-color: #40544a;
+    background: #1b2822;
+    color: #e8c879;
+}
+
+html[data-theme="dark"] .theme-toggle:hover {
+    background: #26372e;
+}
+
+html[data-theme="dark"] :is(
+    .auth-box,
+    .info-card,
+    .article-page-card,
+    .detail-article,
+    .detail-not-found,
+    .create-panel,
+    .article-create-tile,
+    .article-references,
+    .related-articles,
+    .volunteer-card,
+    .volunteer-calendar-card,
+    .volunteer-detail-description,
+    .volunteer-detail-list-section,
+    .volunteer-map-section,
+    .volunteer-detail-map,
+    .volunteer-countdown,
+    .volunteer-ended-notice,
+    .attendance-code-form,
+    .notification-panel,
+    .notification-drawer,
+    .notification-popover,
+    .flora-detail-stage,
+    .flora-stage-data,
+    .volunteer-detail-card,
+    .volunteer-capacity,
+    .volunteer-gallery-thumb,
+    .profile-setting-card,
+    .map-filter-card,
+    .map-info-panel,
+    .map-legend,
+    .dashboard-card,
+    .dashboard-form,
+    .dashboard-location-suggestions,
+    .dashboard-date-popover,
+    .dashboard-dialog
+) {
+    border-color: #35473d;
+    background-color: #1b2822;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(
+    .page-content,
+    .detail-body,
+    .flora-species-detail,
+    .profile-page,
+    .dashboard-shell,
+    .map-content
+) {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(
+    .topbar,
+    .mobile-menu,
+    .auth-box,
+    .info-card,
+    .article-page-card,
+    .detail-article,
+    .detail-not-found,
+    .create-panel,
+    .article-create-tile,
+    .article-references,
+    .related-articles,
+    .volunteer-card,
+    .volunteer-calendar-card,
+    .volunteer-detail-description,
+    .volunteer-detail-list-section,
+    .volunteer-map-section,
+    .volunteer-detail-map,
+    .volunteer-countdown,
+    .volunteer-ended-notice,
+    .notification-panel,
+    .notification-drawer,
+    .notification-popover,
+    .flora-detail-stage,
+    .flora-stage-data,
+    .volunteer-detail-card,
+    .profile-setting-card,
+    .map-filter-card,
+    .map-info-panel,
+    .map-legend,
+    .dashboard-card,
+    .dashboard-form
+) :is(h1, h2, h3, h4, strong, label) {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(
+    .page-intro p,
+    .info-card p,
+    .article-page-content p,
+    .detail-body p,
+    .create-panel > p,
+    .detail-not-found p,
+    .article-create-tile small,
+    .volunteer-detail-description > p,
+    .volunteer-detail-section-heading p,
+    .volunteer-map-unavailable,
+    .volunteer-cta-note,
+    .volunteer-calendar-range,
+    .volunteer-countdown-times p,
+    .volunteer-ended-notice small,
+    .flora-detail-intro p,
+    .flora-stage-description,
+    .flora-stage-information p,
+    .flora-source-section > p,
+    .flora-conservation-card p,
+    .profile-notification-settings > p,
+    .profile-setting-card p,
+    .map-info-panel p,
+    .map-filter-form label,
+    .map-legend li,
+    .dashboard-heading p,
+    .dashboard-card-body > p,
+    .notification-item-content span
+) {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] :is(input, textarea, select) {
+    border-color: #45594e;
+    background-color: #142019;
+    color: #e7eee9;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"] :is(input, textarea, select)::placeholder {
+    color: #91a197;
+}
+
+html[data-theme="dark"] .password-field {
+    border-color: #45594e;
+    background: #142019;
+}
+
+html[data-theme="dark"] .password-field button,
+html[data-theme="dark"] .flora-detail-back,
+html[data-theme="dark"] .article-link,
+html[data-theme="dark"] .detail-label,
+html[data-theme="dark"] .flora-detail-type,
+html[data-theme="dark"] .flora-detail-status strong,
+html[data-theme="dark"] .flora-stage-step.is-active,
+html[data-theme="dark"] .map-info-panel h2,
+html[data-theme="dark"] .dashboard-heading h1,
+html[data-theme="dark"] .dashboard-section-heading h2,
+html[data-theme="dark"] .dashboard-form-heading h3,
+html[data-theme="dark"] .dashboard-card h3,
+html[data-theme="dark"] .dashboard-notification-button {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] #inicio.home-page .volunteer-card,
+html[data-theme="dark"] #inicio.home-page .article-card {
+    border-color: #35473d;
+    background: #1b2822;
+}
+
+html[data-theme="dark"] #inicio.home-page .impact-section {
+    background: #192a22;
+}
+
+html[data-theme="dark"] #inicio.home-page .intro h2,
+html[data-theme="dark"] #inicio.home-page .section-heading h2,
+html[data-theme="dark"] #inicio.home-page .article-content h3,
+html[data-theme="dark"] #inicio.home-page .volunteer-card h3,
+html[data-theme="dark"] #inicio.home-page .impact-intro h2,
+html[data-theme="dark"] #inicio.home-page .impact-step strong {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] #inicio.home-page .impact-step {
+    border-color: rgb(183 229 209 / 24%);
+}
+
+html[data-theme="dark"] #inicio.home-page .impact-step small,
+html[data-theme="dark"] #inicio.home-page .article-content p,
+html[data-theme="dark"] #inicio.home-page .volunteer-heading-right p {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] #inicio.home-page .home-footer,
+html[data-theme="dark"] .home-footer,
+html[data-theme="dark"] .flora-species-detail,
+html[data-theme="dark"] .map-content {
+    background: #101915;
+}
+
+html[data-theme="dark"] :is(.flora-detail-type, .flora-stage-step.is-active) {
+    border-color: #456653;
+    background: #1b3025;
+}
+
+html[data-theme="dark"] .flora-detail-status,
+html[data-theme="dark"] .flora-stage-data {
+    background-color: #1b2822;
+}
+
+html[data-theme="dark"] .flora-species-detail :is(.flora-scientific-name, .flora-detail-status span, .flora-stage-data span, .flora-location-item span) {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .map-filter-form input,
+html[data-theme="dark"] .map-filter-form select {
+    border-color: #45594e;
+    background: #142019;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .map-clear-button {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .map-legend {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .notification-drawer-header {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .notification-drawer-header h2,
+html[data-theme="dark"] .notification-drawer-close,
+html[data-theme="dark"] .notification-item-content strong {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .notification-item.is-unread,
+html[data-theme="dark"] .notification-item.priority-normal,
+html[data-theme="dark"] .notification-item.priority-high,
+html[data-theme="dark"] .notification-item:hover,
+html[data-theme="dark"] .notification-item:focus-visible {
+    border-color: #456653;
+    background: #22362b;
+}
+
+html[data-theme="dark"] .notification-item-icon,
+html[data-theme="dark"] .notification-empty span {
+    background: #294536;
+    color: #c5ead4;
+}
+
+html[data-theme="dark"] .dashboard-tabs {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .dashboard-tab {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .dashboard-tab.is-active {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .dashboard-notice {
+    background: #1d3a2b;
+    color: #c7ecd5;
+}
+
+html[data-theme="dark"] :is(.dashboard-notice.is-error, .dashboard-error, .dashboard-access-error) {
+    background: #3a2521;
+    color: #ffd1c6;
+}
+
+html[data-theme="dark"] .dashboard-button-secondary,
+html[data-theme="dark"] .button-secondary,
+html[data-theme="dark"] .dashboard-place-carousel-button {
+    border-color: #45594e;
+    background: #1b2822;
+    color: #d7e8dd;
+}
+
+html[data-theme="dark"] .status-publicado,
+html[data-theme="dark"] .status-activa,
+html[data-theme="dark"] .status-completada,
+html[data-theme="dark"] .status-normal {
+    background: #1d3a2b;
+    color: #bce6c9;
+}
+
+html[data-theme="dark"] .status-pendiente,
+html[data-theme="dark"] .status-alta {
+    background: #3b3420;
+    color: #f0d889;
+}
+
+html[data-theme="dark"] .status-cancelado,
+html[data-theme="dark"] .status-cancelada,
+html[data-theme="dark"] .status-rechazado,
+html[data-theme="dark"] .status-urgente {
+    background: #402723;
+    color: #ffc0b5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme="dark"] body {
+        transition: none;
+    }
+}
+
+html[data-theme="dark"] .article-create-tile {
+    border-color: #456653;
+    background: #1b3025;
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .article-create-tile:hover,
+html[data-theme="dark"] .article-create-tile:focus-visible {
+    border-color: #83c8a7;
+    background: #223b2e;
+}
+
+html[data-theme="dark"] :is(footer, .page-footer, .home-footer) {
+    border-color: rgb(231 238 233 / 12%);
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .footer-logo {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] :is(
+    .volunteer-detail-section-heading h2,
+    .volunteer-detail-description h3,
+    .volunteer-detail-list-section h3,
+    .volunteer-detail-card > h2,
+    .volunteer-calendar-card h3,
+    .volunteer-detail-fact strong,
+    .volunteer-enrollment-message,
+    .volunteer-countdown,
+    .volunteer-countdown-times time
+) {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(.volunteer-detail-chips li, .volunteer-countdown, .volunteer-ended-notice) {
+    border-color: #3a5344;
+    background: #203328;
+    color: #d6e5db;
+}
+
+html[data-theme="dark"] .volunteer-detail-chips--materials li {
+    border-color: #5b4b2d;
+    background: #342d1e;
+    color: #ead9ad;
+}
+
+html[data-theme="dark"] .volunteer-capacity-bar {
+    background: #35473d;
+}
+
+html[data-theme="dark"] .volunteer-cancel-cta {
+    border-color: #78443d;
+    background: #332420;
+    color: #ffc0b5;
+}
+
+html[data-theme="dark"] .volunteer-map-unavailable {
+    background: #22332a;
+}

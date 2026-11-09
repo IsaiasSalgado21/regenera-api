@@ -3,6 +3,31 @@
  */
 (function () {
     const token = () => sessionStorage.getItem("regenera_access_token");
+    const themeToggle = document.querySelector("[data-theme-toggle]");
+
+    function setTheme(theme, save = false) {
+        document.documentElement.dataset.theme = theme;
+
+        if (themeToggle) {
+            const isDark = theme === "dark";
+            themeToggle.setAttribute("aria-label", isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+            themeToggle.setAttribute("aria-pressed", String(isDark));
+            themeToggle.querySelector("[data-theme-icon]").textContent = isDark ? "☀" : "☾";
+        }
+
+        if (save) {
+            const secure = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = `regenera_theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+        }
+    }
+
+    if (themeToggle) {
+        setTheme(document.documentElement.dataset.theme || "light");
+        themeToggle.addEventListener("click", () => {
+            const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+            setTheme(nextTheme, true);
+        });
+    }
 
     async function currentUser() {
         if (!token()) return null;

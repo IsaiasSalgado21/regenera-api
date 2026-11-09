@@ -5,6 +5,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        (() => {
+            const savedTheme = document.cookie
+                .split('; ')
+                .find(cookie => cookie.startsWith('regenera_theme='))
+                ?.split('=')[1];
+            const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+
+            document.documentElement.dataset.theme = savedTheme === 'dark'
+                || (savedTheme !== 'light' && prefersDark)
+                ? 'dark'
+                : 'light';
+        })();
+    </script>
 
     <title>@yield('title', 'Regenera BCS')</title>
 
@@ -17,6 +31,7 @@
     {{-- Estilos compilados con Vite --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @stack('styles')
+        <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
     </head>
 
     <body>
@@ -55,6 +70,9 @@
                 @endauth
             </nav>
 
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Cambiar a modo oscuro" aria-pressed="false" title="Cambiar tema">
+                <span aria-hidden="true" data-theme-icon>☾</span>
+            </button>
             <button class="menu-button" id="menuButton" aria-label="Abrir menú">☰</button>
         </header>
 
