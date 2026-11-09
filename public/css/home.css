@@ -333,8 +333,6 @@
 #inicio.home-page .volunteer-card:nth-child(2),
 #inicio.home-page .volunteer-card:nth-child(3) {
     grid-column: span 6;
-    display: grid;
-    grid-template-columns: minmax(150px, .8fr) 1fr;
 }
 
 #inicio.home-page .volunteer-card:first-child .volunteer-image {
@@ -943,5 +941,131 @@
     #inicio.home-page *::after {
         scroll-behavior: auto !important;
         transition-duration: .01ms !important;
+    }
+}
+
+#inicio.home-page .volunteer-card {
+    cursor: pointer;
+    transition:
+        transform .3s ease,
+        box-shadow .3s ease,
+        border-color .3s ease;
+}
+
+#inicio.home-page .volunteer-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(47, 128, 100, .3);
+    box-shadow: 0 12px 28px rgba(20, 32, 27, .09);
+}
+
+#inicio.home-page .volunteer-card-link {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    color: inherit;
+    text-decoration: none;
+}
+
+#inicio.home-page .volunteer-card-link:focus-visible {
+    outline: 2px solid #2f8064;
+    outline-offset: 4px;
+}
+
+#inicio.home-page .volunteer-card:nth-child(2) .volunteer-card-link,
+#inicio.home-page .volunteer-card:nth-child(3) .volunteer-card-link {
+    display: grid;
+    grid-template-columns: minmax(130px, .8fr) minmax(0, 1fr);
+}
+
+#inicio.home-page .volunteer-card-link .volunteer-image {
+    width: 100%;
+}
+
+#inicio.home-page .volunteer-card-link .volunteer-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+#inicio.home-page .volunteer-card-link .volunteer-link {
+    margin-top: auto;
+    padding-top: 18px;
+}
+
+/* Volunteer card interaction */
+#inicio.home-page .volunteer-card {
+    position: relative;
+    overflow: hidden;
+}
+
+#inicio.home-page .volunteer-card-link {
+    position: relative;
+    overflow: hidden;
+}
+
+#inicio.home-page .volunteer-card-hover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(15, 45, 34, .78);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+}
+
+#inicio.home-page .volunteer-card-hover .hover-arrow {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 50%;
+    font-size: 16px;
+    transform: translate(-5px, 5px);
+    transition: transform .3s ease;
+}
+
+#inicio.home-page .volunteer-card:hover .volunteer-card-hover {
+    opacity: 1;
+}
+
+#inicio.home-page .volunteer-card:hover .hover-arrow {
+    transform: translate(0, 0);
+}
+
+#inicio.home-page .volunteer-card-link:focus-visible .volunteer-card-hover {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    #inicio.home-page .volunteer-card-hover {
+        inset: auto 12px 12px auto;
+        padding: 9px 12px;
+        border-radius: 3px;
+        background: rgba(15, 45, 34, .88);
+        opacity: 1;
+        font-size: 10px;
+    }
+
+    #inicio.home-page .volunteer-card-hover .hover-arrow {
+        width: 23px;
+        height: 23px;
+    }
+}
+
+@media (max-width: 600px) {
+    #inicio.home-page .volunteer-card:nth-child(2) .volunteer-card-link,
+    #inicio.home-page .volunteer-card:nth-child(3) .volunteer-card-link {
+        display: flex;
+        flex-direction: column;
     }
 }

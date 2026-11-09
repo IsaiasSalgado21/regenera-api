@@ -29,49 +29,53 @@
         <div class="volunteer-grid">
             @forelse ($voluntariados as $voluntariado)
                 <article class="volunteer-card">
-                    <div
-                        class="volunteer-image"
-                        style="background-image: url('{{ $voluntariado['imagen'] }}')"
+                    <a
+                        class="volunteer-card-link"
+                        href="{{ url('/voluntariados/' . $voluntariado['id']) }}"
+                        aria-label="Conocer iniciativa: {{ $voluntariado['titulo'] }}"
                     >
-                        @if ($voluntariado['fecha'])
-                            <span class="volunteer-date">
-                                {{ $voluntariado['fecha'] }}
-                            </span>
-                        @endif
-                    </div>
-
-                    <div class="volunteer-card-content">
-                        <span class="volunteer-category">
-                            {{ ucfirst($voluntariado['categoria']) }}
-                        </span>
-
-                        <h3>{{ $voluntariado['titulo'] }}</h3>
-
-                        <div class="volunteer-meta">
+                        <div
+                            class="volunteer-image"
+                            style="background-image: url('{{ $voluntariado['imagen'] }}')"
+                        >
                             @if ($voluntariado['fecha'])
-                                <span>📅 {{ $voluntariado['fecha'] }}</span>
-                            @endif
-
-                            @if ($voluntariado['lugar'])
-                                <span>📍 {{ $voluntariado['lugar'] }}</span>
-                            @endif
-
-                            @if ($voluntariado['cupo'])
-                                <span>👥 Cupo: {{ $voluntariado['cupo'] }}</span>
+                                <span class="volunteer-date">
+                                    {{ $voluntariado['fecha'] }}
+                                </span>
                             @endif
                         </div>
 
-                        <p>
-                            {{ \Illuminate\Support\Str::limit($voluntariado['descripcion'], 110) }}
-                        </p>
+                        <div class="volunteer-card-content">
+                            <span class="volunteer-category">
+                                {{ ucfirst($voluntariado['categoria']) }}
+                            </span>
 
-                        <a
-                            class="volunteer-link"
-                            href="{{ url('/voluntariados/' . $voluntariado['id']) }}"
-                        >
-                            Conocer iniciativa <span>→</span>
-                        </a>
-                    </div>
+                            <h3>{{ $voluntariado['titulo'] }}</h3>
+
+                            <div class="volunteer-meta">
+                                @if ($voluntariado['fecha'])
+                                    <span>📅 {{ $voluntariado['fecha'] }}</span>
+                                @endif
+
+                                @if ($voluntariado['lugar'])
+                                    <span>📍 {{ $voluntariado['lugar'] }}</span>
+                                @endif
+
+                                @if ($voluntariado['cupo'])
+                                    <span>👥 Cupo: {{ $voluntariado['cupo'] }}</span>
+                                @endif
+                            </div>
+
+                            <p>
+                                {{ \Illuminate\Support\Str::limit($voluntariado['descripcion'], 110) }}
+                            </p>
+
+                            <div class="volunteer-card-hover" aria-hidden="true">
+                                <span>Explorar voluntariado</span>
+                                <span class="hover-arrow">↗</span>
+                            </div>
+                        </div>
+                    </a>
                 </article>
             @empty
                 <p class="empty-state">
