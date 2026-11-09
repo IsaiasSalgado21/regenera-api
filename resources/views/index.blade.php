@@ -12,30 +12,6 @@
 @section('content')
 <main id="inicio" class="home-page">
 
-    <section class="intro">
-        <div class="section-label">BAJA CALIFORNIA SUR · CONSERVACIÓN EN COMUNIDAD</div>
-
-        <h2>
-            Pequeñas acciones,<br>
-            grandes cambios.
-        </h2>
-
-        <p>
-            Conecta con iniciativas ambientales, descubre la biodiversidad del estado
-            y encuentra formas concretas de participar en el cuidado de nuestro entorno.
-        </p>
-
-        <div class="home-actions">
-            <a class="home-primary-link" href="{{ url('/voluntariados') }}">
-                Encuentra dónde participar <span aria-hidden="true">↗</span>
-            </a>
-
-            <a class="home-secondary-link" href="{{ url('/flora') }}">
-                Descubre la biodiversidad <span aria-hidden="true">↗</span>
-            </a>
-        </div>
-    </section>
-
     <section class="volunteer-section" id="voluntariados">
         <div class="section-heading volunteer-heading">
             <div>
@@ -44,11 +20,6 @@
             </div>
 
             <div class="volunteer-heading-right">
-                <p>
-                    Pasa de la intención a la acción. Descubre jornadas e iniciativas
-                    donde puedes aportar tu tiempo y ayudar a cuidar Baja California Sur.
-                </p>
-
                 <a href="{{ url('/voluntariados') }}" class="section-link">
                     Explorar voluntariados <span>→</span>
                 </a>
@@ -110,6 +81,7 @@
             @endforelse
         </div>
     </section>
+    
 
     <section class="hero" aria-label="Flora y fauna de Baja California Sur">
         <div class="hero-panel" id="floraPanel" data-base-url="{{ url('/') }}">
@@ -132,17 +104,8 @@
                     Conoce. <span>Explora.</span> Regenera.
                 </h2>
 
-                <p class="hero-description">
-                    Conocer la biodiversidad de nuestro estado es el primer paso
-                    para comprender por qué vale la pena protegerla. Descubre las
-                    especies y los ecosistemas que hacen único a Baja California Sur.
-                </p>
-
                 <a href="{{ url('/flora') }}" class="panel-button">
                     Explorar flora y fauna <span>→</span>
-                </a>
-                <a href="{{ url('/voluntariados') }}" class="hero-volunteer-link">
-                    Participa en una iniciativa <span aria-hidden="true">↗</span>
                 </a>
             </div>
 
