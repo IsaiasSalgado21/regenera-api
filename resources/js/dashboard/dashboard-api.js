@@ -48,6 +48,7 @@ export const dashboardApi = {
     listPlaces: role => request('get', role === 'admin' ? '/api/admin/lugares' : '/api/lugares'),
     listFlora: role => request('get', role === 'admin' ? '/api/admin/flora-fauna' : '/api/flora-fauna'),
     listVoluntariados: () => request('get', '/api/admin/voluntariados'),
+    voluntariadoDashboard: id => request('get', `/api/admin/voluntariados/${id}/dashboard`),
     listOrganizadores: () => request('get', '/api/admin/voluntariados/organizadores'),
     listUsers: () => request('get', '/api/admin/usuarios'),
     saveUser: (id, data) => request(id ? 'put' : 'post', id ? `/api/admin/usuarios/${id}` : '/api/admin/usuarios', data),

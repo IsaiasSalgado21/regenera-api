@@ -157,8 +157,8 @@ function initializeDashboard() {
         });
     }
 
-    function card({ title, description, meta, id, actions = '', media = '' }) {
-        return `<article class="dashboard-card" data-record-id="${escapeHtml(id)}">
+    function card({ title, description, meta, id, actions = '', media = '', interactive = false }) {
+        return `<article class="dashboard-card${interactive ? ' dashboard-card-interactive' : ''}" data-record-id="${escapeHtml(id)}"${interactive ? ` data-open-volunteer="${escapeHtml(id)}" tabindex="0" role="button" aria-label="Abrir dashboard de ${escapeHtml(title)}"` : ''}>
             ${media}
             <div class="dashboard-card-body">
                 <div class="dashboard-card-meta">${meta}</div>
@@ -359,6 +359,7 @@ function initializeDashboard() {
                 id: voluntariado.id,
                 actions,
                 media: attendanceQr,
+                interactive: true,
             });
         }).join('');
 
@@ -378,6 +379,201 @@ function initializeDashboard() {
         });
 
         showResourceState('voluntariados', list.length ? 'ready' : 'empty');
+    }
+
+    function formatDateTime(value) {
+        if (!value) return 'Sin registro';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime())
+            ? String(value)
+            : new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    }
+
+    function formatEventDate(value) {
+        if (!value) return 'Sin fecha';
+        const [year, month, day] = String(value).slice(0, 10).split('-').map(Number);
+        return year && month && day ? `${day}/${month}/${year}` : String(value);
+    }
+
+    function detailList(values) {
+        const items = (Array.isArray(values) ? values : values ? [values] : []).filter(Boolean);
+        return items.length
+            ? `<ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
+            : '<p class="volunteer-detail-empty">No especificado</p>';
+    }
+
+    function renderVolunteerDashboard(data) {
+        const { voluntariado, estadisticas, participantes } = data;
+        const qrActivo = Boolean(voluntariado.codigoAsistenciaActivo);
+        const canEdit = user.rol === 'admin' || ['pendiente', 'rechazado'].includes(voluntariado.estado);
+        const image = voluntariado.imagen
+            ? `<img class="volunteer-detail-cover" src="${escapeHtml(voluntariado.imagen)}" alt="" loading="lazy">`
+            : '';
+        const lugar = voluntariado.lugar
+            ? [voluntariado.lugar.nombre, voluntariado.lugar.municipio, voluntariado.lugar.direccion].filter(Boolean).join(' · ')
+            : 'Lugar no disponible';
+        const actionButtons = `${canEdit ? action('Editar voluntariado', 'edit-voluntariado', voluntariado.id) : ''}`;
+        const people = participantes.map(participante => {
+            const estadoInscripcion = participante.estadoInscripcion || 'desconocido';
+            const cancelado = estadoInscripcion === 'cancelada';
+            const confirmada = Boolean(participante.asistencia?.confirmada);
+            const estadoAsistencia = cancelado ? 'cancelada' : confirmada ? 'confirmada' : 'pendiente';
+            const nombre = participante.nombre || 'Usuario sin nombre';
+            const inicial = escapeHtml(nombre.trim().charAt(0).toLocaleUpperCase() || '?');
+            const avatar = typeof participante.foto === 'string' && participante.foto
+                ? `<img src="${escapeHtml(participante.foto)}" alt="" loading="lazy">`
+                : inicial;
+            const fechaAsistencia = participante.asistencia
+                ? (participante.asistencia.fecha
+                    ? formatDateTime(participante.asistencia.fecha)
+                    : participante.asistencia.hora || 'Sin fecha')
+                : 'Pendiente';
+            return `<tr data-participant-row data-name="${escapeHtml(nombre.toLocaleLowerCase())}" data-email="${escapeHtml(participante.correo || '').toLocaleLowerCase()}" data-inscription="${escapeHtml(estadoInscripcion)}" data-attendance="${estadoAsistencia}">
+                <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${escapeHtml(nombre)}</strong><small>${escapeHtml(participante.correo || 'Sin correo')}</small></span></div></td>
+                <td>${formatDateTime(participante.fechaInscripcion)}</td>
+                <td><span class="volunteer-state volunteer-state-${escapeHtml(estadoInscripcion)}">${escapeHtml(estadoInscripcion)}</span></td>
+                <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${cancelado ? 'Cancelada' : confirmada ? 'Confirmada' : 'Pendiente'}</span></td>
+                <td>${escapeHtml(fechaAsistencia)}</td>
+                <td>${escapeHtml(participante.asistencia?.metodo || '—')}</td>
+                <td><details class="volunteer-person-details"><summary>Ficha</summary><div><span>Identificador</span><code>${escapeHtml(participante.usuarioId || '—')}</code>${participante.observaciones ? `<span>Observaciones</span><p>${escapeHtml(participante.observaciones)}</p>` : ''}</div></details></td>
+            </tr>`;
+        }).join('');
+        const qrToken = voluntariado.tokenAsistencia || '';
+        const qrNotice = qrToken
+            ? `<div class="volunteer-qr-layout">
+                <div class="volunteer-qr-frame"><canvas id="volunteerDetailQr" aria-label="Código QR de asistencia"></canvas></div>
+                <div class="volunteer-qr-info">
+                    <span class="volunteer-status ${qrActivo ? 'is-active' : 'is-inactive'}"><i></i>${qrActivo ? 'Código activo' : 'Código desactivado'}</span>
+                    <p>Este QR utiliza el token almacenado para este voluntariado. Solo permite registrar asistencia cuando está activo.</p>
+                    <label for="volunteerQrToken">Token de asistencia</label>
+                    <div class="volunteer-token-row"><code id="volunteerQrToken">${escapeHtml(qrToken)}</code><button class="button button-secondary" type="button" data-copy-volunteer-token>Copiar</button></div>
+                    <p class="volunteer-qr-usage">${Number(estadisticas.registrosQr) || 0} registros confirmados con método QR</p>
+                    <div class="volunteer-detail-actions">
+                        <button class="button button-primary" type="button" data-action="toggle-attendance-qr" data-id="${escapeHtml(voluntariado.id)}" data-active="${qrActivo ? 'false' : 'true'}">${qrActivo ? 'Desactivar QR' : 'Activar QR'}</button>
+                        <button class="button button-secondary" type="button" data-download-volunteer-qr disabled>Descargar QR</button>
+                    </div>
+                </div>
+            </div>`
+            : '<p class="volunteer-detail-empty">Este voluntariado no tiene un token de asistencia disponible.</p>';
+
+        byId('voluntariadoDetailContent').innerHTML = `
+            <div class="volunteer-detail-toolbar">
+                <button class="volunteer-back-button" type="button" data-volunteer-back><span aria-hidden="true">←</span> Voluntariados</button>
+                <div class="volunteer-detail-actions">${actionButtons}</div>
+            </div>
+            <header class="volunteer-detail-hero">
+                ${image}
+                <div class="volunteer-detail-hero-content">
+                    <div class="volunteer-detail-kicker"><span class="volunteer-status ${voluntariado.estado === 'publicado' ? 'is-active' : 'is-inactive'}"><i></i>${escapeHtml(voluntariado.estado || 'Sin estado')}</span><span>${escapeHtml(voluntariado.categoria || 'Voluntariado')}</span></div>
+                    <h2>${escapeHtml(voluntariado.titulo)}</h2>
+                    <p>${escapeHtml(voluntariado.descripcion || 'Sin descripción disponible.')}</p>
+                    <div class="volunteer-hero-meta"><span>◷ ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>⌖ ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
+                </div>
+            </header>
+            <div class="volunteer-stat-grid">
+                <article class="volunteer-stat-card"><span>Inscritos</span><strong>${Number(estadisticas.inscritos) || 0}<small> / ${Number(estadisticas.cupo) || 0}</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.ocupacion) || 0))}%"></i></div><small>${Number(estadisticas.disponibles) || 0} lugares disponibles</small></article>
+                <article class="volunteer-stat-card"><span>Ocupación</span><strong>${Number(estadisticas.ocupacion) || 0}<small>%</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.ocupacion) || 0))}%"></i></div><small>Del cupo total</small></article>
+                <article class="volunteer-stat-card"><span>Asistencias confirmadas</span><strong>${Number(estadisticas.asistencias) || 0}<small> / ${Number(estadisticas.inscritos) || 0}</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.porcentajeAsistencia) || 0))}%"></i></div><small>${Number(estadisticas.porcentajeAsistencia) || 0}% de inscritos</small></article>
+                <article class="volunteer-stat-card"><span>Pendientes de asistencia</span><strong>${Number(estadisticas.pendientes) || 0}</strong><small>${Number(estadisticas.canceladas) || 0} inscripciones canceladas</small></article>
+            </div>
+            <div class="volunteer-dashboard-columns">
+                <section class="volunteer-panel volunteer-participants-panel">
+                    <div class="volunteer-panel-heading"><div><span class="volunteer-panel-eyebrow">COMUNIDAD</span><h3>Participantes</h3></div><span class="volunteer-result-count" id="volunteerParticipantCount">${participantes.length} resultados</span></div>
+                    <div class="volunteer-participant-filters">
+                        <label class="volunteer-search"><span aria-hidden="true">⌕</span><input type="search" data-participant-search placeholder="Buscar nombre o correo" aria-label="Buscar participantes"></label>
+                        <select data-participant-inscription aria-label="Filtrar por estado de inscripción"><option value="">Todas las inscripciones</option><option value="inscrita">Inscrita</option><option value="activa">Activa</option><option value="completada">Completada</option><option value="cancelada">Cancelada</option></select>
+                        <select data-participant-attendance aria-label="Filtrar por asistencia"><option value="">Todas las asistencias</option><option value="confirmada">Confirmada</option><option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option></select>
+                    </div>
+                    <div class="volunteer-participant-scroll"><table class="volunteer-participant-table"><thead><tr><th>Participante</th><th>Fecha de inscripción</th><th>Estado de inscripción</th><th>Asistencia</th><th>Registro de asistencia</th><th>Método</th><th></th></tr></thead><tbody>${people || '<tr><td class="volunteer-table-empty" colspan="7">Todavía no hay inscripciones para este voluntariado.</td></tr>'}</tbody></table></div>
+                </section>
+                <section class="volunteer-panel volunteer-qr-panel"><div class="volunteer-panel-heading"><div><span class="volunteer-panel-eyebrow">CONTROL DE ACCESO</span><h3>Asistencia por QR</h3></div></div>${qrNotice}</section>
+            </div>
+            <details class="volunteer-panel volunteer-full-details"><summary><span><span class="volunteer-panel-eyebrow">INFORMACIÓN DEL EVENTO</span><strong>Detalles completos</strong></span><span aria-hidden="true">＋</span></summary>
+                <div class="volunteer-information-grid">
+                    <section><h4>Actividad</h4><dl><dt>Título</dt><dd>${escapeHtml(voluntariado.titulo)}</dd><dt>Descripción</dt><dd>${escapeHtml(voluntariado.descripcion || 'Sin descripción')}</dd><dt>Categoría</dt><dd>${escapeHtml(voluntariado.categoria || '—')}</dd><dt>Identificador</dt><dd><code>${escapeHtml(voluntariado.id)}</code></dd></dl></section>
+                    <section><h4>Fecha y lugar</h4><dl><dt>Inicio</dt><dd>${escapeHtml(formatEventDate(voluntariado.fechaInicio))} · ${escapeHtml(voluntariado.horaInicio || '—')}</dd><dt>Finalización</dt><dd>${escapeHtml(formatEventDate(voluntariado.fechaFin))} · ${escapeHtml(voluntariado.horaFin || '—')}</dd><dt>Lugar</dt><dd>${escapeHtml(lugar)}</dd><dt>Id del lugar</dt><dd><code>${escapeHtml(voluntariado.lugarId || '—')}</code></dd><dt>Coordenadas</dt><dd>${voluntariado.latitud != null && voluntariado.longitud != null ? `${escapeHtml(voluntariado.latitud)}, ${escapeHtml(voluntariado.longitud)}` : 'No disponibles'}</dd><dt>Cupo</dt><dd>${Number(estadisticas.cupo) || 0} personas</dd></dl></section>
+                    <section><h4>Organización</h4><dl><dt>Responsable</dt><dd>${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</dd><dt>Correo</dt><dd>${escapeHtml(voluntariado.organizador?.correo || '—')}</dd><dt>Estado</dt><dd>${escapeHtml(voluntariado.estado || '—')}</dd><dt>Creado</dt><dd>${escapeHtml(formatDateTime(voluntariado.creadoEn))}</dd><dt>Actualizado</dt><dd>${escapeHtml(formatDateTime(voluntariado.actualizadoEn))}</dd></dl></section>
+                    <section><h4>Preparación</h4><div class="volunteer-detail-list"><strong>Requisitos</strong>${detailList(voluntariado.requisitos)}<strong>Materiales necesarios</strong>${detailList(voluntariado.materiales)}</div></section>
+                </div>
+            </details>`;
+
+        applyParticipantFilters();
+        if (qrToken) {
+            const canvas = byId('volunteerDetailQr');
+            const scanUrl = `${root.dataset.attendanceUrl}#${encodeURIComponent(qrToken)}`;
+            QRCode.toCanvas(canvas, scanUrl, {
+                width: 256,
+                margin: 2,
+                color: { dark: '#164f3d', light: '#ffffff' },
+            }).then(() => {
+                const downloadButton = byId('voluntariadoDetailContent').querySelector('[data-download-volunteer-qr]');
+                if (downloadButton) downloadButton.disabled = false;
+            }).catch(error => {
+                console.error('No se pudo generar el código QR de asistencia.', error);
+                canvas.replaceWith(Object.assign(document.createElement('p'), {
+                    className: 'volunteer-detail-empty',
+                    textContent: 'No se pudo mostrar el código QR.',
+                }));
+            });
+        }
+    }
+
+    function applyParticipantFilters() {
+        const content = byId('voluntariadoDetailContent');
+        const search = content.querySelector('[data-participant-search]')?.value.trim().toLocaleLowerCase() || '';
+        const inscription = content.querySelector('[data-participant-inscription]')?.value || '';
+        const attendance = content.querySelector('[data-participant-attendance]')?.value || '';
+        let visible = 0;
+        content.querySelectorAll('[data-participant-row]').forEach(row => {
+            const matches = (!search || row.dataset.name.includes(search) || row.dataset.email.includes(search))
+                && (!inscription || row.dataset.inscription === inscription)
+                && (!attendance || row.dataset.attendance === attendance);
+            row.hidden = !matches;
+            if (matches) visible += 1;
+        });
+        const counter = byId('volunteerParticipantCount');
+        if (counter) counter.textContent = `${visible} ${visible === 1 ? 'resultado' : 'resultados'}`;
+    }
+
+    function setVolunteerListVisible(visible, clearUrl = true) {
+        const list = byId('voluntariadoListView');
+        const detail = byId('voluntariadoDetailView');
+        list.hidden = !visible;
+        detail.hidden = visible;
+        openVolunteerId = visible ? null : openVolunteerId;
+        if (visible) {
+            byId('voluntariadoDetailContent').replaceChildren();
+            byId('voluntariadoDetailLoading').hidden = true;
+            byId('voluntariadoDetailError').hidden = true;
+            if (clearUrl) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('voluntariado');
+                window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+            }
+        }
+    }
+
+    async function showVolunteerDetail(id, updateHistory = true) {
+        openVolunteerId = String(id);
+        setVolunteerListVisible(false, false);
+        byId('voluntariadoDetailError').hidden = true;
+        byId('voluntariadoDetailContent').replaceChildren();
+        byId('voluntariadoDetailLoading').hidden = false;
+        if (updateHistory) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('voluntariado', openVolunteerId);
+            window.history.pushState({ volunteerDashboard: true }, '', `${url.pathname}${url.search}${url.hash}`);
+        }
+        try {
+            const response = await dashboardApi.voluntariadoDashboard(openVolunteerId);
+            if (openVolunteerId !== String(id)) return;
+            byId('voluntariadoDetailLoading').hidden = true;
+            renderVolunteerDashboard(response.data);
+        } catch (error) {
+            byId('voluntariadoDetailLoading').hidden = true;
+            byId('voluntariadoDetailErrorMessage').textContent = error.message;
+            byId('voluntariadoDetailError').hidden = false;
+        }
     }
 
     function renderUsers() {
@@ -1236,6 +1432,9 @@ function initializeDashboard() {
             showNotice('La acción se completó correctamente.');
 
             await refreshCurrentSection();
+            if (actionName === 'toggle-attendance-qr' && openVolunteerId) {
+                await showVolunteerDetail(openVolunteerId, false);
+            }
 
             if (actionName === 'read-notification') {
                 await loadNotifications(true);
@@ -1258,6 +1457,7 @@ function initializeDashboard() {
 
     let activeSection = 'articles';
     let user;
+    let openVolunteerId = null;
     let rejectArticleId = null;
     let rejectResource = 'article';
     let pendingAction = null;
@@ -1348,6 +1548,7 @@ function initializeDashboard() {
 
     root.querySelectorAll('[data-section]').forEach(tab => {
         tab.addEventListener('click', async () => {
+            if (openVolunteerId) setVolunteerListVisible(true);
             activeSection = tab.dataset.section;
             root.querySelectorAll('.dashboard-tab').forEach(item => item.classList.toggle('is-active', item === tab));
             root.querySelectorAll('.dashboard-section').forEach(section => {
@@ -1375,6 +1576,8 @@ function initializeDashboard() {
                     .forEach(option => option.classList.remove('is-selected'));
             }
         }
+
+        if (event.target.closest('[data-participant-search]')) applyParticipantFilters();
     });
 
     root.addEventListener('focusin', event => {
@@ -1412,6 +1615,10 @@ function initializeDashboard() {
     });
 
     root.addEventListener('change', event => {
+        if (event.target.closest('[data-participant-inscription], [data-participant-attendance]')) {
+            applyParticipantFilters();
+            return;
+        }
         const imageInput = event.target.closest('[data-image-input]');
         if (imageInput) {
             const field = imageInput.closest('[data-image-field]');
@@ -1595,6 +1802,41 @@ function initializeDashboard() {
         }
 
         const retry = event.target.closest('[data-retry]');
+        if (event.target.closest('[data-volunteer-retry]')) {
+            if (openVolunteerId) await showVolunteerDetail(openVolunteerId, false);
+            return;
+        }
+        if (event.target.closest('[data-volunteer-back]')) {
+            if (window.history.state?.volunteerDashboard) {
+                window.history.back();
+            } else {
+                setVolunteerListVisible(true);
+            }
+            return;
+        }
+        if (event.target.closest('[data-copy-volunteer-token]')) {
+            const token = byId('volunteerQrToken')?.textContent || '';
+            try {
+                await navigator.clipboard.writeText(token);
+                showNotice('Token copiado al portapapeles.');
+            } catch (error) {
+                console.error('No se pudo copiar el token QR.', error);
+                showNotice('No se pudo copiar el token. Selecciónalo y cópialo manualmente.', 'error');
+            }
+            return;
+        }
+        if (event.target.closest('[data-download-volunteer-qr]')) {
+            const canvas = byId('volunteerDetailQr');
+            if (!canvas) {
+                showNotice('El código QR todavía no está disponible para descargar.', 'error');
+                return;
+            }
+            const download = document.createElement('a');
+            download.href = canvas.toDataURL('image/png');
+            download.download = `regenera-qr-${openVolunteerId}.png`;
+            download.click();
+            return;
+        }
         if (retry?.dataset.retry === 'notifications') {
             await loadNotifications(true);
             return;
@@ -1614,7 +1856,33 @@ function initializeDashboard() {
             return;
         }
         const actionButton = event.target.closest('[data-action]');
-        if (actionButton) await handleAction(actionButton);
+        if (actionButton) {
+            if (actionButton.dataset.action === 'edit-voluntariado' && openVolunteerId) {
+                setVolunteerListVisible(true);
+            }
+            await handleAction(actionButton);
+            return;
+        }
+        const volunteerCard = event.target.closest('[data-open-volunteer]');
+        if (volunteerCard && !event.target.closest('button, a, input, select, textarea, [data-action]')) {
+            await showVolunteerDetail(volunteerCard.dataset.openVolunteer);
+        }
+    });
+
+    root.addEventListener('keydown', async event => {
+        const volunteerCard = event.target.closest('[data-open-volunteer]');
+        if (!volunteerCard || event.target !== volunteerCard || !['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        await showVolunteerDetail(volunteerCard.dataset.openVolunteer);
+    });
+
+    window.addEventListener('popstate', () => {
+        const id = new URLSearchParams(window.location.search).get('voluntariado');
+        if (id) {
+            showVolunteerDetail(id, false);
+        } else if (openVolunteerId) {
+            setVolunteerListVisible(true, false);
+        }
     });
 
     for (const type of Object.keys(formNames)) {
@@ -1801,6 +2069,19 @@ function initializeDashboard() {
             await loadResource('articles');
             await Promise.all([loadResource('places'), loadResource('flora')]);
             await loadResource('voluntariados');
+            const volunteerId = new URLSearchParams(window.location.search).get('voluntariado');
+            if (volunteerId) {
+                activeSection = 'voluntariados';
+                root.querySelectorAll('.dashboard-tab').forEach(tab => {
+                    tab.classList.toggle('is-active', tab.dataset.section === activeSection);
+                });
+                root.querySelectorAll('.dashboard-section').forEach(section => {
+                    const selected = section.id === `section-${activeSection}`;
+                    section.hidden = !selected;
+                    section.classList.toggle('is-active', selected);
+                });
+                await showVolunteerDetail(volunteerId, false);
+            }
             if (user.rol === 'admin') await loadResource('users');
             await loadNotifications();
             window.setInterval(() => loadNotifications(), 60_000);

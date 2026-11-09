@@ -118,6 +118,7 @@ Route::prefix('admin')
     ->group(function () {
         Route::get('/voluntariados', [AdminVoluntariadoController::class, 'index']);
         Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
+        Route::get('/voluntariados/{id}/dashboard', [AdminVoluntariadoController::class, 'dashboard']);
         Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::patch('/voluntariados/{id}/codigo-asistencia', [AdminVoluntariadoController::class, 'actualizarCodigoAsistencia']);

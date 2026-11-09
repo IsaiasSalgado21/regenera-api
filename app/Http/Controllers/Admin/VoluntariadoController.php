@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Asistencia;
+use App\Models\Inscripcion;
 use App\Models\Lugar;
 use App\Models\User;
 use App\Models\Voluntariado;
@@ -66,6 +68,116 @@ class VoluntariadoController extends Controller
         return response()->json([
             'data' => $data,
             'message' => 'Todos los voluntariados consultados correctamente.',
+        ]);
+    }
+
+    public function dashboard(Request $request, string $id)
+    {
+        $voluntariado = Voluntariado::findOrFail($id);
+        $this->ensureCanManage($request, $voluntariado);
+        $voluntariadoId = (string) $voluntariado->_id;
+
+        $inscripciones = Inscripcion::where(function ($query) use ($voluntariadoId): void {
+            $query->where('voluntariadoId', $voluntariadoId);
+            if (preg_match('/^[a-f0-9]{24}$/i', $voluntariadoId)) {
+                $query->orWhere('voluntariadoId', new ObjectId($voluntariadoId));
+            }
+        })->get();
+
+        $asistencias = Asistencia::where(function ($query) use ($voluntariadoId): void {
+            $query->where('voluntariadoId', $voluntariadoId);
+            if (preg_match('/^[a-f0-9]{24}$/i', $voluntariadoId)) {
+                $query->orWhere('voluntariadoId', new ObjectId($voluntariadoId));
+            }
+        })->get();
+
+        $usuarioIds = $inscripciones
+            ->pluck('usuarioId')
+            ->filter()
+            ->map(fn ($usuarioId) => (string) $usuarioId)
+            ->unique()
+            ->values()
+            ->all();
+        $organizadorId = (string) $voluntariado->organizadorId;
+        $usuarios = User::whereIn('_id', array_values(array_unique([...$usuarioIds, $organizadorId])))
+            ->get(['_id', 'nombre', 'correo', 'foto'])
+            ->keyBy(fn (User $usuario) => (string) $usuario->_id);
+        $asistenciaPorUsuario = $asistencias
+            ->sortBy('fecha')
+            ->keyBy(fn (Asistencia $asistencia) => (string) $asistencia->usuarioId);
+        $inscripcionesActivas = $inscripciones->filter(fn (Inscripcion $inscripcion) => $inscripcion->estado !== 'cancelada');
+        $usuarioIdsActivos = $inscripcionesActivas
+            ->pluck('usuarioId')
+            ->map(fn ($usuarioId) => (string) $usuarioId)
+            ->unique()
+            ->all();
+        $asistenciasConfirmadas = $asistencias
+            ->filter(fn (Asistencia $asistencia) => (bool) $asistencia->confirmada)
+            ->filter(fn (Asistencia $asistencia) => in_array((string) $asistencia->usuarioId, $usuarioIdsActivos, true))
+            ->unique(fn (Asistencia $asistencia) => (string) $asistencia->usuarioId);
+        $inscritos = $inscripcionesActivas->count();
+        $cupo = max(0, (int) ($voluntariado->cupo ?? 0));
+        $asistentes = $asistenciasConfirmadas->count();
+        $lugar = Lugar::find((string) $voluntariado->lugarId);
+        $organizador = $usuarios->get($organizadorId);
+
+        $participantes = $inscripciones
+            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario): array {
+                $usuarioId = (string) $inscripcion->usuarioId;
+                $usuario = $usuarios->get($usuarioId);
+                $asistencia = $asistenciaPorUsuario->get($usuarioId);
+
+                return [
+                    'id' => (string) $inscripcion->_id,
+                    'usuarioId' => $usuarioId,
+                    'nombre' => $usuario?->nombre,
+                    'correo' => $usuario?->correo,
+                    'foto' => $usuario?->foto,
+                    'fechaInscripcion' => $inscripcion->fechaInscripcion?->toIso8601String(),
+                    'estadoInscripcion' => $inscripcion->estado,
+                    'observaciones' => $inscripcion->observaciones,
+                    'asistencia' => $asistencia ? [
+                        'confirmada' => (bool) $asistencia->confirmada,
+                        'fecha' => $asistencia->fecha?->toIso8601String(),
+                        'hora' => $asistencia->hora,
+                        'metodo' => $asistencia->metodo,
+                    ] : null,
+                ];
+            })
+            ->sortByDesc('fechaInscripcion')
+            ->values();
+
+        return response()->json([
+            'data' => [
+                'voluntariado' => [
+                    ...$this->present($voluntariado),
+                    'creadoEn' => $voluntariado->created_at?->toIso8601String(),
+                    'actualizadoEn' => $voluntariado->updated_at?->toIso8601String(),
+                    'lugar' => $lugar ? [
+                        'nombre' => $lugar->nombre,
+                        'municipio' => $lugar->municipio,
+                        'direccion' => $lugar->direccion,
+                    ] : null,
+                    'organizador' => $organizador ? [
+                        'id' => $organizadorId,
+                        'nombre' => $organizador->nombre,
+                        'correo' => $organizador->correo,
+                    ] : null,
+                ],
+                'estadisticas' => [
+                    'inscritos' => $inscritos,
+                    'cupo' => $cupo,
+                    'disponibles' => max(0, $cupo - $inscritos),
+                    'ocupacion' => $cupo > 0 ? round(min(100, ($inscritos / $cupo) * 100), 1) : 0,
+                    'asistencias' => $asistentes,
+                    'porcentajeAsistencia' => $inscritos > 0 ? round(($asistentes / $inscritos) * 100, 1) : 0,
+                    'pendientes' => max(0, $inscritos - $asistentes),
+                    'canceladas' => $inscripciones->where('estado', 'cancelada')->count(),
+                    'registrosQr' => $asistencias->where('confirmada', true)->where('metodo', 'QR')->count(),
+                ],
+                'participantes' => $participantes,
+            ],
+            'message' => 'Dashboard del voluntariado consultado correctamente.',
         ]);
     }
 

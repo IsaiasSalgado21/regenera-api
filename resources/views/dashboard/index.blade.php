@@ -145,6 +145,7 @@
         </section>
 
         <section class="dashboard-section" id="section-voluntariados" data-resource="voluntariados" hidden>
+            <div id="voluntariadoListView">
             <div class="dashboard-section-heading">
                 <div>
                     <span class="dashboard-eyebrow">PARTICIPACIÓN AMBIENTAL</span>
@@ -275,6 +276,18 @@
                     <button class="button button-secondary" type="button" data-cancel="voluntariado">Cancelar</button>
                 </div>
             </form>
+            </div>
+            <section class="volunteer-dashboard" id="voluntariadoDetailView" hidden aria-live="polite">
+                <div class="volunteer-dashboard-loading" id="voluntariadoDetailLoading" hidden>
+                    <span class="volunteer-loading-pulse"></span> Cargando datos reales del voluntariado…
+                </div>
+                <div class="volunteer-dashboard-error" id="voluntariadoDetailError" hidden>
+                    <p id="voluntariadoDetailErrorMessage">No se pudo cargar la información.</p>
+                    <button class="button button-secondary" type="button" data-volunteer-retry>Reintentar</button>
+                    <button class="button button-secondary" type="button" data-volunteer-back>Volver a voluntariados</button>
+                </div>
+                <div id="voluntariadoDetailContent"></div>
+            </section>
         </section>
 
         <section class="dashboard-section" id="section-flora" data-resource="flora" hidden>
