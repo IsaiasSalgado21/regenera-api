@@ -94,139 +94,165 @@
                 @endif
             </article>
 
-            <aside class="volunteer-detail-aside">
-                <section class="volunteer-detail-card"
-                    data-volunteer-id="{{ (string) $voluntariado->_id }}"
-                    data-event-start-at="{{ $inicioFechaHora?->toIso8601String() ?? '' }}"
-                    data-event-end-at="{{ $finFechaHora?->toIso8601String() ?? '' }}">
-                    <span class="volunteer-detail-card-kicker">ÚNETE A LA ACCIÓN</span>
-                    <h2>Tu participación importa.</h2>
-                    <div class="volunteer-detail-facts">
-                        @if ($voluntariado->fechaInicio)
-                            <div class="volunteer-detail-fact">
-                                <span class="volunteer-detail-fact-icon" aria-hidden="true">📅</span>
-                                <span><small>Fecha</small><strong>{{ $voluntariado->fechaInicio->format('d/m/Y') }}@if ($voluntariado->fechaFin && $voluntariado->fechaFin->format('Y-m-d') !== $voluntariado->fechaInicio->format('Y-m-d')) – {{ $voluntariado->fechaFin->format('d/m/Y') }}@endif</strong></span>
-                            </div>
-                        @endif
-                        @if ($voluntariado->horaInicio)
-                            <div class="volunteer-detail-fact">
-                                <span class="volunteer-detail-fact-icon" aria-hidden="true">🕒</span>
-                                <span>
-                                    <small>Horario de la actividad</small>
-                                    <strong>Inicio · {{ $voluntariado->horaInicio }}</strong>
-                                    @if ($voluntariado->horaFin)
-                                        <strong>Fin · {{ $voluntariado->horaFin }}</strong>
-                                    @endif
-                                </span>
-                            </div>
-                        @endif
-                        @if ($lugar)
-                            <div class="volunteer-detail-fact">
-                                <span class="volunteer-detail-fact-icon" aria-hidden="true">📍</span>
-                                <span><small>Lugar</small><strong>{{ $lugar->nombre }}</strong>@if ($lugar->municipio)<small>{{ $lugar->municipio }}</small>@endif</span>
-                            </div>
-                        @endif
-                        @if ($voluntariado->cupo)
-                            <div class="volunteer-detail-fact">
-                                <span class="volunteer-detail-fact-icon" aria-hidden="true">👥</span>
-                                <span><small>Cupo</small><strong>{{ $voluntariado->cupo }} personas</strong></span>
-                            </div>
-                        @endif
-                        @if ($voluntariado->estado)
-                            <span class="volunteer-detail-status volunteer-detail-status--{{ $voluntariado->estado }}">
-                                <span aria-hidden="true">●</span>{{ ucfirst($voluntariado->estado) }}
-                            </span>
-                        @endif
-                    </div>
+            
+        <section class="volunteer-detail-card"
+            data-volunteer-id="{{ (string) $voluntariado->_id }}"
+            data-event-start-at="{{ $inicioFechaHora?->toIso8601String() ?? '' }}"
+            data-event-end-at="{{ $finFechaHora?->toIso8601String() ?? '' }}">
 
-                    <div class="volunteer-enrollment-actions" data-enrollment-actions>
-                        <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
-                            class="volunteer-cta"
-                            data-voluntariado-id="{{ (string) $voluntariado->_id }}">
-                            <span aria-hidden="true">🙌</span> Quiero participar
-                            <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
-                        </a>
-                        <button type="button" class="volunteer-cancel-cta" data-enrollment-cancel hidden>
-                            Cancelar participación
-                        </button>
-                    </div>
-                    <p class="volunteer-cta-note" data-enrollment-note>Súmate y forma parte del cambio en Baja California Sur.</p>
-                    <p id="enrollmentMessage" class="volunteer-enrollment-message" role="status" aria-live="polite"></p>
-                </section>
+            <span class="volunteer-detail-card-kicker">ÚNETE A LA ACCIÓN</span>
+            <h2>Tu participación importa.</h2>
 
-                @if ($finFechaHora)
-                    <div class="volunteer-ended-notice" role="status" @unless ($voluntariadoFinalizado) hidden @endunless>
-                        <span class="volunteer-ended-notice-icon" aria-hidden="true">✓</span>
+            <div class="volunteer-detail-facts">
+
+                {{-- Fecha --}}
+                @if ($voluntariado->fechaInicio)
+                    <div class="volunteer-detail-fact">
+                        <span class="volunteer-detail-fact-icon">📅</span>
                         <span>
-                            <strong>Este voluntariado ya finalizó</strong>
-                            <small>La fecha de esta actividad ya pasó.</small>
+                            <small>Fecha</small>
+                            <strong>
+                                {{ $voluntariado->fechaInicio->format('d/m/Y') }}
+                                @if ($voluntariado->fechaFin &&
+                                    $voluntariado->fechaFin->format('Y-m-d') !==
+                                    $voluntariado->fechaInicio->format('Y-m-d'))
+                                    – {{ $voluntariado->fechaFin->format('d/m/Y') }}
+                                @endif
+                            </strong>
                         </span>
                     </div>
                 @endif
-                @if ($inicioFechaHora && $finFechaHora)
-                    <section class="volunteer-countdown" data-volunteer-countdown
-                        data-countdown-start="{{ $inicioFechaHora->toIso8601String() }}"
-                        data-countdown-end="{{ $finFechaHora->toIso8601String() }}"
-                        aria-label="Cuenta regresiva de la actividad" hidden>
-                        <strong data-countdown-title></strong>
-                        <div class="volunteer-countdown-times">
-                            <p data-countdown-start-row hidden>Inicia en <time data-countdown-start-value></time></p>
-                            <p data-countdown-end-row hidden>Finaliza en <time data-countdown-end-value></time></p>
-                        </div>
-                    </section>
+
+                {{-- Horario --}}
+                @if ($voluntariado->horaInicio)
+                    <div class="volunteer-detail-fact">
+                        <span class="volunteer-detail-fact-icon">🕒</span>
+                        <span>
+                            <small>Horario de la actividad</small>
+                            <strong>Inicio · {{ $voluntariado->horaInicio }}</strong>
+                            @if ($voluntariado->horaFin)
+                                <strong>Fin · {{ $voluntariado->horaFin }}</strong>
+                            @endif
+                        </span>
+                    </div>
                 @endif
 
-                <section class="volunteer-calendar-card"
-                    data-event-date="{{ $voluntariado->fechaInicio ? $voluntariado->fechaInicio->format('Y-m-d') : '' }}"
-                    data-event-end="{{ $voluntariado->fechaFin ? $voluntariado->fechaFin->format('Y-m-d') : ($voluntariado->fechaInicio ? $voluntariado->fechaInicio->format('Y-m-d') : '') }}">
-                    <h3>Duración del voluntariado</h3>
-                    <p class="volunteer-calendar-range">
-                        @if ($voluntariado->fechaInicio)
-                            {{ $voluntariado->fechaInicio->format('d/m/Y') }}
-                            @if ($voluntariado->fechaFin && $voluntariado->fechaFin->format('Y-m-d') !== $voluntariado->fechaInicio->format('Y-m-d'))
-                                al {{ $voluntariado->fechaFin->format('d/m/Y') }}
+                {{-- Lugar --}}
+                @if ($lugar)
+                    <div class="volunteer-detail-fact">
+                        <span class="volunteer-detail-fact-icon">📍</span>
+                        <span>
+                            <small>Lugar</small>
+                            <strong>{{ $lugar->nombre }}</strong>
+                            @if ($lugar->municipio)
+                                <small>{{ $lugar->municipio }}</small>
                             @endif
-                        @else
-                            Fecha por confirmar
-                        @endif
-                    </p>
-                    <div class="calendar-header">
-                        <button type="button" id="calendarPrev" aria-label="Mes anterior">←</button>
-                        <h4 id="calendarMonth"></h4>
-                        <button type="button" id="calendarNext" aria-label="Mes siguiente">→</button>
+                        </span>
                     </div>
-                    <div class="calendar-weekdays">
-                        <span>Lun</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                @endif
+
+                {{-- Mapa integrado --}}
+                <div class="volunteer-inline-map">
+                    <div class="volunteer-inline-map-heading">
+                        <span>Ubicación del evento</span>
+                        <span aria-hidden="true">↗</span>
                     </div>
-                    <div class="calendar-days" id="calendarDays"></div>
-                    <p class="calendar-event-date"><span class="calendar-event-dot"></span>Días de actividad:<strong id="calendarSelectedDate"></strong></p>
-                </section>
-                <div class="calendar-legend">
-                    <div class="calendar-legend-item"><span class="calendar-legend-event">15</span><span>Días del voluntariado</span></div>
-                    <div class="calendar-legend-item"><span class="calendar-legend-today">15</span><span>Día actual</span></div>
+
+                    @if ($ubicacion)
+                        <div id="volunteerDetailMap"
+                            class="volunteer-detail-map"
+                            data-latitude="{{ $ubicacion['latitud'] }}"
+                            data-longitude="{{ $ubicacion['longitud'] }}"
+                            data-location-name="{{ $lugar?->nombre ?? $voluntariado->titulo }}"
+                            data-location-address="{{ $lugar?->direccion ?? '' }}"
+                            role="application"
+                            aria-label="Mapa de ubicación del voluntariado">
+                        </div>
+                    @else
+                        <p class="volunteer-map-unavailable">
+                            Ubicación del mapa pendiente de configurar.
+                        </p>
+                    @endif
                 </div>
-            </aside>
+
+                {{-- Capacidad e inscripciones --}}
+                @if ($voluntariado->cupo)
+                    @php
+                        $totalCupo = (int) $voluntariado->cupo;
+                        $totalInscritos = (int) ($inscritosCount ?? 0);
+                        $disponibles = max(0, $totalCupo - $totalInscritos);
+                        $ocupacion = $totalCupo > 0
+                            ? min(100, ($totalInscritos / $totalCupo) * 100)
+                            : 0;
+                    @endphp
+
+                    <div class="volunteer-capacity">
+                        <div class="volunteer-capacity-heading">
+                            <span class="volunteer-detail-fact-icon">👥</span>
+                            <span>
+                                <small>Disponibilidad de lugares</small>
+                                <strong>{{ $disponibles }} espacios disponibles</strong>
+                            </span>
+                        </div>
+
+                        <div class="volunteer-capacity-bar">
+                            <span style="width: {{ $ocupacion }}%"></span>
+                        </div>
+
+                        <div class="volunteer-capacity-stats">
+                            <div>
+                                <strong>{{ $totalInscritos }}</strong>
+                                <small>Inscritos</small>
+                            </div>
+                            <div>
+                                <strong>{{ $disponibles }}</strong>
+                                <small>Disponibles</small>
+                            </div>
+                            <div>
+                                <strong>{{ $totalCupo }}</strong>
+                                <small>Cupo total</small>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($voluntariado->estado)
+                    <span class="volunteer-detail-status volunteer-detail-status--{{ $voluntariado->estado }}">
+                        <span aria-hidden="true">●</span>
+                        {{ ucfirst($voluntariado->estado) }}
+                    </span>
+                @endif
+
+            </div>
+
+            {{-- Acciones de inscripción --}}
+            <div class="volunteer-enrollment-actions" data-enrollment-actions>
+                <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
+                    class="volunteer-cta"
+                    data-voluntariado-id="{{ (string) $voluntariado->_id }}">
+                    <span aria-hidden="true">🙌</span>
+                    Quiero participar
+                    <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
+                </a>
+
+                <button type="button" class="volunteer-cancel-cta"
+                    data-enrollment-cancel hidden>
+                    Cancelar participación
+                </button>
+            </div>
+
+            <p class="volunteer-cta-note" data-enrollment-note>
+                Súmate y forma parte del cambio en Baja California Sur.
+            </p>
+
+            <p id="enrollmentMessage"
+                class="volunteer-enrollment-message"
+                role="status"
+                aria-live="polite"></p>
+
+        </section>
         </div>
 
-        <section class="volunteer-map-section">
-            <header class="volunteer-detail-section-heading">
-                <span>ENCUENTRA EL PUNTO</span>
-                <h2>Ubicación de la actividad</h2>
-                @if ($lugar)
-                    <p>{{ $lugar->nombre }}@if ($lugar->municipio) · {{ $lugar->municipio }}@endif</p>
-                @endif
-            </header>
-            @if ($ubicacion)
-                <div id="volunteerDetailMap" class="volunteer-detail-map"
-                    data-latitude="{{ $ubicacion['latitud'] }}"
-                    data-longitude="{{ $ubicacion['longitud'] }}"
-                    data-location-name="{{ $lugar?->nombre ?? $voluntariado->titulo }}"
-                    data-location-address="{{ $lugar?->direccion ?? '' }}"
-                    role="application" aria-label="Mapa de ubicación del voluntariado"></div>
-            @else
-                <p class="volunteer-map-unavailable">Este voluntariado aún no tiene una ubicación válida para mostrar en el mapa.</p>
-            @endif
-        </section>
 
         <div class="detail-back">
             <a href="{{ url('/voluntariados') }}" class="section-link">← Volver a voluntariados</a>

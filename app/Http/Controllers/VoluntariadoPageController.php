@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lugar;
+use App\Models\Inscripcion;
 use App\Models\Voluntariado;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
@@ -102,9 +103,14 @@ class VoluntariadoPageController extends Controller
         $hasValidLocation = $this->boundary->contains($latitude, $longitude);
         $inicioFechaHora = $this->horario->inicio($voluntariado);
         $finFechaHora = $this->horario->fin($voluntariado);
+        $inscritosCount = Inscripcion::query()
+            ->where('voluntariadoId', (string) $voluntariado->_id)
+            ->whereIn('estado', ['inscrita', 'activa'])
+            ->count();
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
+            'inscritosCount' => $inscritosCount,
             'lugar' => $lugar,
             'inicioFechaHora' => $inicioFechaHora,
             'finFechaHora' => $finFechaHora,
