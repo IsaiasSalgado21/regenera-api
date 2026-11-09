@@ -120,6 +120,7 @@ Route::prefix('admin')
         Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
         Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
+        Route::patch('/voluntariados/{id}/codigo-asistencia', [AdminVoluntariadoController::class, 'actualizarCodigoAsistencia']);
         Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);
     });
 
@@ -129,10 +130,12 @@ Route::get('/articulos/{id}', [ArticuloController::class, 'show'])->middleware('
 Route::put('/articulos/{id}', [ArticuloController::class, 'update'])->middleware('auth:sanctum');
 Route::patch('/articulos/{id}/enviar-revision', [ArticuloController::class, 'enviarRevision'])->middleware('auth:sanctum');
 
-Route::get('/asistencias', [AsistenciaController::class, 'index']);
-Route::post('/asistencias', [AsistenciaController::class, 'store']);
-Route::get('/asistencias/{id}', [AsistenciaController::class, 'show']);
-Route::delete('/asistencias/{id}', [AsistenciaController::class, 'destroy']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/asistencias', [AsistenciaController::class, 'index']);
+    Route::post('/asistencias', [AsistenciaController::class, 'store']);
+    Route::get('/asistencias/{id}', [AsistenciaController::class, 'show']);
+    Route::delete('/asistencias/{id}', [AsistenciaController::class, 'destroy']);
+});
 
 Route::middleware('auth:sanctum')->prefix('notificaciones')->group(function () {
     Route::get('/', [NotificacionController::class, 'index']);

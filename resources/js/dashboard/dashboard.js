@@ -1,4 +1,5 @@
 import '../../css/dashboard.css';
+import QRCode from 'qrcode';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -328,6 +329,7 @@ function initializeDashboard() {
 
         byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
             const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
+            const qrActivo = Boolean(voluntariado.codigoAsistenciaActivo);
             let actions = '';
             if (user.rol === 'admin') {
                 actions += action('Editar', 'edit-voluntariado', voluntariado.id);
@@ -340,14 +342,41 @@ function initializeDashboard() {
                 actions += action('Editar y reenviar', 'edit-voluntariado', voluntariado.id);
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
             }
+            actions += `<button class="button button-${qrActivo ? 'danger' : 'secondary'}" type="button" data-action="toggle-attendance-qr" data-id="${escapeHtml(voluntariado.id)}" data-active="${qrActivo ? 'false' : 'true'}">${qrActivo ? 'Desactivar QR' : 'Activar QR'}</button>`;
+
+            const attendanceQr = voluntariado.tokenAsistencia
+                ? `<div class="dashboard-attendance-qr">
+                    <canvas data-attendance-qr="${escapeHtml(voluntariado.tokenAsistencia)}" aria-label="Código QR de asistencia para ${escapeHtml(voluntariado.titulo)}"></canvas>
+                    <div><strong>Asistencia por QR · ${qrActivo ? 'Activo' : 'Desactivado'}</strong>
+                    <p>${qrActivo ? 'Escanéalo durante el horario de la actividad.' : 'Actívalo para permitir registros de asistencia.'}</p></div>
+                </div>`
+                : '<p class="dashboard-attendance-qr-error">No se pudo cargar el token de asistencia. Actualiza la página o contacta al administrador.</p>';
+
             return card({
                 title: voluntariado.titulo,
                 description: voluntariado.descripcion,
                 meta,
                 id: voluntariado.id,
                 actions,
+                media: attendanceQr,
             });
         }).join('');
+
+        byId('voluntariadoCards').querySelectorAll('[data-attendance-qr]').forEach(canvas => {
+            const scanUrl = `${root.dataset.attendanceUrl}#${encodeURIComponent(canvas.dataset.attendanceQr)}`;
+            QRCode.toCanvas(canvas, scanUrl, {
+                width: 176,
+                margin: 1,
+                color: { dark: '#164f3d', light: '#ffffff' },
+            }).catch(error => {
+                console.error('No se pudo generar el código QR de asistencia.', error);
+                const message = document.createElement('p');
+                message.className = 'dashboard-attendance-qr-error';
+                message.textContent = 'No se pudo generar este código QR.';
+                canvas.replaceWith(message);
+            });
+        });
+
         showResourceState('voluntariados', list.length ? 'ready' : 'empty');
     }
 
@@ -1180,6 +1209,13 @@ function initializeDashboard() {
                 case 'delete-voluntariado':
                     await dashboardApi.deleteVoluntariado(id);
                     break;
+
+                case 'toggle-attendance-qr': {
+                    const voluntariado = cache.voluntariados.find(item => String(item.id) === String(id));
+                    if (!voluntariado) throw new Error('No se encontró el voluntariado seleccionado.');
+                    await dashboardApi.setAttendanceQrActive(id, button.dataset.active === 'true');
+                    break;
+                }
 
                 case 'delete-user':
                     await dashboardApi.deleteUser(id);

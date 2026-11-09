@@ -189,6 +189,25 @@ class VoluntariadoController extends Controller
         return response()->json(['data' => $this->present($voluntariado), 'message' => 'Voluntariado rechazado y el organizador fue notificado.']);
     }
 
+    public function actualizarCodigoAsistencia(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'codigoAsistenciaActivo' => ['required', 'boolean'],
+        ]);
+        $voluntariado = Voluntariado::findOrFail($id);
+        $this->ensureCanManage($request, $voluntariado);
+        $voluntariado->update([
+            'codigoAsistenciaActivo' => $validated['codigoAsistenciaActivo'],
+        ]);
+
+        return response()->json([
+            'data' => $this->present($voluntariado->fresh()),
+            'message' => $validated['codigoAsistenciaActivo']
+                ? 'El código de asistencia fue activado.'
+                : 'El código de asistencia fue desactivado.',
+        ]);
+    }
+
     private function rules(bool $partial = false): array
     {
         $required = $partial ? 'sometimes|required' : 'required';
@@ -259,6 +278,8 @@ class VoluntariadoController extends Controller
             'imagen' => $this->gridFsImages->url($this->imagePaths($voluntariado)[0] ?? null),
             'imagenes' => $this->gridFsImages->urls($this->imagePaths($voluntariado)),
             'estado' => $voluntariado->estado,
+            'tokenAsistencia' => $voluntariado->tokenAsistencia,
+            'codigoAsistenciaActivo' => (bool) $voluntariado->codigoAsistenciaActivo,
         ];
     }
 

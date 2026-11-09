@@ -9,6 +9,11 @@ class VoluntariadoHorario
 {
     private const TIMEZONE = 'America/Mazatlan';
 
+    public function ahora(): Carbon
+    {
+        return Carbon::now(self::TIMEZONE);
+    }
+
     public function inicio(Voluntariado $voluntariado): ?Carbon
     {
         if (! $voluntariado->fechaInicio) {

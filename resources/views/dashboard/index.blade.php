@@ -8,7 +8,7 @@
 @endpush
 
 @section('content')
-<section class="dashboard-shell" id="dashboardRoot" data-dashboard-role="{{ $dashboardRole }}">
+<section class="dashboard-shell" id="dashboardRoot" data-dashboard-role="{{ $dashboardRole }}" data-attendance-url="{{ route('asistencia.scan') }}">
     <header class="dashboard-heading">
         <div>
             <span class="dashboard-eyebrow">REGENERA BCS / GESTIÓN</span>

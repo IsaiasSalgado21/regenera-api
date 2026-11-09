@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/js/map/map-entry.js',
                 'resources/js/dashboard/dashboard.js',
                 'resources/js/voluntariado-detail.js',
+                'resources/js/asistencia.js',
             ],
             refresh: true,
         }),

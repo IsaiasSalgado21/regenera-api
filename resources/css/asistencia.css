@@ -1,0 +1,49 @@
+.attendance-page {
+    width: min(620px, calc(100% - 40px));
+    margin: 72px auto;
+    border: 1px solid var(--dashboard-border, #dce3dd);
+    border-radius: 22px;
+    padding: clamp(24px, 5vw, 48px);
+    background: var(--surface, #fff);
+    color: var(--dashboard-text, #14201b);
+    box-shadow: 0 18px 50px rgb(20 32 27 / 9%);
+}
+
+.attendance-page h1 {
+    margin: 8px 0 12px;
+    color: var(--dashboard-green, #164f3d);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2rem, 5vw, 2.8rem);
+}
+
+.attendance-page > p {
+    color: var(--dashboard-muted, #66716c);
+    line-height: 1.6;
+}
+
+.attendance-message {
+    margin: 24px 0 16px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #f0f4f0;
+}
+
+.attendance-message.is-error {
+    background: #fff0eb;
+    color: #8a321e;
+}
+
+.attendance-message.is-success {
+    background: #e7f2eb;
+    color: #164f3d;
+}
+
+.attendance-page .button {
+    margin: 4px 8px 4px 0;
+}
+
+.attendance-back-link {
+    display: block;
+    margin-top: 24px;
+    color: var(--dashboard-green, #164f3d);
+}

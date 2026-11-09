@@ -24,6 +24,7 @@ Route::get('/perfil', fn () => view('profile.show'))->name('profile.show');
 // Voluntariados
 Route::get('/voluntariados', [VoluntariadoPageController::class, 'index'])->name('voluntariados.index');
 Route::get('/voluntariados/{id}', [VoluntariadoPageController::class, 'show'])->name('voluntariados.show');
+Route::view('/asistencia', 'asistencia.scan')->name('asistencia.scan');
 
 // Flora y fauna
 Route::get('/flora', [FloraPageController::class, 'index'])->name('flora.index');

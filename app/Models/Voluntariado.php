@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use MongoDB\Laravel\Eloquent\Model;
 
 class Voluntariado extends Model
@@ -28,7 +29,23 @@ class Voluntariado extends Model
         'imagen',
         'imagenes',
         'estado',
+        'tokenAsistencia',
+        'codigoAsistenciaActivo',
     ];
+
+    protected $hidden = [
+        'tokenAsistencia',
+    ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Voluntariado $voluntariado): void {
+            if (! is_string($voluntariado->tokenAsistencia) || $voluntariado->tokenAsistencia === '') {
+                $voluntariado->tokenAsistencia = Str::random(64);
+            }
+            $voluntariado->codigoAsistenciaActivo ??= true;
+        });
+    }
 
     protected function casts(): array
     {
@@ -38,6 +55,7 @@ class Voluntariado extends Model
             'cupo' => 'integer',
             'latitud' => 'float',
             'longitud' => 'float',
+            'codigoAsistenciaActivo' => 'boolean',
             'requisitos' => 'array',
             'materiales' => 'array',
         ];
