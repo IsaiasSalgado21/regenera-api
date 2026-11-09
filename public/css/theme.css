@@ -290,6 +290,15 @@ html[data-theme="dark"] .map-clear-button {
     color: #b7e5d1;
 }
 
+html[data-theme="dark"] .map-panel-view-link {
+    border-color: #83c8a7;
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .map-panel-view-link:hover {
+    background: #223b2e;
+}
+
 html[data-theme="dark"] .map-legend {
     border-color: #35473d;
 }

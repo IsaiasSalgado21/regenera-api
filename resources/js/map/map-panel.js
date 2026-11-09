@@ -49,6 +49,15 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
 
         if (item.tipo !== 'voluntariado') return;
 
+        const actions = document.createElement('div');
+        actions.className = 'map-panel-actions';
+        if (item.id) {
+            const detailLink = addText(actions, 'a', 'Ver voluntariado', 'map-panel-view-link');
+            const detailBase = panel.dataset.volunteerDetailBase || '/voluntariados';
+            detailLink.href = `${detailBase.replace(/\/$/, '')}/${encodeURIComponent(String(item.id))}`;
+        }
+        panel.appendChild(actions);
+
         const user = getUser();
         let reason = '';
         if (getAuthError()) reason = getAuthError();
@@ -63,7 +72,7 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
             return;
         }
 
-        const button = addText(panel, 'button', 'Inscribirse');
+        const button = addText(actions, 'button', 'Inscribirse');
         button.type = 'button';
         button.dataset.tooltip = 'La inscripción será validada nuevamente por el servidor.';
         button.addEventListener('click', async () => {
