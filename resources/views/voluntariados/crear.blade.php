@@ -5,6 +5,7 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pages.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/create-voluntariado.css') }}">
 @endpush
 
 @section('content')
@@ -55,26 +56,25 @@
                 </ul>
             </div>
 
-            <form id="createVoluntariadoForm" class="create-form" novalidate>
-                <div class="create-form-heading">
+            <form id="createVoluntariadoForm" class="dashboard-form create-form" novalidate>
+                <div class="dashboard-form-heading">
                     <div>
-                        <span class="create-form-eyebrow">EDITOR</span>
-                        <h2>Nuevo voluntariado</h2>
+                        <span class="dashboard-eyebrow">EDITOR</span>
+                        <h3>Nuevo voluntariado</h3>
                     </div>
-                    <a class="create-form-close" href="{{ url('/voluntariados') }}" aria-label="Cerrar formulario">×</a>
+                    <a class="icon-button" href="{{ url('/voluntariados') }}" aria-label="Cerrar formulario">×</a>
                 </div>
 
                 <div class="form-message" id="createMessage" role="status" aria-live="polite"></div>
 
-                <div class="form-grid">
-                    <div class="form-field full-width">
-                        <label for="titulo">Título del voluntariado <span class="required">*</span></label>
-                        <input type="text" id="titulo" name="titulo" required maxlength="150"
+                <div class="dashboard-form-row">
+                    <label for="titulo">Título del voluntariado <span class="required">*</span>
+                        <input type="text" id="titulo" name="titulo"
+                            required maxlength="150"
                             placeholder="Ej. Jornada de limpieza en Playa Balandra">
-                    </div>
+                    </label>
 
-                    <div class="form-field full-width">
-                        <label for="categoria">Categoría <span class="required">*</span></label>
+                    <label for="categoria">Categoría <span class="required">*</span>
                         <select id="categoria" name="categoria" required>
                             <option value="">Selecciona una categoría</option>
                             <option value="limpieza">Limpieza</option>
@@ -84,76 +84,103 @@
                             <option value="monitoreo">Monitoreo</option>
                             <option value="educacion-ambiental">Educación ambiental</option>
                         </select>
-                    </div>
+                    </label>
+                </div>
 
-                    <div class="form-field full-width">
-                        <label for="lugarId">Lugar <span class="required">*</span></label>
-                        <select id="lugarId" name="lugarId" required>
-                            <option value="">Selecciona un lugar</option>
-                        </select>
-                    </div>
+                <label for="lugarId">Lugar <span class="required">*</span>
+                    <select id="lugarId" name="lugarId" required>
+                        <option value="">Selecciona un lugar</option>
+                    </select>
+                </label>
 
-                    <div class="form-field">
-                        <label for="fechaInicio">Fecha de inicio <span class="required">*</span></label>
-                        <input type="date" id="fechaInicio" name="fechaInicio" required>
-                    </div>
+                <div class="dashboard-form-row">
+                    <label class="dashboard-date-field" for="fechaInicio">Fecha de inicio <span class="required">*</span>
+                        <span class="dashboard-date-control">
+                            <span aria-hidden="true">📅</span>
+                            <input type="date" id="fechaInicio" name="fechaInicio" required>
+                        </span>
+                    </label>
 
-                    <div class="form-field">
-                        <label for="fechaFin">Fecha de fin <span class="required">*</span></label>
-                        <input type="date" id="fechaFin" name="fechaFin" required>
-                    </div>
+                    <label class="dashboard-date-field" for="fechaFin">Fecha de fin <span class="required">*</span>
+                        <span class="dashboard-date-control">
+                            <span aria-hidden="true">📅</span>
+                            <input type="date" id="fechaFin" name="fechaFin" required>
+                        </span>
+                    </label>
+                </div>
 
-                    <div class="form-field">
-                        <label for="horaInicio">Hora de inicio <span class="required">*</span></label>
-                        <input type="time" id="horaInicio" name="horaInicio" required>
-                    </div>
+                <div class="dashboard-form-row">
+                    <label class="dashboard-time-field" for="horaInicio">Hora de inicio
+                        <span class="dashboard-time-control">
+                            <span aria-hidden="true">🕒</span>
+                            <input type="time" id="horaInicio" name="horaInicio" required>
+                        </span>
+                    </label>
 
-                    <div class="form-field">
-                        <label for="horaFin">Hora de fin <span class="required">*</span></label>
-                        <input type="time" id="horaFin" name="horaFin" required>
-                    </div>
+                    <label class="dashboard-time-field" for="horaFin">Hora de fin
+                        <span class="dashboard-time-control">
+                            <span aria-hidden="true">🕒</span>
+                            <input type="time" id="horaFin" name="horaFin" required>
+                        </span>
+                    </label>
+                </div>
 
-                    <div class="form-field form-field-capacity full-width">
-                        <label for="cupo">Cupo de participantes <span class="required">*</span></label>
-                        <div class="create-capacity-control">
-                            <span class="create-capacity-icon" aria-hidden="true">♟</span>
-                            <button type="button" class="create-capacity-step" data-capacity-step="-1" aria-label="Disminuir cupo">−</button>
-                            <input type="number" id="cupo" name="cupo" required min="1" max="10000" value="10"
-                                inputmode="numeric" aria-label="Número de participantes">
-                            <button type="button" class="create-capacity-step" data-capacity-step="1" aria-label="Aumentar cupo">+</button>
-                            <span class="create-capacity-unit">personas</span>
-                        </div>
-                    </div>
-
-                    <div class="form-field full-width">
-                        <label for="requisitos">Requisitos (opcional)</label>
-                        <textarea id="requisitos" name="requisitos" rows="3"
-                            placeholder="Ej. Traer ropa cómoda, calzado cerrado, agua."></textarea>
-                    </div>
-
-                    <div class="form-field full-width">
-                        <label for="materiales">Materiales necesarios (opcional)</label>
-                        <textarea id="materiales" name="materiales" rows="3"
-                            placeholder="Ej. Bolsas de basura, guantes, palas."></textarea>
-                    </div>
-
-                    <div class="form-field full-width">
-                        <label for="imagen">Imagen del voluntariado (opcional)</label>
-                        <input type="file" id="imagen" name="imagen" accept="image/*">
-                    </div>
-
-                    <div class="form-field full-width">
-                        <label for="descripcion">Descripción <span class="required">*</span></label>
-                        <textarea id="descripcion" name="descripcion" required maxlength="3000" rows="4"
-                            placeholder="Describe la actividad, qué se hará y por qué es importante para el entorno."></textarea>
+                <div class="dashboard-capacity-field">
+                    <span class="dashboard-choice-legend">Cupo de participantes</span>
+                    <div class="dashboard-capacity-control">
+                        <span class="dashboard-capacity-icon" aria-hidden="true">👤</span>
+                        <button type="button" class="dashboard-capacity-step"
+                                data-capacity-step="-1"
+                                aria-label="Disminuir cupo">−</button>
+                        <input type="number" id="cupo" name="cupo"
+                            min="1" max="10000" value="10"
+                            inputmode="numeric" required
+                            aria-label="Número de participantes">
+                        <button type="button" class="dashboard-capacity-step"
+                                data-capacity-step="1"
+                                aria-label="Aumentar cupo">+</button>
+                        <span class="dashboard-capacity-unit">personas</span>
                     </div>
                 </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="button button-primary" id="submitBtn">Enviar voluntariado</button>
+                <div class="dashboard-token-field" data-suggestion-field="requisitos">
+                    <label for="requisitos-query">Requisitos (opcional)</label>
+                    <div class="dashboard-token-selected" data-selected-values></div>
+                    <input id="requisitos-query" type="search" data-suggestion-query
+                        placeholder="Buscar o agregar requisito…" autocomplete="off">
+                    <div class="dashboard-token-suggestions" role="listbox" aria-label="Sugerencias de requisitos" hidden></div>
+                    <textarea id="requisitos" name="requisitos" class="suggestion-values" rows="1" tabindex="-1" aria-hidden="true"></textarea>
+                </div>
+
+                <div class="dashboard-token-field" data-suggestion-field="materiales">
+                    <label for="materiales-query">Materiales necesarios (opcional)</label>
+                    <div class="dashboard-token-selected" data-selected-values></div>
+                    <input id="materiales-query" type="search" data-suggestion-query
+                        placeholder="Buscar o agregar material…" autocomplete="off">
+                    <div class="dashboard-token-suggestions" role="listbox" aria-label="Sugerencias de materiales" hidden></div>
+                    <textarea id="materiales" name="materiales" class="suggestion-values" rows="1" tabindex="-1" aria-hidden="true"></textarea>
+                </div>
+
+                <div class="dashboard-image-field">
+                    <label for="imagen">Imagen del voluntariado (opcional)
+                        <input type="file" id="imagen" name="imagen" accept="image/*">
+                    </label>
+                </div>
+
+                <label for="descripcion">Descripción <span class="required">*</span>
+                    <textarea id="descripcion" name="descripcion"
+                            rows="5" required maxlength="3000"
+                            placeholder="Describe la actividad, qué se hará y por qué es importante para el entorno."></textarea>
+                </label>
+
+                <div class="dashboard-form-actions">
+                    <button type="submit" class="button button-primary" id="submitBtn">
+                        Enviar voluntariado
+                    </button>
                     <a class="button button-secondary" href="{{ url('/voluntariados') }}">Cancelar</a>
                 </div>
             </form>
+
         </div>
     </section>
 </main>
@@ -168,6 +195,28 @@
             const cupoInput = document.getElementById('cupo');
             const fechaFinInput = document.getElementById('fechaFin');
             const fechaInicioInput = document.getElementById('fechaInicio');
+            const suggestionOptions = {
+                requisitos: [
+                    ['🧴', 'Usar bloqueador biodegradable'],
+                    ['👟', 'Usar calzado cómodo'],
+                    ['💧', 'Llevar agua suficiente'],
+                    ['🧢', 'Llevar gorra o sombrero'],
+                    ['🧤', 'Seguir indicaciones del equipo'],
+                    ['♻️', 'Separar y recoger residuos'],
+                    ['🪪', 'Ser mayor de edad'],
+                    ['🤝', 'Participar en equipo'],
+                ],
+                materiales: [
+                    ['🧤', 'Guantes de trabajo'],
+                    ['🧴', 'Bloqueador biodegradable'],
+                    ['💧', 'Agua potable'],
+                    ['🧢', 'Gorra o sombrero'],
+                    ['🧹', 'Bolsas para residuos'],
+                    ['🛠️', 'Herramientas de trabajo'],
+                    ['🦺', 'Chaleco de seguridad'],
+                    ['🩹', 'Botiquín de primeros auxilios'],
+                ],
+            };
 
             if (!form) return;
 
@@ -194,6 +243,148 @@
                 if (fechaFinInput.value && fechaFinInput.value < this.value) {
                     fechaFinInput.value = this.value;
                 }
+            });
+
+            form.querySelectorAll('.dashboard-date-control, .dashboard-time-control').forEach(control => {
+                control.addEventListener('click', function (event) {
+                    if (event.target.closest('input')) return;
+
+                    const input = control.querySelector('input');
+                    if (typeof input.showPicker === 'function') {
+                        try {
+                            input.showPicker();
+                        } catch {
+                            input.focus();
+                            input.click();
+                        }
+                    } else {
+                        input.focus();
+                        input.click();
+                    }
+                });
+            });
+
+            form.querySelectorAll('[data-suggestion-field]').forEach(field => {
+                const type = field.dataset.suggestionField;
+                const textarea = field.querySelector('textarea');
+                const queryInput = field.querySelector('[data-suggestion-query]');
+                const selectedContainer = field.querySelector('[data-selected-values]');
+                const suggestions = field.querySelector('.dashboard-token-suggestions');
+                let selected = textarea.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
+
+                function renderSelected() {
+                    selectedContainer.replaceChildren();
+                    selected.forEach(value => {
+                        const chip = document.createElement('span');
+                        chip.className = 'dashboard-token-chip';
+
+                        const label = document.createElement('span');
+                        label.textContent = value;
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.dataset.removeValue = value;
+                        remove.setAttribute('aria-label', `Quitar ${value}`);
+                        remove.textContent = '×';
+                        chip.append(label, remove);
+                        selectedContainer.append(chip);
+                    });
+                    textarea.value = selected.join('\n');
+                }
+
+                function renderSuggestions() {
+                    const query = queryInput.value.trim().toLocaleLowerCase();
+                    const selectedValues = selected.map(value => value.toLocaleLowerCase());
+                    const matches = suggestionOptions[type].filter(([, label]) =>
+                        !selectedValues.includes(label.toLocaleLowerCase())
+                        && (!query || label.toLocaleLowerCase().includes(query)),
+                    );
+
+                    suggestions.replaceChildren();
+                    matches.forEach(([icon, label]) => {
+                        const option = document.createElement('button');
+                        option.type = 'button';
+                        option.setAttribute('role', 'option');
+                        option.dataset.addValue = label;
+
+                        const iconElement = document.createElement('span');
+                        iconElement.setAttribute('aria-hidden', 'true');
+                        iconElement.textContent = icon;
+                        const labelElement = document.createElement('span');
+                        labelElement.textContent = label;
+                        const addIcon = document.createElement('span');
+                        addIcon.className = 'dashboard-token-add-icon';
+                        addIcon.setAttribute('aria-hidden', 'true');
+                        addIcon.textContent = '+';
+                        option.append(iconElement, labelElement, addIcon);
+                        suggestions.append(option);
+                    });
+
+                    const exactMatch = suggestionOptions[type].some(([, label]) =>
+                        label.toLocaleLowerCase() === query,
+                    );
+                    const customValue = queryInput.value.trim();
+                    const alreadySelected = selectedValues.includes(query);
+                    if (customValue && !exactMatch && !alreadySelected) {
+                        const addCustom = document.createElement('button');
+                        addCustom.type = 'button';
+                        addCustom.dataset.addValue = customValue;
+                        const customLabel = document.createElement('span');
+                        customLabel.textContent = `Agregar “${customValue}”`;
+                        const addIcon = document.createElement('span');
+                        addIcon.className = 'dashboard-token-add-icon';
+                        addIcon.setAttribute('aria-hidden', 'true');
+                        addIcon.textContent = '+';
+                        addCustom.append(customLabel, addIcon);
+                        suggestions.append(addCustom);
+                    }
+
+                    if (!suggestions.childElementCount) {
+                        const empty = document.createElement('p');
+                        empty.textContent = 'No hay más opciones para agregar.';
+                        suggestions.append(empty);
+                    }
+                    suggestions.hidden = false;
+                }
+
+                function addValue(value) {
+                    if (!value || selected.some(item => item.toLocaleLowerCase() === value.toLocaleLowerCase())) return;
+                    selected.push(value);
+                    queryInput.value = '';
+                    renderSelected();
+                    renderSuggestions();
+                    queryInput.focus();
+                }
+
+                renderSelected();
+                queryInput.addEventListener('focus', renderSuggestions);
+                queryInput.addEventListener('input', renderSuggestions);
+                suggestions.addEventListener('click', event => {
+                    const option = event.target.closest('[data-add-value]');
+                    if (!option) return;
+                    addValue(option.dataset.addValue);
+                });
+                selectedContainer.addEventListener('click', event => {
+                    const remove = event.target.closest('[data-remove-value]');
+                    if (!remove) return;
+
+                    selected = selected.filter(value => value !== remove.dataset.removeValue);
+                    renderSelected();
+                    renderSuggestions();
+                    queryInput.focus();
+                });
+
+                document.addEventListener('click', event => {
+                    if (!field.contains(event.target)) suggestions.hidden = true;
+                });
+
+                form.addEventListener('reset', () => {
+                    window.setTimeout(() => {
+                        selected = [];
+                        queryInput.value = '';
+                        renderSelected();
+                        suggestions.hidden = true;
+                    });
+                });
             });
 
             form.querySelectorAll('[data-capacity-step]').forEach(button => {
