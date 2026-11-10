@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/map/map-entry.js',
+                'resources/js/flora-detail-map.js',
                 'resources/js/dashboard/dashboard.js',
                 'resources/js/voluntariado-detail.js',
                 'resources/js/asistencia.js',

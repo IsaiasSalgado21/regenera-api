@@ -3,12 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\FloraFauna;
+use App\Models\Lugar;
+use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
+use MongoDB\BSON\ObjectId;
 
 class FloraPageController extends Controller
 {
-    public function __construct(private readonly FloraFaunaService $floraFaunaService) {}
+    public function __construct(
+        private readonly FloraFaunaService $floraFaunaService,
+        private readonly BajaCaliforniaSurBoundary $boundary,
+    ) {}
 
     /**
      * Listado público de flora y fauna con filtros del lado del servidor.
@@ -68,9 +74,61 @@ class FloraPageController extends Controller
 
         $especie->setAttribute('ubicacion', $this->floraFaunaService->ubicacionVisible($especie));
         $especie->setAttribute('imagenes', $this->floraFaunaService->imagenes($especie));
+        $ubicacion = $especie->ubicacion;
+
+        $relatedIds = collect($especie->lugaresRelacionados ?? [])
+            ->map(function ($id) {
+                $id = (string) $id;
+
+                return preg_match('/^[a-f0-9]{24}$/i', $id) ? new ObjectId($id) : $id;
+            })
+            ->values()
+            ->all();
+
+        $lugaresRelacionados = empty($relatedIds)
+            ? collect()
+            : Lugar::query()
+                ->where('estado', 'activo')
+                ->whereIn('_id', $relatedIds)
+                ->get(['nombre', 'latitud', 'longitud', 'municipio']);
+
+        $mapLocations = [];
+        if (
+            is_array($ubicacion)
+            && isset($ubicacion['latitud'], $ubicacion['longitud'])
+            && $this->boundary->contains($ubicacion['latitud'], $ubicacion['longitud'])
+        ) {
+            $mapLocations[] = [
+                'nombre' => $ubicacion['nombre'] ?? $especie->nombre,
+                'tipo' => 'Distribución registrada',
+                'latitud' => (float) $ubicacion['latitud'],
+                'longitud' => (float) $ubicacion['longitud'],
+            ];
+        }
+
+        foreach ($lugaresRelacionados as $lugar) {
+            if ($this->boundary->contains($lugar->latitud, $lugar->longitud)) {
+                $mapLocations[] = [
+                    'nombre' => $lugar->nombre,
+                    'tipo' => 'Lugar relacionado',
+                    'latitud' => (float) $lugar->latitud,
+                    'longitud' => (float) $lugar->longitud,
+                ];
+            }
+        }
+
+        $locationName = is_array($ubicacion) && is_string($ubicacion['nombre'] ?? null)
+            ? mb_strtolower($ubicacion['nombre'])
+            : '';
+        $mapMode = count($mapLocations) > 0
+            ? 'locations'
+            : (str_contains($locationName, 'baja california sur') ? 'regional' : 'none');
 
         return view('flora.show', [
             'especie' => $especie,
+            'lugaresRelacionados' => $lugaresRelacionados,
+            'mapLocations' => $mapLocations,
+            'mapMode' => $mapMode,
         ]);
     }
 }

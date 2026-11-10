@@ -1,0 +1,96 @@
+.flora-map-card {
+    margin-top: 30px;
+    padding: 25px;
+    border: 1px solid rgba(20, 32, 27, .1);
+    border-radius: 8px;
+    background: #fbfbf8;
+}
+
+.flora-map-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.flora-map-heading h3 {
+    margin: 8px 0 0;
+    color: #14201b;
+    font-family: "Playfair Display", serif;
+    font-size: 23px;
+    font-weight: 500;
+}
+
+.flora-map-note {
+    margin: 12px 0 18px;
+    color: #68756e;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.flora-detail-map {
+    width: 100%;
+    height: clamp(280px, 42vw, 430px);
+    overflow: hidden;
+    border: 1px solid rgba(20, 32, 27, .12);
+    border-radius: 6px;
+    background: #e8eee9;
+    z-index: 0;
+}
+
+.flora-detail-map .leaflet-control-attribution {
+    font-size: 10px;
+}
+
+.flora-map-external-link {
+    flex: 0 0 auto;
+    color: #164f3d;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.flora-map-status:empty {
+    display: none;
+}
+
+.flora-map-status {
+    margin: 12px 0 0;
+    color: #7a3028;
+    font-size: 13px;
+}
+
+html[data-theme="dark"] .flora-map-card {
+    border-color: #3a5147;
+    background: #1c2a23;
+}
+
+html[data-theme="dark"] .flora-map-heading h3,
+html[data-theme="dark"] .flora-map-external-link {
+    color: #edf4ef;
+}
+
+html[data-theme="dark"] .flora-map-note,
+html[data-theme="dark"] .flora-map-status {
+    color: #bdc9c1;
+}
+
+html[data-theme="dark"] .flora-map-external-link {
+    color: #9bd5bb;
+}
+
+@media (max-width: 600px) {
+    .flora-map-card {
+        padding: 18px;
+    }
+
+    .flora-map-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .flora-detail-map {
+        height: 300px;
+    }
+}

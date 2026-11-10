@@ -345,6 +345,70 @@
                         </p>
                     </div>
                 @endif
+
+                @if ($lugaresRelacionados->isNotEmpty())
+                    <div class="flora-location-card">
+                        <span class="flora-stage-section-label">
+                            LUGARES RELACIONADOS
+                        </span>
+                        <ul class="flora-source-list">
+                            @foreach ($lugaresRelacionados as $lugar)
+                                <li>{{ $lugar->nombre }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if ($mapMode !== 'none')
+                    <section class="flora-map-card" aria-labelledby="flora-map-heading">
+                        <div class="flora-map-heading">
+                            <div>
+                                <span class="flora-stage-section-label">MAPA DE REFERENCIA</span>
+                                <h3 id="flora-map-heading">
+                                    {{ $mapMode === 'regional' ? 'Distribución regional' : 'Ubicación y sitios relacionados' }}
+                                </h3>
+                            </div>
+                            @if ($mapMode === 'locations')
+                                <a
+                                    class="flora-map-external-link"
+                                    href="https://www.openstreetmap.org/?mlat={{ $mapLocations[0]['latitud'] }}&mlon={{ $mapLocations[0]['longitud'] }}#map=9/{{ $mapLocations[0]['latitud'] }}/{{ $mapLocations[0]['longitud'] }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Abrir mapa
+                                </a>
+                            @endif
+                        </div>
+
+                        <p class="flora-map-note">
+                            @if ($mapMode === 'regional')
+                                La ficha indica una distribución general en Baja California Sur. El contorno muestra la región, no puntos de avistamiento.
+                            @else
+                                Los marcadores muestran ubicaciones registradas o lugares relacionados con esta ficha;
+                                no representan necesariamente avistamientos puntuales de la especie.
+                            @endif
+                        </p>
+
+                        <div
+                            class="flora-detail-map"
+                            data-flora-map
+                            data-flora-map-mode="{{ $mapMode }}"
+                            role="region"
+                            aria-label="Mapa de ubicaciones relacionadas con {{ $especie->nombre }}"
+                        ></div>
+                        <script type="application/json" data-flora-map-locations>@json($mapLocations)</script>
+
+                        <p class="flora-map-status" data-flora-map-status role="status" aria-live="polite"></p>
+                    </section>
+                @else
+                    <div class="flora-stage-empty">
+                        <span aria-hidden="true">⌖</span>
+                        <h3>Mapa pendiente de ubicación</h3>
+                        <p>
+                            No hay coordenadas válidas registradas para esta especie ni para los lugares relacionados.
+                        </p>
+                    </div>
+                @endif
             </article>
 
             {{-- ETAPA 4: CONSERVACIÓN --}}
@@ -456,6 +520,7 @@
 </main>
 @endsection
 @push('scripts')
+@vite('resources/js/flora-detail-map.js')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const navigation = document.querySelector('[data-flora-navigation]');
@@ -498,6 +563,9 @@ document.addEventListener('DOMContentLoaded', () => {
             panel.hidden = !isActive;
             panel.setAttribute('aria-hidden', String(!isActive));
         });
+        document.dispatchEvent(new CustomEvent('flora:stage-shown', {
+            detail: { stage: currentStage }
+        }));
 
         steps.forEach((step, position) => {
             const isActive = position === currentStage;

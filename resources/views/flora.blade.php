@@ -96,7 +96,7 @@
                     No se encontraron especies con esos filtros.
                     <a href="{{ url('/flora') }}">Limpiar filtros</a>
                 </p>
-            @endforelse}
+            @endforelse
         </div>
 
         {{-- SECCIÓN DESTACADA --}}

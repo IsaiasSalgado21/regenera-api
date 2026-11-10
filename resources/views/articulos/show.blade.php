@@ -15,7 +15,7 @@
     {{-- HERO --}}
     <section class="page-hero">
         @if ($articulo->imagen)
-            <div class="page-hero-background" style="background-image: url('{{ $articulo->imagen }})"></div>
+            <div class="page-hero-background" style="background-image: url('{{ $articulo->imagen }}')"></div>
         @else
             <div class="page-hero-background"
                  style="background-image: url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1800&q=85');">
@@ -57,7 +57,7 @@
                 @foreach ($otros as $otro)
                     <article class="article-page-card">
                         @if ($otro->imagen)
-                            <div class="article-page-image" style="background-image: url('{{ $otro->imagen }})"></div>
+                            <div class="article-page-image" style="background-image: url('{{ $otro->imagen }}')"></div>
                         @else
                             <div class="article-page-image article-page-image--placeholder"></div>
                         @endif

@@ -82,7 +82,7 @@
                     No se encontraron artículos.
                     <a href="{{ url('/articulos') }}">Limpiar búsqueda</a>
                 </p>
-            @endforelse}
+            @endforelse
         </div>
 
     </section>
