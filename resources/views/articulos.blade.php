@@ -55,27 +55,27 @@
         <div class="page-grid article-list-grid">
             @forelse ($articulos as $articulo)
                 <article class="article-page-card">
-                    @if ($articulo['imagen'])
-                        <div class="article-page-image" style="background-image: url('{{ $articulo['imagen'] }}')"></div>
-                    @else
-                        <div class="article-page-image article-page-image--placeholder"></div>
-                    @endif
-
-                    <div class="article-page-content">
-                        <span>{{ strtoupper($articulo['categoria'] ?? 'ARTÍCULO') }}</span>
-
-                        <h2>{{ $articulo['titulo'] }}</h2>
-
-                        <p>{{ $articulo['resumen'] }}</p>
-
-                        @if ($articulo['fecha'])
-                            <span class="article-page-date">{{ $articulo['fecha'] }}</span>
+                    <a href="{{ url('/articulos/' . $articulo['id']) }}" class="article-page-card-link" aria-label="Leer artículo: {{ $articulo['titulo'] }}">
+                        @if ($articulo['imagen'])
+                            <div class="article-page-image" style="background-image: url('{{ $articulo['imagen'] }}')"></div>
+                        @else
+                            <div class="article-page-image article-page-image--placeholder"></div>
                         @endif
 
-                        <a href="{{ url('/articulos/' . $articulo['id']) }}" class="article-link">
-                            Leer artículo →
-                        </a>
-                    </div>
+                        <div class="article-page-content">
+                            <span>{{ strtoupper($articulo['categoria'] ?? 'ARTÍCULO') }}</span>
+
+                            <h2>{{ $articulo['titulo'] }}</h2>
+
+                            <p>{{ $articulo['resumen'] }}</p>
+
+                            @if ($articulo['fecha'])
+                                <span class="article-page-date">{{ $articulo['fecha'] }}</span>
+                            @endif
+
+                            <span class="article-link-visual">Leer artículo <span>→</span></span>
+                        </div>
+                    </a>
                 </article>
             @empty
                 <p class="empty-state">

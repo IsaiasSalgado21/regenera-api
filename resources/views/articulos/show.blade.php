@@ -56,20 +56,20 @@
             <div class="page-grid article-list-grid">
                 @foreach ($otros as $otro)
                     <article class="article-page-card">
-                        @if ($otro->imagen)
-                            <div class="article-page-image" style="background-image: url('{{ $otro->imagen }}')"></div>
-                        @else
-                            <div class="article-page-image article-page-image--placeholder"></div>
-                        @endif
+                        <a href="{{ url('/articulos/' . (string) $otro->_id) }}" class="article-page-card-link" aria-label="Leer artículo: {{ $otro->titulo }}">
+                            @if ($otro->imagen)
+                                <div class="article-page-image" style="background-image: url('{{ $otro->imagen }}')"></div>
+                            @else
+                                <div class="article-page-image article-page-image--placeholder"></div>
+                            @endif
 
-                        <div class="article-page-content">
-                            <span>{{ strtoupper($otro->categoria ?? 'ARTÍCULO') }}</span>
-                            <h2>{{ $otro->titulo }}</h2>
-                            <p>{{ \Illuminate\Support\Str::limit(strip_tags($otro->contenido), 120) }}</p>
-                            <a href="{{ url('/articulos/' . (string) $otro->_id) }}" class="article-link">
-                                Leer artículo →
-                            </a>
-                        </div>
+                            <div class="article-page-content">
+                                <span>{{ strtoupper($otro->categoria ?? 'ARTÍCULO') }}</span>
+                                <h2>{{ $otro->titulo }}</h2>
+                                <p>{{ \Illuminate\Support\Str::limit(strip_tags($otro->contenido), 120) }}</p>
+                                <span class="article-link-visual">Leer artículo <span>→</span></span>
+                            </div>
+                        </a>
                     </article>
                 @endforeach
             </div>

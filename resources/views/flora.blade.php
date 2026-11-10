@@ -64,32 +64,32 @@
         <div class="page-grid">
             @forelse ($especies as $especie)
                 <article class="info-card">
-                    @if ($especie['imagen'])
-                        <div class="info-card-image" style="background-image: url('{{ $especie['imagen'] }}')"></div>
-                    @else
-                        <div class="info-card-image info-card-image--placeholder"></div>
-                    @endif
-
-                    <div class="info-card-content">
-                        <span class="info-card-category">
-                            {{ $especie['tipo'] === 'flora' ? 'FLORA' : 'FAUNA' }}
-                            @if ($especie['conservacion'])
-                                · {{ strtoupper($especie['conservacion']) }}
-                            @endif
-                        </span>
-
-                        <h3>{{ $especie['nombre'] }}</h3>
-
-                        @if ($especie['cientifico'])
-                            <p class="info-card-scientific"><em>{{ $especie['cientifico'] }}</em></p>
+                    <a href="{{ url('/flora/' . $especie['id']) }}" class="info-card-link-wrapper" aria-label="Conocer más: {{ $especie['nombre'] }}">
+                        @if ($especie['imagen'])
+                            <div class="info-card-image" style="background-image: url('{{ $especie['imagen'] }}')"></div>
+                        @else
+                            <div class="info-card-image info-card-image--placeholder"></div>
                         @endif
 
-                        <p>{{ \Illuminate\Support\Str::limit($especie['descripcion'], 150) }}</p>
+                        <div class="info-card-content">
+                            <span class="info-card-category">
+                                {{ $especie['tipo'] === 'flora' ? 'FLORA' : 'FAUNA' }}
+                                @if ($especie['conservacion'])
+                                    · {{ strtoupper($especie['conservacion']) }}
+                                @endif
+                            </span>
 
-                        <a href="{{ url('/flora/' . $especie['id']) }}" class="info-card-link">
-                            Conocer más <span>→</span>
-                        </a>
-                    </div>
+                            <h3>{{ $especie['nombre'] }}</h3>
+
+                            @if ($especie['cientifico'])
+                                <p class="info-card-scientific"><em>{{ $especie['cientifico'] }}</em></p>
+                            @endif
+
+                            <p>{{ \Illuminate\Support\Str::limit($especie['descripcion'], 150) }}</p>
+
+                            <span class="info-card-link-visual">Conocer más <span>→</span></span>
+                        </div>
+                    </a>
                 </article>
             @empty
                 <p class="empty-state">

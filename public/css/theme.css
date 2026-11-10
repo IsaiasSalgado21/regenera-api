@@ -446,3 +446,43 @@ html[data-theme="dark"] .volunteer-cancel-cta {
 html[data-theme="dark"] .volunteer-map-unavailable {
     background: #22332a;
 }
+
+html[data-theme="dark"] .volunteer-detail-page {
+    background: #14201b;
+}
+
+html[data-theme="dark"] .volunteer-gallery-main {
+    background: #1c2a23;
+}
+
+html[data-theme="dark"] .volunteer-detail-fact-icon {
+    background: #22332a;
+}
+
+html[data-theme="dark"] .volunteer-detail-back,
+html[data-theme="dark"] .volunteer-detail-back:hover {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .volunteer-detail-section-heading > span {
+    color: #9bd5bb;
+}
+
+html[data-theme="dark"] .volunteer-inline-map {
+    border-color: #35473d;
+    background: #1c2a23;
+}
+
+html[data-theme="dark"] .volunteer-inline-map-heading {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .volunteer-capacity-heading small,
+html[data-theme="dark"] .volunteer-capacity-stats small {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .volunteer-capacity-heading strong,
+html[data-theme="dark"] .volunteer-capacity-stats strong {
+    color: #b7e5d1;
+}

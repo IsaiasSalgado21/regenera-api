@@ -1453,14 +1453,16 @@
             const articles = getPublicArticles().slice(0, 3);
             articleContainer.innerHTML = articles.length ? articles.map(article => `
                 <article class="article-card">
-                    <div class="article-image" style="background-image:url('${escapeHtml(article.imagen)}')"></div>
-                    <div class="article-content">
-                        <span>${escapeHtml(article.categoria)}</span>
-                        <h3>${escapeHtml(article.titulo)}</h3>
-                        <p>${escapeHtml(article.contenido.slice(0, 170))}${article.contenido.length > 170 ? "…" : ""}</p>
-                        <p class="article-meta">${escapeHtml(article.autor?.nombre || "Autor por confirmar")} · ${escapeHtml(formatDate(article.fechaPublicacion))}</p>
-                        <a href="${detailUrl("articulo", article.articulos_id)}">Leer artículo →</a>
-                    </div>
+                    <a href="${detailUrl("articulo", article.articulos_id)}" class="article-card-link" aria-label="Leer artículo: ${escapeHtml(article.titulo)}">
+                        <div class="article-image" style="background-image:url('${escapeHtml(article.imagen)}')"></div>
+                        <div class="article-content">
+                            <span>${escapeHtml(article.categoria)}</span>
+                            <h3>${escapeHtml(article.titulo)}</h3>
+                            <p>${escapeHtml(article.contenido.slice(0, 170))}${article.contenido.length > 170 ? "…" : ""}</p>
+                            <p class="article-meta">${escapeHtml(article.autor?.nombre || "Autor por confirmar")} · ${escapeHtml(formatDate(article.fechaPublicacion))}</p>
+                            <span class="article-link-visual">Leer artículo <span>→</span></span>
+                        </div>
+                    </a>
                 </article>`).join("") : '<p class="empty-state">Aún no hay artículos publicados.</p>';
         }
     }
@@ -1474,14 +1476,16 @@
         </a>`;
         const cards = articles.map(article => `
             <article class="article-page-card">
-                <div class="article-page-image" style="background-image:url('${escapeHtml(article.imagen)}')"></div>
-                <div class="article-page-content">
-                    <span>${escapeHtml(article.categoria)}</span>
-                    <h2>${escapeHtml(article.titulo)}</h2>
-                    <p>${escapeHtml(article.contenido.slice(0, 220))}${article.contenido.length > 220 ? "…" : ""}</p>
-                    <p class="article-meta">${escapeHtml(article.autor?.nombre || "Autor por confirmar")} · ${escapeHtml(formatDate(article.fechaPublicacion))}</p>
-                    <a class="article-link" href="${detailUrl("articulo", article.articulos_id)}">Leer artículo →</a>
-                </div>
+                <a href="${detailUrl("articulo", article.articulos_id)}" class="article-page-card-link" aria-label="Leer artículo: ${escapeHtml(article.titulo)}">
+                    <div class="article-page-image" style="background-image:url('${escapeHtml(article.imagen)}')"></div>
+                    <div class="article-page-content">
+                        <span>${escapeHtml(article.categoria)}</span>
+                        <h2>${escapeHtml(article.titulo)}</h2>
+                        <p>${escapeHtml(article.contenido.slice(0, 220))}${article.contenido.length > 220 ? "…" : ""}</p>
+                        <p class="article-meta">${escapeHtml(article.autor?.nombre || "Autor por confirmar")} · ${escapeHtml(formatDate(article.fechaPublicacion))}</p>
+                        <span class="article-link-visual">Leer artículo <span>→</span></span>
+                    </div>
+                </a>
             </article>`).join("");
         container.innerHTML = `${createTile}${cards || '<p class="empty-state">Aún no hay artículos publicados.</p>'}`;
     }
@@ -1498,15 +1502,17 @@
         });
         container.innerHTML = entries.map(item => `
             <article class="info-card">
-                <div class="info-card-image" style="background-image:url('${escapeHtml(item.imagenes?.[0] || "")}')"></div>
-                <div class="info-card-content">
-                    <span class="info-card-category">${escapeHtml(item.tipo)}</span>
-                    <h3>${escapeHtml(item.nombre)}</h3>
-                    <p class="flora-scientific-name">${escapeHtml(item.nombreCientifico || "Nombre científico no registrado en la demo")}</p>
-                    <p>${escapeHtml(item.descripcion)}</p>
-                    <p class="flora-card-meta"><strong>Hábitat:</strong> ${escapeHtml(item.habitat || "Información no disponible en la demo")}</p>
-                    <a class="info-card-link" href="${detailUrl("flora", item.floraFauna_id)}">Explorar ficha →</a>
-                </div>
+                <a href="${detailUrl("flora", item.floraFauna_id)}" class="info-card-link-wrapper" aria-label="Conocer más: ${escapeHtml(item.nombre)}">
+                    <div class="info-card-image" style="background-image:url('${escapeHtml(item.imagenes?.[0] || "")}')"></div>
+                    <div class="info-card-content">
+                        <span class="info-card-category">${escapeHtml(item.tipo)}</span>
+                        <h3>${escapeHtml(item.nombre)}</h3>
+                        <p class="flora-scientific-name">${escapeHtml(item.nombreCientifico || "Nombre científico no registrado en la demo")}</p>
+                        <p>${escapeHtml(item.descripcion)}</p>
+                        <p class="flora-card-meta"><strong>Hábitat:</strong> ${escapeHtml(item.habitat || "Información no disponible en la demo")}</p>
+                        <span class="info-card-link-visual">Conocer más <span>→</span></span>
+                    </div>
+                </a>
             </article>`).join("") || '<p class="empty-state">No hay especies en este filtro.</p>';
     }
 

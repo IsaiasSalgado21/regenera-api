@@ -210,24 +210,24 @@
         <div class="articles-grid">
             @forelse ($articulos as $articulo)
                 <article class="article-card">
-                    <div
-                        class="article-image"
-                        style="background-image: url('{{ $articulo['imagen'] }}')"
-                    ></div>
+                    <a href="{{ url('/articulos/' . $articulo['id']) }}" class="article-card-link" aria-label="Leer artículo: {{ $articulo['titulo'] }}">
+                        <div
+                            class="article-image"
+                            style="background-image: url('{{ $articulo['imagen'] }}')"
+                        ></div>
 
-                    <div class="article-content">
-                        <span>{{ ucfirst($articulo['categoria']) }}</span>
+                        <div class="article-content">
+                            <span>{{ ucfirst($articulo['categoria']) }}</span>
 
-                        <h3>{{ $articulo['titulo'] }}</h3>
+                            <h3>{{ $articulo['titulo'] }}</h3>
 
-                        <p>
-                            {{ \Illuminate\Support\Str::limit($articulo['contenido'], 160) }}
-                        </p>
+                            <p>
+                                {{ \Illuminate\Support\Str::limit($articulo['contenido'], 160) }}
+                            </p>
 
-                        <a href="{{ url('/articulos/' . $articulo['id']) }}">
-                            Leer artículo <span>→</span>
-                        </a>
-                    </div>
+                            <span class="article-link-visual">Leer artículo <span>→</span></span>
+                        </div>
+                    </a>
                 </article>
             @empty
                 <p class="empty-state">

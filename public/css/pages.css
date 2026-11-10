@@ -227,6 +227,27 @@
     margin-bottom: 20px;
 }
 
+.article-page-card-link {
+    display: block;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.article-page-card-link:focus-visible {
+    outline: 2px solid #2f8064;
+    outline-offset: 4px;
+}
+
+.article-link-visual {
+    display: inline-block;
+    margin-top: 15px;
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 600;
+}
+
 .article-link {
     color: var(--green);
     font-size: 13px;
