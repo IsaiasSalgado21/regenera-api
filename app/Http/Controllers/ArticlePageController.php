@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Articulo;
@@ -11,9 +10,7 @@ class ArticlePageController extends Controller
 {
     public function __construct(private readonly GridFsImageService $gridFsImages) {}
 
-    /**
-     * Listado público de artículos publicados, con filtro opcional por categoría.
-     */
+    /** Listado público de artículos publicados, con filtro opcional por categoría. */
     public function index(Request $request)
     {
         $query = Articulo::query()->where('estado', 'publicado');
@@ -43,9 +40,7 @@ class ArticlePageController extends Controller
         ]);
     }
 
-    /**
-     * Detalle de un artículo.
-     */
+    /** Detalle de un artículo. */
     public function show(string $id)
     {
         $articulo = Articulo::find($id);
@@ -80,5 +75,10 @@ class ArticlePageController extends Controller
             : ($articulo->imagen ? [$articulo->imagen] : []);
 
         return $this->gridFsImages->urls($images);
+    }
+
+    public function create()
+    {
+        return view('articulos.crear');
     }
 }

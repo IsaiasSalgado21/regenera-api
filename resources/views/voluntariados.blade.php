@@ -41,6 +41,12 @@
             </p>
         </div>
 
+        <div class="create-cta">
+            <a href="{{ route('voluntariados.create') }}" class="button button-primary">
+                Quiero crear un voluntariado
+            </a>
+        </div>
+
         {{-- FILTROS (GET, server-side) --}}
         <form method="GET" action="{{ url('/voluntariados') }}" class="volunteer-filters-form">
 

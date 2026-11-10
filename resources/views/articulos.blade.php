@@ -52,6 +52,13 @@
         </form>
 
         {{-- LISTADO --}}
+            <div class="create-cta">
+                <a href="{{ route('articulos.create') }}" class="button button-primary">
+                    Quiero crear un artículo
+                </a>
+            </div>
+
+            {{-- LISTADO --}}
         <div class="page-grid article-list-grid">
             @forelse ($articulos as $articulo)
                 <article class="article-page-card">

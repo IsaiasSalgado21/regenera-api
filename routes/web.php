@@ -33,4 +33,5 @@ Route::get('/flora/{id}', [FloraPageController::class, 'show'])->name('flora.sho
 
 // Artículos
 Route::get('/articulos', [ArticlePageController::class, 'index'])->name('articulos.index');
+Route::get('/articulos/crear', [ArticlePageController::class, 'create'])->name('articulos.create');
 Route::get('/articulos/{id}', [ArticlePageController::class, 'show'])->name('articulos.show');

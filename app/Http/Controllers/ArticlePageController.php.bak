@@ -1,0 +1,84 @@
+﻿<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Articulo;
+use App\Services\GridFsImageService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+class ArticlePageController extends Controller
+{
+    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+
+    /**
+     * Listado pÃºblico de artÃ­culos publicados, con filtro opcional por categorÃ­a.
+     */
+    public function index(Request $request)
+    {
+        $query = Articulo::query()->where('estado', 'publicado');
+
+        if ($request->filled('q')) {
+            $termino = $request->q;
+            $query->where(function ($sub) use ($termino) {
+                $sub->where('titulo', 'like', '%' . $termino . '%')
+                    ->orWhere('contenido', 'like', '%' . $termino . '%');
+            });
+        }
+
+        $articulos = $query->orderBy('fechaPublicacion', 'desc')->get()->map(function ($a) {
+            return [
+                'id' => (string) $a->_id,
+                'titulo' => $a->titulo,
+                'resumen' => Str::limit(strip_tags($a->contenido), 150),
+                'imagen' => $this->gridFsImages->url($a->imagen),
+                'categoria' => $a->categoria,
+                'fecha' => $a->fechaPublicacion?->format('d/m/Y'),
+            ];
+        });
+
+        return view('articulos', [
+            'articulos' => $articulos,
+            'q' => $request->q,
+        ]);
+    }
+
+    /**
+     * Detalle de un artÃ­culo.
+     */
+    public function show(string $id)
+    {
+        $articulo = Articulo::find($id);
+
+        if (!$articulo || $articulo->estado !== 'publicado') {
+            abort(404);
+        }
+
+        $articuloImages = $this->imageUrls($articulo);
+        $articulo->setAttribute('imagenes', $articuloImages);
+        $articulo->imagen = $articuloImages[0] ?? null;
+
+        $otros = Articulo::where('estado', 'publicado')
+            ->where('_id', '!=', $articulo->_id)
+            ->orderBy('fechaPublicacion', 'desc')
+            ->limit(3)
+            ->get();
+        $otros->each(function (Articulo $otro): void {
+            $otro->imagen = $this->imageUrls($otro)[0] ?? null;
+        });
+
+        return view('articulos.show', [
+            'articulo' => $articulo,
+            'otros' => $otros,
+        ]);
+    }
+
+    private function imageUrls(Articulo $articulo): array
+    {
+        $images = is_array($articulo->imagenes) && $articulo->imagenes
+            ? $articulo->imagenes
+            : ($articulo->imagen ? [$articulo->imagen] : []);
+
+        return $this->gridFsImages->urls($images);
+    }
+}
