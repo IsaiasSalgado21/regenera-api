@@ -296,3 +296,378 @@
     }
 
 }
+
+/* =====================================================
+   BOTONES (reutilizados en páginas públicas)
+   ===================================================== */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 39px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 9px 15px;
+    cursor: pointer;
+    font: inherit;
+    font-size: .84rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.button-primary {
+    background: var(--green);
+    color: #fff;
+}
+
+.button-primary:hover {
+    background: var(--green-light);
+}
+
+.button-secondary {
+    border-color: var(--gray);
+    background: #fff;
+    color: var(--green);
+}
+
+.button-secondary:hover {
+    border-color: var(--green);
+    background: #fbfcfa;
+}
+
+/* =====================================================
+   CTA DE CREAR VOLUNTARIADO
+   ===================================================== */
+
+.create-cta {
+    margin: 30px 0;
+    text-align: center;
+}
+
+@media (max-width: 800px) {
+    .create-cta {
+        margin: 20px 0;
+    }
+}
+
+/* =====================================================
+   FORMULARIO DE CREACIÓN DE VOLUNTARIADO
+   ===================================================== */
+
+.create-form {
+    max-width: 760px;
+    margin: 0 auto;
+    border: 1px solid #dce3dd;
+    border-radius: 18px;
+    padding: clamp(18px, 4vw, 30px);
+    background: #f5f4ed;
+}
+
+.create-form-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.create-form-eyebrow {
+    color: #2f8064;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .13em;
+}
+
+.create-form-heading h2 {
+    margin: 5px 0 0;
+    color: #164f3d;
+    font-size: 1.35rem;
+}
+
+.create-form-close {
+    display: inline-grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff;
+    color: #164f3d;
+    font-size: 1.4rem;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.form-message {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: .9rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.form-message:empty {
+    display: none;
+}
+
+.form-message.is-success {
+    background: #e4f2e9;
+    color: #286347;
+    border: 1px solid #b9dccf;
+}
+
+.form-message.is-error {
+    background: #f9e5e1;
+    color: #963e34;
+    border: 1px solid #e8c7c2;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 14px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 14px 0;
+}
+
+.form-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-field-capacity {
+    align-items: flex-start;
+}
+
+.create-capacity-control {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #dce3dd;
+    border-radius: 9px;
+    padding: 5px 9px;
+    background: #fff;
+}
+
+.create-capacity-icon {
+    color: #164f3d;
+    font-size: 1.05rem;
+}
+
+.create-capacity-control .create-capacity-step {
+    display: inline-grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 7px;
+    background: #e7f0e9;
+    color: #164f3d;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.form-field .create-capacity-control input[type="number"] {
+    width: 42px;
+    min-height: auto;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #164f3d;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    appearance: textfield;
+}
+
+.form-field .create-capacity-control input[type="number"]::-webkit-inner-spin-button,
+.form-field .create-capacity-control input[type="number"]::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+}
+
+.create-capacity-unit {
+    color: #66716c;
+    font-size: .75rem;
+}
+
+.form-field label {
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--black);
+}
+
+.form-field label .required {
+    color: #a54131;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    min-height: 42px;
+    padding: 11px 12px;
+    border: 1px solid #cbd5cd;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--black);
+    font: inherit;
+    font-size: .9rem;
+    box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    outline: 3px solid rgb(47 128 100 / 18%);
+    border-color: #2f8064;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+    margin-top: 18px;
+}
+
+.form-actions .button {
+    min-height: 44px;
+    padding-right: 20px;
+    padding-left: 20px;
+}
+
+.form-actions .button-secondary {
+    border-color: #718078;
+    background: #fff;
+}
+
+html[data-theme="dark"] .create-form {
+    border-color: #35473d;
+    background: #1b2822;
+}
+
+html[data-theme="dark"] .form-field label {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .create-form-heading h2 {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .create-form-eyebrow {
+    color: #8bc6aa;
+}
+
+html[data-theme="dark"] .create-capacity-control {
+    border-color: #45594e;
+    background: #142019;
+}
+
+html[data-theme="dark"] .create-capacity-control input[type="number"] {
+    color: #b7e5d1;
+}
+
+@media (max-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .button {
+        flex: none;
+        width: 100%;
+    }
+}
+
+/* =====================================================
+   INFO LISTA DE CREACIÓN
+   ===================================================== */
+
+.create-info-list {
+    margin: 16px 0 24px;
+    padding-left: 20px;
+    color: var(--gray);
+    line-height: 1.8;
+}
+
+.create-info-list li {
+    margin-bottom: 10px;
+}
+
+/* =====================================================
+   ESTADO DE AUTENTICACIÓN REQUERIDA
+   ===================================================== */
+
+.auth-required {
+    max-width: 560px;
+    margin: 40px auto;
+    text-align: center;
+}
+
+.auth-card {
+    padding: 40px 30px;
+    border-radius: 22px;
+    background: #fff;
+    border: 1px solid rgba(20, 32, 27, .07);
+    box-shadow: 0 18px 55px rgba(20, 32, 27, .07);
+}
+
+/* =====================================================
+   TARJETA DE CREACIÓN DE VOLUNTARIADO (estilo tarjeta)
+   ===================================================== */
+
+.volunteer-create-card {
+    min-width: 0;
+}
+
+.volunteer-create-action {
+    margin-top: 4px;
+}
+
+html[data-theme="dark"] .auth-card {
+    border-color: #35473d;
+    background: #1b2822;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .auth-card h1,
+html[data-theme="dark"] .auth-card p {
+    color: #e7eee9;
+}
+
+.auth-heading {
+    margin-bottom: 24px;
+}
+
+.auth-eyebrow {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-light);
+}
+
+.auth-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.auth-actions .button {
+    flex: 1 1 200px;
+    max-width: 260px;
+}

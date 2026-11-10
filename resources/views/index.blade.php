@@ -23,6 +23,9 @@
                 <a href="{{ url('/voluntariados') }}" class="section-link">
                     Explorar voluntariados <span>→</span>
                 </a>
+                <a href="{{ route('voluntariados.create') }}" class="button button-primary">
+                    Quiero crear un voluntariado
+                </a>
             </div>
         </div>
 

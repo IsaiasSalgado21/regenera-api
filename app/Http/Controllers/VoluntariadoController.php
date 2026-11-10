@@ -28,12 +28,13 @@ class VoluntariadoController extends Controller
 
     public function store(Request $request)
     {
-        // MVP: organizadorVerificado=false no debe bloquear a un organizador al crear un voluntariado.
+        $user = $request->user();
+
         $validated = $request->validate([
             'titulo' => 'required|string|max:150',
             'descripcion' => 'required|string|max:3000',
+            'categoria' => 'required|string|max:100',
             'lugarId' => 'required|string|max:100',
-            'organizadorId' => 'required|string|max:100',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
             'fechaInicio' => 'required|date',
@@ -53,18 +54,16 @@ class VoluntariadoController extends Controller
             'materiales' => 'nullable|array',
             'materiales.*' => 'string|max:255',
             'imagen' => 'nullable|file|image|max:5120',
-            'estado' => [
-                'sometimes',
-                Rule::in([
-                    'pendiente',
-                    'publicado',
-                    'cancelado',
-                    'finalizado',
-                ]),
-            ],
         ]);
 
-        $validated['estado'] = $validated['estado'] ?? 'pendiente';
+        // El estado se define exclusivamente en el backend según el rol del usuario.
+        // Nunca se confía en el valor enviado desde el frontend.
+        $puedePublicarDirectamente =
+            $user->rol === 'admin' ||
+            ($user->rol === 'organizador' && (bool) $user->organizadorVerificado);
+
+        $validated['estado'] = $puedePublicarDirectamente ? 'publicado' : 'pendiente';
+        $validated['organizadorId'] = $user->getAuthIdentifier();
         $validated['requisitos'] = $validated['requisitos'] ?? [];
         $validated['materiales'] = $validated['materiales'] ?? [];
 
@@ -74,10 +73,13 @@ class VoluntariadoController extends Controller
         }
 
         $voluntariado = Voluntariado::create($validated);
+        $message = $voluntariado->estado === 'publicado'
+            ? 'Voluntariado publicado correctamente.'
+            : 'Tu voluntariado quedó pendiente de aprobación del equipo.';
 
         return response()->json([
             'success' => true,
-            'message' => 'Voluntariado registrado correctamente.',
+            'message' => $message,
             'voluntariado' => $voluntariado,
         ], 201);
     }

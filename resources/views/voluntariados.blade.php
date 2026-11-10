@@ -98,6 +98,17 @@
 
         {{-- RESULTADOS --}}
         <div class="volunteer-grid">
+            <article class="volunteer-card volunteer-create-card">
+                <div class="volunteer-card-content">
+                    <span class="volunteer-category">PROPÓN UNA ACTIVIDAD</span>
+                    <h3>Crear voluntariado</h3>
+                    <p>Comparte una nueva iniciativa ambiental con la comunidad.</p>
+                    <a class="button button-primary volunteer-create-action" href="{{ route('voluntariados.create') }}">
+                        Crear voluntariado
+                    </a>
+                </div>
+            </article>
+
             @forelse ($voluntariados as $voluntariado)
                 <article class="volunteer-card">
                     <a class="volunteer-card-link" href="{{ url('/voluntariados/' . $voluntariado['id']) }}" aria-label="Ver voluntariado: {{ $voluntariado['titulo'] }}">

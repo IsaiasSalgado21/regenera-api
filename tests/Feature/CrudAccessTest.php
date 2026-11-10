@@ -21,6 +21,11 @@ class CrudAccessTest extends TestCase
         $this->getJson('/api/admin/voluntariados/organizadores')->assertUnauthorized();
     }
 
+    public function test_voluntariado_creation_requires_authentication(): void
+    {
+        $this->postJson('/api/voluntariados', [])->assertUnauthorized();
+    }
+
     public function test_admin_routes_reject_authenticated_non_admin_users(): void
     {
         $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false]);

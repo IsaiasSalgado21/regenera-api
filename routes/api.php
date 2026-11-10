@@ -63,7 +63,7 @@ Route::get('/lugares/{id}', [LugarController::class, 'show'])->middleware('auth.
 Route::put('/lugares/{id}', [LugarController::class, 'update'])->middleware('auth:sanctum');
 
 Route::get('/voluntariados', [VoluntariadoController::class, 'index']);
-Route::post('/voluntariados', [VoluntariadoController::class, 'store']);
+Route::post('/voluntariados', [VoluntariadoController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/voluntariados/{id}', [VoluntariadoController::class, 'show']);
 Route::put('/voluntariados/{id}', [VoluntariadoController::class, 'update']);
 Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update']);

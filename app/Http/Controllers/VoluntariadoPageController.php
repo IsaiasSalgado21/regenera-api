@@ -78,6 +78,14 @@ class VoluntariadoPageController extends Controller
     }
 
     /**
+     * Formulario para crear un voluntariado.
+     */
+    public function create()
+    {
+        return view('voluntariados.crear');
+    }
+
+    /**
      * Detalle de un voluntariado.
      */
     public function show(string $id)
