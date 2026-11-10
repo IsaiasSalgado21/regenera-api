@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly GridFsImageService $gridFsImages,
+    ) {}
+
     /**
      * Registrar un usuario.
      */
@@ -135,8 +140,10 @@ class AuthController extends Controller
                 'id' => (string) $usuario->_id,
                 'nombre' => $usuario->nombre,
                 'correo' => $usuario->correo,
+                'foto' => $this->gridFsImages->url($usuario->foto),
                 'rol' => $usuario->rol,
                 'organizadorVerificado' => $usuario->organizadorVerificado,
+                'fechaRegistro' => $usuario->fechaRegistro?->toISOString(),
                 'estado' => $usuario->estado,
             ],
         ]);
