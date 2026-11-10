@@ -31,6 +31,7 @@
     {{-- Estilos compilados con Vite --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @stack('styles')
+        <link rel="stylesheet" href="{{ asset('css/login.css') }}">
         <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
     </head>
 
@@ -76,6 +77,14 @@
             <button class="menu-button" id="menuButton" aria-label="Abrir menú">☰</button>
         </header>
 
+        <section class="auth-modal" data-auth-modal hidden aria-hidden="true">
+            <button class="auth-modal-backdrop" type="button" data-auth-close aria-label="Cerrar acceso"></button>
+            <div class="auth-modal-dialog" role="dialog" aria-modal="true" aria-label="Acceder a Regenera BCS" tabindex="-1">
+                <button class="auth-modal-close" type="button" data-auth-close aria-label="Cerrar">×</button>
+                @include('auth.form', ['authPrefix' => 'modal'])
+            </div>
+        </section>
+
         {{-- =========================
              MENÚ MÓVIL
         ========================== --}}
@@ -111,6 +120,9 @@
         {{-- Script global del sitio (menú móvil) --}}
         @if (file_exists(public_path('js/site.js')))
             <script src="{{ asset('js/site.js') }}"></script>
+        @endif
+        @if (file_exists(public_path('js/login.js')))
+            <script src="{{ asset('js/login.js') }}"></script>
         @endif
 
     </body>

@@ -2,14 +2,16 @@ import axios from 'axios';
 
 const page = document.querySelector('[data-notification-profile]');
 if (page) {
-    const token = sessionStorage.getItem('regenera_access_token');
     const status = page.querySelector('[data-profile-status]');
     const frequencyForm = page.querySelector('[data-reminder-form]');
     const reminderSettings = page.querySelector('[data-reminder-settings]');
     const pushButton = page.querySelector('[data-push-toggle]');
-    const headers = {
-        Accept: 'application/json',
-        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    const headers = () => {
+        const token = sessionStorage.getItem('regenera_access_token');
+        return {
+            Accept: 'application/json',
+            ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        };
     };
 
     function setStatus(message, isError = false) {
@@ -24,20 +26,23 @@ if (page) {
     }
 
     async function load() {
-        if (!token) {
+        if (!sessionStorage.getItem('regenera_access_token')) {
             setStatus('Inicia sesión para configurar tus preferencias.', true);
             frequencyForm.querySelectorAll('select, button').forEach(control => { control.disabled = true; });
             pushButton.disabled = true;
             return;
         }
+        frequencyForm.querySelectorAll('select, button').forEach(control => { control.disabled = false; });
+        pushButton.disabled = false;
         try {
             const [userResponse, preferenceResponse] = await Promise.all([
-                axios.get('/api/auth/me', { headers }),
-                axios.get('/api/notificaciones/preferencias', { headers }),
+                axios.get('/api/auth/me', { headers: headers() }),
+                axios.get('/api/notificaciones/preferencias', { headers: headers() }),
             ]);
             if (userResponse.data.usuario.rol === 'admin') {
                 reminderSettings.hidden = true;
             } else {
+                reminderSettings.hidden = false;
                 frequencyForm.elements.recordatorioFrecuencia.value =
                     preferenceResponse.data.data.recordatorioFrecuencia || 'milestones';
             }
@@ -72,7 +77,7 @@ if (page) {
         try {
             await axios.patch('/api/notificaciones/preferencias', {
                 recordatorioFrecuencia: frequencyForm.elements.recordatorioFrecuencia.value,
-            }, { headers });
+            }, { headers: headers() });
             setStatus('Frecuencia de recordatorios guardada.');
         } catch (error) {
             setStatus(error.response?.data?.message || 'No se pudieron guardar las preferencias.', true);
@@ -88,7 +93,7 @@ if (page) {
             const existing = await registration.pushManager.getSubscription();
             if (existing) {
                 await axios.delete('/api/notificaciones/push/suscripcion', {
-                    headers,
+                    headers: headers(),
                     data: { endpoint: existing.endpoint },
                 });
                 await existing.unsubscribe();
@@ -103,7 +108,7 @@ if (page) {
                 setStatus('No se activaron las push porque no se concedió permiso.', true);
                 return;
             }
-            const keyResponse = await axios.get('/api/notificaciones/push/clave-publica', { headers });
+            const keyResponse = await axios.get('/api/notificaciones/push/clave-publica', { headers: headers() });
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: decodeApplicationServerKey(keyResponse.data.data.publicKey),
@@ -111,7 +116,7 @@ if (page) {
             await axios.post('/api/notificaciones/push/suscripcion', {
                 ...subscription.toJSON(),
                 contentEncoding: PushManager.supportedContentEncodings?.[0] || 'aes128gcm',
-            }, { headers });
+            }, { headers: headers() });
             pushButton.dataset.endpoint = subscription.endpoint;
             pushButton.textContent = 'Desactivar push en este dispositivo';
             setStatus('Push activado en este dispositivo.');
@@ -123,4 +128,5 @@ if (page) {
     });
 
     load();
+    document.addEventListener('regenera:auth-changed', load);
 }

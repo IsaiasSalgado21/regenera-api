@@ -100,6 +100,23 @@
         });
     }
 
+    document.addEventListener("regenera:auth-changed", event => {
+        const user = event.detail?.user;
+        if (!user) return;
+        updateNavigation(user);
+
+        if (event.detail?.intent?.type === "enrollment") {
+            const link = [...document.querySelectorAll("[data-voluntariado-id]")]
+                .find(item => item.dataset.voluntariadoId === event.detail.intent.voluntariadoId);
+            if (link?.tagName === "A") {
+                link.click();
+                const button = [...document.querySelectorAll("[data-voluntariado-id]")]
+                    .find(item => item.dataset.voluntariadoId === event.detail.intent.voluntariadoId);
+                button?.click();
+            }
+        }
+    });
+
     currentUser()
         .then(updateNavigation)
         .catch(error => console.error("No se pudo verificar la sesión.", error));
@@ -134,7 +151,15 @@
         event.preventDefault();
         const accessToken = token();
         if (!accessToken) {
-            window.location.assign(enrollmentLink.href);
+            document.dispatchEvent(new CustomEvent("regenera:auth-required", {
+                detail: {
+                    mode: "login",
+                    intent: {
+                        type: "enrollment",
+                        voluntariadoId: enrollmentLink.dataset.voluntariadoId,
+                    },
+                },
+            }));
             return;
         }
 

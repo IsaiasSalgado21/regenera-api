@@ -3,14 +3,16 @@ import axios from 'axios';
 const page = document.querySelector('[data-personal-profile]');
 
 if (page) {
-    const token = sessionStorage.getItem('regenera_access_token');
-    const headers = {
-        Accept: 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    const headers = () => {
+        const token = sessionStorage.getItem('regenera_access_token');
+        return {
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
     };
     const accessMessage = page.querySelector('[data-profile-access]');
     const profileError = page.querySelector('[data-profile-error]');
-    const api = (path) => axios.get(path, { headers });
+    const api = (path) => axios.get(path, { headers: headers() });
 
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;',
@@ -225,7 +227,7 @@ if (page) {
     };
 
     const showProfile = async () => {
-        if (!token) {
+        if (!sessionStorage.getItem('regenera_access_token')) {
             accessMessage.hidden = false;
             accessMessage.innerHTML = 'Inicia sesión para ver tu perfil personal. <a href="/login">Iniciar sesión</a>';
             page.querySelector('[data-profile-identity]').hidden = true;
@@ -233,6 +235,9 @@ if (page) {
             return;
         }
 
+        accessMessage.hidden = true;
+        profileError.hidden = true;
+        page.querySelector('[data-profile-identity]').hidden = false;
         try {
             const response = await api('/api/auth/me');
             const usuario = response.data.usuario;
@@ -278,4 +283,5 @@ if (page) {
     };
 
     showProfile();
+    document.addEventListener('regenera:auth-changed', showProfile);
 }

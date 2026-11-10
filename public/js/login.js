@@ -1,164 +1,250 @@
-/**
- * Login / Registro conectado al backend Laravel (regenera-api)
- *
- * Endpoints (ya definidos en routes/api.php):
- *   POST /api/auth/register  -> { nombre, correo, password, password_confirmation }
- *   POST /api/auth/login     -> { correo, password }
- *
- * Respuestas esperadas:
- *   { success: true,  message, usuario: { id, nombre, correo, rol, estado } }
- *   { success: false, message, errors? }
- *
- * Nota: como las rutas viven en routes/api.php, NO requieren CSRF.
- */
+(() => {
+    const modal = document.querySelector('[data-auth-modal]');
+    let lastFocusedElement = null;
+    let authIntent = null;
 
-const API = "/api";
-
-const form         = document.getElementById("loginForm");
-const nameField    = document.querySelector(".auth-name-field");
-const nameInput    = document.getElementById("nombre");
-const correoInput  = document.getElementById("correo");
-const passwordInput= document.getElementById("password");
-const submitButton = document.getElementById("authSubmit");
-const message      = document.getElementById("authMessage");
-const passwordToggle = document.getElementById("togglePassword");
-
-let mode = "login"; // "login" | "register"
-
-function setMessage(text, type = "") {
-    message.textContent = text || "";
-    message.className = "auth-message" + (type ? " is-" + type : "");
-}
-
-function setLoading(loading) {
-    submitButton.disabled = loading;
-    submitButton.textContent = loading
-        ? "Procesando…"
-        : (mode === "register" ? "Crear cuenta →" : "Iniciar sesión →");
-}
-
-function setMode(nextMode) {
-    mode = nextMode;
-    const registering = mode === "register";
-    nameField.hidden = !registering;
-    nameInput.required = registering;
-    passwordInput.autocomplete = registering ? "new-password" : "current-password";
-    submitButton.textContent = registering ? "Crear cuenta →" : "Iniciar sesión →";
-    setMessage("");
-    document.querySelectorAll("[data-auth-mode]").forEach(button => {
-        const active = button.dataset.authMode === mode;
-        button.classList.toggle("active", active);
-        button.setAttribute("aria-selected", String(active));
-    });
-}
-
-// Mostrar / ocultar contraseña
-passwordToggle.addEventListener("click", () => {
-    const visible = passwordInput.type === "password";
-    passwordInput.type = visible ? "text" : "password";
-    passwordToggle.textContent = visible ? "Ocultar" : "Mostrar";
-    passwordToggle.setAttribute("aria-label", `${visible ? "Ocultar" : "Mostrar"} contraseña`);
-    passwordToggle.setAttribute("aria-pressed", String(visible));
-});
-
-// Tabs
-document.querySelectorAll("[data-auth-mode]").forEach(button => {
-    button.addEventListener("click", () => setMode(button.dataset.authMode));
-});
-
-async function callApi(path, payload) {
-    const response = await fetch(API + path, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-        body: JSON.stringify(payload),
-    });
-
-    let data = {};
-    try { data = await response.json(); } catch (_) { /* respuesta vacía */ }
-
-    return {
-        ok: response.ok && data.success !== false,
-        status: response.status,
-        data,
+    const safeLocalPath = value => {
+        if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin || url.pathname === '/login') return null;
+        return `${url.pathname}${url.search}${url.hash}`;
     };
-}
 
-function mapRegisterError(errors) {
-    if (!errors) return null;
-    // Laravel devuelve errors.{campo}: [mensaje, ...]
-    if (errors.correo)    return "El correo ya está registrado o no es válido.";
-    if (errors.password)  return "La contraseña debe tener al menos 8 caracteres.";
-    if (errors.nombre)    return "Ingresa tu nombre.";
-    return Object.values(errors)[0]?.[0] || null;
-}
-
-form.addEventListener("submit", async event => {
-    event.preventDefault();
-    setMessage("");
-
-    if (!form.reportValidity()) return;
-    if (mode === "register" && !nameInput.value.trim()) {
-        setMessage("Ingresa tu nombre.", "error");
-        return;
+    function setMessage(element, text, type = '') {
+        element.textContent = text || '';
+        element.className = `auth-message${type ? ` is-${type}` : ''}`;
     }
 
-    setLoading(true);
-    try {
-        const correo   = correoInput.value.trim();
-        const password = passwordInput.value;
+    function setMode(widget, mode) {
+        const registering = mode === 'register';
+        widget.dataset.authModeCurrent = mode;
+        widget.querySelectorAll('[data-auth-mode]').forEach(button => {
+            const active = button.dataset.authMode === mode;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-selected', String(active));
+        });
+        widget.querySelectorAll('[data-auth-panel]').forEach(panel => {
+            const active = panel.dataset.authPanel === mode;
+            panel.classList.toggle('is-active', active);
+            panel.setAttribute('aria-hidden', String(!active));
+        });
 
-        let result;
-        if (mode === "register") {
-            // El backend pide password_confirmation; la reusamos como el mismo valor.
-            result = await callApi("/auth/register", {
-                nombre: nameInput.value.trim(),
-                correo,
-                password,
-                password_confirmation: password,
-            });
-        } else {
-            result = await callApi("/auth/login", { correo, password });
-        }
+        const content = registering
+            ? {
+                eyebrow: 'FORMA PARTE DE LA COMUNIDAD',
+                title: 'Crea tu cuenta',
+                description: 'Un pequeño paso para sumarte a iniciativas que regeneran nuestro entorno.',
+            }
+            : {
+                eyebrow: 'QUÉ BUENO TENERTE DE VUELTA',
+                title: 'Inicia sesión',
+                description: 'Accede para continuar con tus actividades en Regenera BCS.',
+            };
+        widget.querySelector('[data-auth-eyebrow]').textContent = content.eyebrow;
+        widget.querySelector('[data-auth-title]').textContent = content.title;
+        widget.querySelector('[data-auth-description]').textContent = content.description;
+        widget.querySelectorAll('[data-auth-message]').forEach(message => setMessage(message, ''));
+    }
 
-        if (!result.ok) {
-            const friendly = mapRegisterError(result.data.errors) || result.data.message;
-            setMessage(friendly || "No se pudo completar la solicitud.", "error");
-            return;
-        }
+    function openModal(mode = 'login') {
+        if (!modal) return false;
+        lastFocusedElement = document.activeElement;
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('auth-modal-open');
+        const widget = modal.querySelector('[data-auth-widget]');
+        setMode(widget, mode);
+        window.requestAnimationFrame(() => widget.querySelector(`[data-auth-panel="${mode}"] input`)?.focus());
+        return true;
+    }
 
-        // El token vive solo en esta pestaña y no se guarda en localStorage.
+    function closeModal() {
+        if (!modal || modal.hidden) return;
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('auth-modal-open');
+        document.getElementById('mobileMenu')?.classList.remove('active');
+        lastFocusedElement?.focus();
+        authIntent = null;
+    }
+
+    async function callApi(mode, payload) {
+        const response = await fetch(`/api/auth/${mode === 'register' ? 'register' : 'login'}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        let data = {};
         try {
-            if (typeof result.data.token !== "string" || !result.data.token) {
-                throw new Error("El servidor no devolvió un token de acceso.");
+            data = await response.json();
+        } catch {
+            throw new Error('El servidor devolvió una respuesta que no se pudo interpretar.');
+        }
+
+        if (!response.ok || data.success === false) {
+            const validationError = Object.values(data.errors || {}).flat()[0];
+            const error = new Error(validationError || data.message || 'No se pudo completar la solicitud.');
+            error.status = response.status;
+            throw error;
+        }
+        return data;
+    }
+
+    function showApiError(error) {
+        if (error.status === 401) return 'El correo o la contraseña no coinciden.';
+        if (error.status === 403) return error.message || 'No es posible acceder con esta cuenta.';
+        if (error.status === 409) return 'Ya existe una cuenta con ese correo.';
+        if (error.status === 422) return error.message || 'Revisa los datos ingresados.';
+        return error.status ? error.message || 'No se pudo completar la solicitud.' : 'No se pudo conectar con el servidor. Intenta de nuevo.';
+    }
+
+    function standaloneDestination() {
+        const requested = safeLocalPath(new URLSearchParams(window.location.search).get('redirect'));
+        if (requested) return requested;
+
+        try {
+            const referrer = new URL(document.referrer);
+            if (referrer.origin === window.location.origin) {
+                const path = safeLocalPath(`${referrer.pathname}${referrer.search}${referrer.hash}`);
+                if (path) return path;
             }
-            sessionStorage.setItem("regenera_access_token", result.data.token);
+        } catch {
+            // No referrer is available, so use the account page as a safe destination.
+        }
+        return '/perfil';
+    }
+
+    async function submitForm(form) {
+        const widget = form.closest('[data-auth-widget]');
+        const mode = form.dataset.authForm;
+        const message = form.querySelector('[data-auth-message]');
+        const submit = form.querySelector('[data-auth-submit]');
+        const label = submit.querySelector('[data-auth-submit-label]');
+        const values = new FormData(form);
+        const payload = {
+            correo: String(values.get('correo') || '').trim(),
+            password: String(values.get('password') || ''),
+        };
+
+        if (!form.reportValidity()) return;
+        if (mode === 'register') {
+            payload.nombre = String(values.get('nombre') || '').trim();
+            payload.password_confirmation = String(values.get('password_confirmation') || '');
+            if (payload.password !== payload.password_confirmation) {
+                setMessage(message, 'Las contraseñas no coinciden.', 'error');
+                form.elements.password_confirmation.focus();
+                return;
+            }
+        }
+
+        const originalLabel = mode === 'register' ? 'Crear mi cuenta' : 'Iniciar sesión';
+        submit.disabled = true;
+        submit.classList.add('is-loading');
+        submit.setAttribute('aria-busy', 'true');
+        label.textContent = mode === 'register' ? 'Creando tu cuenta…' : 'Verificando…';
+        setMessage(message, '');
+
+        try {
+            const data = await callApi(mode, payload);
+            if (typeof data.token !== 'string' || !data.token) {
+                throw new Error('El servidor no devolvió un token de acceso.');
+            }
+            sessionStorage.setItem('regenera_access_token', data.token);
+            setMessage(message, data.message || 'Acceso correcto.', 'success');
+
+            const user = data.usuario || {};
+            if (widget.closest('[data-auth-modal]')) {
+                const completedIntent = authIntent;
+                if (!modal.hidden) closeModal();
+                document.dispatchEvent(new CustomEvent('regenera:auth-changed', {
+                    detail: { user, intent: completedIntent },
+                }));
+                authIntent = null;
+            } else {
+                document.dispatchEvent(new CustomEvent('regenera:auth-changed', {
+                    detail: { user },
+                }));
+                window.setTimeout(() => window.location.assign(standaloneDestination()), 450);
+            }
         } catch (error) {
-            console.error("No se pudo establecer la sesión en este navegador.", error);
-            setMessage(error.message || "No se pudo guardar la sesión en este navegador.", "error");
+            setMessage(message, showApiError(error), 'error');
+        } finally {
+            submit.disabled = false;
+            submit.classList.remove('is-loading');
+            submit.removeAttribute('aria-busy');
+            label.textContent = originalLabel;
+        }
+    }
+
+    document.querySelectorAll('[data-auth-widget]').forEach(widget => {
+        widget.querySelectorAll('[data-auth-mode]').forEach(button => {
+            button.addEventListener('click', () => setMode(widget, button.dataset.authMode));
+        });
+        widget.querySelectorAll('[data-auth-form]').forEach(form => {
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                submitForm(form);
+            });
+        });
+        widget.querySelectorAll('[data-auth-password-toggle]').forEach(button => {
+            button.addEventListener('click', () => {
+                const input = button.parentElement.querySelector('input');
+                const visible = input.type === 'password';
+                input.type = visible ? 'text' : 'password';
+                button.textContent = visible
+                    ? 'Ocultar'
+                    : (input.closest('[data-auth-panel="login"]') ? 'Mostrar' : 'Ver');
+                button.setAttribute('aria-label', `${visible ? 'Ocultar' : 'Mostrar'} contraseña`);
+                button.setAttribute('aria-pressed', String(visible));
+            });
+        });
+    });
+
+    document.addEventListener('click', event => {
+        const closeButton = event.target.closest('[data-auth-close]');
+        if (closeButton) {
+            closeModal();
             return;
         }
 
-        setMessage(result.data.message || "¡Bienvenido!", "success");
+        const loginLink = event.target.closest('a[href]');
+        if (!loginLink || event.defaultPrevented || !modal) return;
+        const url = new URL(loginLink.href, window.location.origin);
+        if (url.origin !== window.location.origin || url.pathname !== '/login') return;
 
-        const redirect = new URLSearchParams(window.location.search).get("redirect");
-        let destination = "/";
-        if (redirect && redirect.startsWith("/")) {
-            const redirectUrl = new URL(redirect, window.location.origin);
-            if (redirectUrl.origin === window.location.origin) {
-                destination = redirectUrl.pathname + redirectUrl.search + redirectUrl.hash;
-            }
+        event.preventDefault();
+        const mode = url.searchParams.get('mode') === 'register' ? 'register' : 'login';
+        authIntent = null;
+        openModal(mode);
+    });
+
+    document.addEventListener('regenera:auth-required', event => {
+        authIntent = event.detail?.intent || null;
+        openModal(event.detail?.mode || 'login');
+    });
+
+    document.addEventListener('keydown', event => {
+        if (!modal || modal.hidden) return;
+        if (event.key === 'Escape') {
+            closeModal();
+            return;
         }
-        setTimeout(() => { window.location.assign(destination); }, 600);
-    } catch (error) {
-        console.error(error);
-        setMessage(
-            "No se pudo conectar con el servidor. Verifica que `php artisan serve` esté corriendo y MongoDB activo.",
-            "error"
-        );
-    } finally {
-        setLoading(false);
-    }
-});
+        if (event.key !== 'Tab') return;
+        const focusable = [...modal.querySelectorAll('button:not(:disabled):not(.auth-modal-backdrop), input:not(:disabled), a[href]')]
+            .filter(element => element.offsetParent !== null);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+})();

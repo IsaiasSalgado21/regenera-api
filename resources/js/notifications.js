@@ -149,6 +149,14 @@ if (drawer) {
             status.textContent = 'No se pudo actualizar la notificación.';
         }
     });
+    document.addEventListener('regenera:auth-changed', event => {
+        if (event.detail?.user) {
+            load();
+            return;
+        }
+        toggles.forEach(toggle => { toggle.hidden = true; });
+        updateBadge(0);
+    });
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape' && !drawer.hidden) setOpen(false);
     });
