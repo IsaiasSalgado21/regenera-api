@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Lugar;
 use App\Models\Inscripcion;
+use App\Models\ImpactoVoluntariado;
 use App\Models\Voluntariado;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
+use App\Services\ImpactoVoluntariadoService;
 use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
@@ -19,6 +21,7 @@ class VoluntariadoPageController extends Controller
         private readonly BajaCaliforniaSurBoundary $boundary,
         private readonly VoluntariadoHorario $horario,
         private readonly VoluntariadoWorkflow $workflow,
+        private readonly ImpactoVoluntariadoService $impactos,
     ) {}
 
     /**
@@ -117,9 +120,15 @@ class VoluntariadoPageController extends Controller
             ->where('voluntariadoId', (string) $voluntariado->_id)
             ->whereIn('estado', ['inscrita', 'activa'])
             ->count();
+        $impacto = $this->impactos->present(
+            ImpactoVoluntariado::query()
+                ->where('voluntariadoId', (string) $voluntariado->_id)
+                ->get(),
+        );
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
+            'impacto' => $impacto,
             'inscritosCount' => $inscritosCount,
             'lugar' => $lugar,
             'inicioFechaHora' => $inicioFechaHora,

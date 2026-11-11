@@ -37,6 +37,32 @@ class VoluntariadoController extends Controller
         ]);
     }
 
+    public function categorias()
+    {
+        $recomendadas = [
+            'limpieza-de-playas',
+            'reforestacion',
+            'restauracion',
+            'conservacion',
+            'monitoreo',
+            'educacion-ambiental',
+        ];
+        $registradas = Voluntariado::query()
+            ->get(['categoria'])
+            ->pluck('categoria')
+            ->filter(fn ($categoria) => is_string($categoria) && trim($categoria) !== '')
+            ->map(fn (string $categoria) => trim($categoria))
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'categorias' => collect($recomendadas)
+                ->merge($registradas)
+                ->unique(fn (string $categoria) => mb_strtolower($categoria))
+                ->values(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();

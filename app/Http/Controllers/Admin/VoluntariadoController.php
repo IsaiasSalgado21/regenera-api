@@ -200,6 +200,34 @@ class VoluntariadoController extends Controller
         ]);
     }
 
+    public function actualizarCodigoAsistencia(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'codigoAsistenciaActivo' => ['required', 'boolean'],
+        ]);
+        $voluntariado = Voluntariado::findOrFail($id);
+        $this->ensureCanManage($request, $voluntariado);
+        $voluntariado->update(['codigoAsistenciaActivo' => $validated['codigoAsistenciaActivo']]);
+
+        $this->auditoria->registrar(
+            $request->user(),
+            $validated['codigoAsistenciaActivo'] ? 'activar_qr_asistencia' : 'desactivar_qr_asistencia',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            $request,
+        );
+
+        return response()->json([
+            'data' => [
+                'id' => (string) $voluntariado->_id,
+                'codigoAsistenciaActivo' => (bool) $voluntariado->codigoAsistenciaActivo,
+            ],
+            'message' => $validated['codigoAsistenciaActivo']
+                ? 'El código de asistencia quedó activo.'
+                : 'El código de asistencia quedó desactivado.',
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate($this->rules());
@@ -421,6 +449,7 @@ class VoluntariadoController extends Controller
             'estado' => $voluntariado->estado,
             'tokenAsistencia' => $voluntariado->tokenAsistencia,
             'codigoCorto' => $voluntariado->codigoCorto,
+            'codigoAsistenciaActivo' => (bool) ($voluntariado->codigoAsistenciaActivo ?? true),
         ];
     }
 

@@ -32,6 +32,37 @@ Las notificaciones internas se conservan en el centro de notificaciones. Para ha
 
 Cada usuario activa las push desde su perfil; el permiso del navegador solo se solicita al pulsar el botón de activación. Los usuarios no administradores pueden elegir no recibir recordatorios, recibirlos un día y una hora antes, o recibir uno diario antes del inicio.
 
+## Registro de impacto ambiental
+
+Al concluir una actividad, su organizador propietario o un administrador puede
+registrar resultados con `POST /api/admin/voluntariados/{id}/impactos`. La API
+valida la propiedad y el horario publicado y fija las unidades por métrica:
+
+- `residuos_recolectados`: kg
+- `plantas_sembradas`: plantas
+- `superficie_restaurada`: m²
+- `costa_limpiada`: km
+
+La cantidad debe ser mayor que cero y tener hasta dos decimales; la nota es
+opcional y admite hasta 500 caracteres. Los resultados públicos se consultan
+por actividad en `GET /api/voluntariados/{id}/impactos` y de forma acumulada en
+`GET /api/impactos/resumen`. Cada registro conserva su trazabilidad y queda
+anotado en auditoría. El detalle web de cada voluntariado y la app muestran el
+total por métrica y una gráfica de los seis registros más recientes de esa
+métrica, con escala independiente para no comparar unidades distintas.
+
+Las rutas de gestión bajo `/api/admin/voluntariados` admiten organizadores
+autenticados y administradores; la API limita las operaciones a las actividades
+propias del organizador. La respuesta incluye `codigoAsistenciaActivo` y el
+estado del QR se puede cambiar con
+`PATCH /api/admin/voluntariados/{id}/codigo-asistencia`. Los registros antiguos
+sin este campo se consideran activos por compatibilidad.
+
+El formulario de creación consulta `GET /api/lugares` con el token del usuario
+para incluir sus lugares administrados aunque no tengan coordenadas de mapa.
+`GET /api/voluntariados/categorias` devuelve las categorías recomendadas y las
+que ya se han utilizado, para que las nuevas categorías puedan reutilizarse.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

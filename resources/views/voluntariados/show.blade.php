@@ -259,6 +259,98 @@
         </section>
         </div>
 
+        <section class="volunteer-impact" aria-labelledby="volunteer-impact-title">
+            <header class="volunteer-impact-heading">
+                <span>HUELLA POSITIVA</span>
+                <h2 id="volunteer-impact-title">Impacto de esta actividad</h2>
+                <p>Resultados reportados por el equipo organizador. Cada gráfica tiene su propia unidad y escala.</p>
+            </header>
+
+            @if (count($impacto['totales']))
+                <div class="volunteer-impact-grid">
+                    @foreach ($impacto['totales'] as $total)
+                        @php
+                            $metricRecords = array_values(array_filter(
+                                $impacto['registros'],
+                                fn ($record) => $record['tipo'] === $total['tipo'],
+                            ));
+                            $chartRecords = array_reverse(array_slice($metricRecords, 0, 6));
+                            $maxAmount = max(array_column($chartRecords, 'cantidad') ?: [0]);
+                        @endphp
+                        <article class="volunteer-impact-card">
+                            <div class="volunteer-impact-card-heading">
+                                <span class="volunteer-impact-label">{{ $total['etiqueta'] }}</span>
+                                <strong class="volunteer-impact-total">
+                                    {{ number_format($total['cantidad'], 2, '.', ',') }}
+                                    <small>{{ $total['unidad'] }}</small>
+                                </strong>
+                            </div>
+
+                            @if (count($chartRecords))
+                                <div class="volunteer-impact-chart"
+                                    role="img"
+                                    aria-label="{{ $total['etiqueta'] }}: {{ count($chartRecords) }} registros recientes. Escala independiente en {{ $total['unidad'] }}.">
+                                    @foreach ($chartRecords as $record)
+                                        @php
+                                            $barHeight = $maxAmount > 0
+                                                ? max(8, ($record['cantidad'] / $maxAmount) * 100)
+                                                : 8;
+                                        @endphp
+                                        <div class="volunteer-impact-column">
+                                            <span class="volunteer-impact-value">{{ number_format($record['cantidad'], 2, '.', ',') }}</span>
+                                            <div class="volunteer-impact-bar-track">
+                                                <span class="volunteer-impact-bar volunteer-impact-bar--{{ $total['tipo'] }}"
+                                                    style="height: {{ $barHeight }}%"></span>
+                                            </div>
+                                            <time class="volunteer-impact-date"
+                                                datetime="{{ $record['registradoEn'] ?? '' }}">
+                                                {{ $record['registradoEn']
+                                                    ? \Illuminate\Support\Carbon::parse($record['registradoEn'])->timezone('America/Mazatlan')->format('d M')
+                                                    : 's/f' }}
+                                            </time>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <p class="volunteer-impact-chart-note">
+                                    Últimos {{ count($chartRecords) }} registros · escala en {{ $total['unidad'] }}
+                                </p>
+                            @else
+                                <p class="volunteer-impact-chart-note">Aún no hay registros individuales para graficar.</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+
+                @if (count($impacto['registros']))
+                    <details class="volunteer-impact-history">
+                        <summary>Ver registros recientes ({{ min(8, count($impacto['registros'])) }})</summary>
+                        <ul>
+                            @foreach (array_slice($impacto['registros'], 0, 8) as $record)
+                                <li>
+                                    <span>
+                                        <strong>{{ $record['etiqueta'] }}</strong>
+                                        · {{ number_format($record['cantidad'], 2, '.', ',') }} {{ $record['unidad'] }}
+                                        @if ($record['nota'])
+                                            <small>{{ $record['nota'] }}</small>
+                                        @endif
+                                    </span>
+                                    @if ($record['registradoEn'])
+                                        <time datetime="{{ $record['registradoEn'] }}">
+                                            {{ \Illuminate\Support\Carbon::parse($record['registradoEn'])->timezone('America/Mazatlan')->format('d/m/Y') }}
+                                        </time>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    </details>
+                @endif
+            @else
+                <div class="volunteer-impact-empty">
+                    <span aria-hidden="true">✦</span>
+                    <p>Aún no se han registrado resultados. El impacto se actualizará cuando el equipo reporte los logros de la actividad.</p>
+                </div>
+            @endif
+        </section>
 
         <div class="detail-back">
             <a href="{{ url('/voluntariados') }}" class="section-link">← Volver a voluntariados</a>

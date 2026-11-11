@@ -97,6 +97,12 @@ class AsistenciaController extends Controller
                     'message' => 'El código no es válido.',
                 ], 404);
             }
+            if (! ($voluntariado->codigoAsistenciaActivo ?? true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El código QR de asistencia está desactivado.',
+                ], 409);
+            }
         } else {
             if (! in_array($request->user()->rol, ['admin', 'organizador'], true)) {
                 return response()->json([

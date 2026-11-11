@@ -31,6 +31,7 @@ class Voluntariado extends Model
         'estado',
         'tokenAsistencia',
         'codigoCorto',
+        'codigoAsistenciaActivo',
     ];
 
     protected $hidden = [
@@ -43,6 +44,7 @@ class Voluntariado extends Model
     {
         static::creating(function (Voluntariado $voluntariado): void {
             $voluntariado->inscritosActivos ??= 0;
+            $voluntariado->codigoAsistenciaActivo ??= true;
             if (! is_string($voluntariado->tokenAsistencia) || $voluntariado->tokenAsistencia === '') {
                 $voluntariado->tokenAsistencia = Str::random(64);
             }
@@ -70,6 +72,7 @@ class Voluntariado extends Model
             'fechaFin' => 'datetime',
             'cupo' => 'integer',
             'inscritosActivos' => 'integer',
+            'codigoAsistenciaActivo' => 'boolean',
             'latitud' => 'float',
             'longitud' => 'float',
             'requisitos' => 'array',

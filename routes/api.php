@@ -11,6 +11,7 @@ use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GridFsImageController;
+use App\Http\Controllers\ImpactoVoluntariadoController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\MapApiController;
 use App\Http\Controllers\NotificacionController;
@@ -63,8 +64,11 @@ Route::get('/lugares/{id}', [LugarController::class, 'show'])->middleware('auth.
 Route::put('/lugares/{id}', [LugarController::class, 'update'])->middleware('auth:sanctum');
 
 Route::get('/voluntariados', [VoluntariadoController::class, 'index'])->middleware('auth.optional');
+Route::get('/voluntariados/categorias', [VoluntariadoController::class, 'categorias']);
 Route::post('/voluntariados', [VoluntariadoController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/voluntariados/{id}', [VoluntariadoController::class, 'show'])->middleware('auth.optional');
+Route::get('/voluntariados/{id}/impactos', [ImpactoVoluntariadoController::class, 'index']);
+Route::get('/impactos/resumen', [ImpactoVoluntariadoController::class, 'resumen']);
 Route::put('/voluntariados/{id}', [VoluntariadoController::class, 'update'])->middleware('auth:sanctum');
 Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('/voluntariados/{id}', [VoluntariadoController::class, 'destroy'])->middleware('auth:sanctum');
@@ -119,6 +123,8 @@ Route::prefix('admin')
         Route::get('/voluntariados', [AdminVoluntariadoController::class, 'index']);
         Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
         Route::get('/voluntariados/{id}/dashboard', [AdminVoluntariadoController::class, 'dashboard']);
+        Route::post('/voluntariados/{id}/impactos', [ImpactoVoluntariadoController::class, 'store']);
+        Route::patch('/voluntariados/{id}/codigo-asistencia', [AdminVoluntariadoController::class, 'actualizarCodigoAsistencia']);
         Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);

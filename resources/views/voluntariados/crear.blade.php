@@ -77,21 +77,31 @@
                     <label for="categoria">Categoría <span class="required">*</span>
                         <select id="categoria" name="categoria" required>
                             <option value="">Selecciona una categoría</option>
+                            <option value="limpieza-de-playas">Limpieza de playas</option>
                             <option value="limpieza">Limpieza</option>
                             <option value="restauracion">Restauración</option>
                             <option value="conservacion">Conservación</option>
                             <option value="reforestacion">Reforestación</option>
                             <option value="monitoreo">Monitoreo</option>
                             <option value="educacion-ambiental">Educación ambiental</option>
+                            <option value="__custom__">Otra categoría…</option>
                         </select>
                     </label>
                 </div>
+                <p id="categoryLoadMessage" class="form-message" role="status" aria-live="polite"></p>
+                <label for="categoriaCustom" id="categoriaCustomField" hidden>
+                    Nombre de la nueva categoría <span class="required">*</span>
+                    <input type="text" id="categoriaCustom" maxlength="100"
+                        placeholder="Ej. Restauración de dunas">
+                    <small>Después de guardar, aparecerá como categoría recomendada.</small>
+                </label>
 
                 <label for="lugarId">Lugar <span class="required">*</span>
                     <select id="lugarId" name="lugarId" required>
                         <option value="">Selecciona un lugar</option>
                     </select>
                 </label>
+                <p id="placeLoadMessage" class="form-message" role="status" aria-live="polite"></p>
 
                 <div class="dashboard-form-row">
                     <label class="dashboard-date-field" for="fechaInicio">Fecha de inicio <span class="required">*</span>
@@ -195,6 +205,11 @@
             const cupoInput = document.getElementById('cupo');
             const fechaFinInput = document.getElementById('fechaFin');
             const fechaInicioInput = document.getElementById('fechaInicio');
+            const categoriaSelect = document.getElementById('categoria');
+            const categoriaCustomField = document.getElementById('categoriaCustomField');
+            const categoriaCustomInput = document.getElementById('categoriaCustom');
+            const categoryLoadMessage = document.getElementById('categoryLoadMessage');
+            const placeLoadMessage = document.getElementById('placeLoadMessage');
             const suggestionOptions = {
                 requisitos: [
                     ['🧴', 'Usar bloqueador biodegradable'],
@@ -220,21 +235,96 @@
 
             if (!form) return;
 
-            fetch('/api/lugares')
-                .then(response => response.json())
-                .then(data => {
-                    lugarSelect.innerHTML = '<option value="">Selecciona un lugar</option>';
-                    (data.data || data.lugares || []).forEach(lugar => {
-                        if (lugar.estado === 'activo') {
-                            const option = document.createElement('option');
-                            option.value = lugar.id || lugar._id || lugar.lugares_id;
-                            option.textContent = lugar.nombre;
-                            lugarSelect.appendChild(option);
-                        }
-                    });
-                });
+            function categoryLabel(value) {
+                const labels = {
+                    'limpieza-de-playas': 'Limpieza de playas',
+                    limpieza: 'Limpieza',
+                    restauracion: 'Restauración',
+                    conservacion: 'Conservación',
+                    reforestacion: 'Reforestación',
+                    monitoreo: 'Monitoreo',
+                    'educacion-ambiental': 'Educación ambiental',
+                };
+                return labels[value.toLocaleLowerCase()] || value.replace(/[-_]/g, ' ')
+                    .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
+            }
 
-            const hoy = new Date().toISOString().split('T')[0];
+            function normalizeCategory(value) {
+                return value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .toLocaleLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100);
+            }
+
+            async function loadPlaces() {
+                try {
+                    const token = sessionStorage.getItem('regenera_access_token');
+                    const response = await fetch('/api/lugares', {
+                        headers: {
+                            Accept: 'application/json',
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message || 'No se pudieron cargar los lugares.');
+                    const places = result.data || result.lugares;
+                    if (!Array.isArray(places)) throw new Error('La respuesta de lugares tiene un formato inesperado.');
+
+                    lugarSelect.replaceChildren(new Option('Selecciona un lugar', ''));
+                    places.forEach(lugar => {
+                        const id = lugar.id || lugar._id || lugar.lugares_id;
+                        if (!id || !lugar.nombre) return;
+                        const option = new Option(
+                            `${lugar.nombre}${lugar.municipio ? ` · ${lugar.municipio}` : ''}`,
+                            id,
+                        );
+                        lugarSelect.appendChild(option);
+                    });
+                    if (!places.length) {
+                        lugarSelect.options[0].textContent = 'No hay lugares disponibles para tu cuenta';
+                    }
+                } catch (error) {
+                    placeLoadMessage.textContent = error.message || 'No se pudieron cargar los lugares.';
+                    placeLoadMessage.className = 'form-message is-error';
+                }
+            }
+
+            async function loadRecommendedCategories() {
+                try {
+                    const response = await fetch('/api/voluntariados/categorias', {
+                        headers: { Accept: 'application/json' },
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !Array.isArray(result.categorias)) {
+                        throw new Error(result.message || 'No se pudieron cargar las categorías recomendadas.');
+                    }
+                    const customOption = new Option('Otra categoría…', '__custom__');
+                    categoriaSelect.replaceChildren(new Option('Selecciona una categoría', ''));
+                    result.categorias.forEach(category => {
+                        if (typeof category !== 'string' || !category.trim()) return;
+                        categoriaSelect.add(new Option(categoryLabel(category), category));
+                    });
+                    categoriaSelect.add(customOption);
+                } catch (error) {
+                    categoryLoadMessage.textContent = error.message || 'No se pudieron cargar las categorías recomendadas.';
+                    categoryLoadMessage.className = 'form-message is-error';
+                }
+            }
+
+            categoriaSelect.addEventListener('change', function () {
+                const isCustom = this.value === '__custom__';
+                categoriaCustomField.hidden = !isCustom;
+                categoriaCustomInput.required = isCustom;
+                if (isCustom) categoriaCustomInput.focus();
+            });
+            form.addEventListener('reset', function () {
+                categoriaCustomField.hidden = true;
+                categoriaCustomInput.required = false;
+                categoriaCustomInput.value = '';
+            });
+
+            void loadPlaces();
+            void loadRecommendedCategories();
+
+            const hoy = [new Date().getFullYear(), String(new Date().getMonth() + 1).padStart(2, '0'), String(new Date().getDate()).padStart(2, '0')].join('-');
             fechaInicioInput.min = hoy;
             fechaFinInput.min = hoy;
 
@@ -408,6 +498,25 @@
                 const horaInicio = formData.get('horaInicio');
                 const horaFin = formData.get('horaFin');
                 const tieneImagen = formData.get('imagen') && formData.get('imagen').size > 0;
+                if (categoriaSelect.value === '__custom__') {
+                    const categoria = normalizeCategory(categoriaCustomInput.value);
+                    if (!categoria) {
+                        message.textContent = 'Escribe un nombre válido para la nueva categoría.';
+                        message.className = 'form-message is-error';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Enviar voluntariado';
+                        categoriaCustomInput.focus();
+                        return;
+                    }
+                    formData.set('categoria', categoria);
+                }
+                if (fechaFin < fechaInicio || horaFin <= horaInicio) {
+                    message.textContent = 'La fecha y hora de fin deben ser posteriores al inicio.';
+                    message.className = 'form-message is-error';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Enviar voluntariado';
+                    return;
+                }
 
                 if (tieneImagen) {
                     await submitWithImage(formData, fechaInicio, horaInicio, fechaFin, horaFin);

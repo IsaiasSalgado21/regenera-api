@@ -42,7 +42,22 @@ class AttendanceQrTest extends TestCase
 
         $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{64}$/', $voluntariado->tokenAsistencia);
         $this->assertMatchesRegularExpression('/^[A-HJ-NP-Z2-9]{8}$/', $voluntariado->codigoCorto);
+        $this->assertTrue($voluntariado->codigoAsistenciaActivo);
         $this->assertArrayNotHasKey('tokenAsistencia', $voluntariado->toArray());
+    }
+
+    public function test_attendance_qr_toggle_requires_management_role(): void
+    {
+        $path = '/api/admin/voluntariados/507f1f77bcf86cd799439013/codigo-asistencia';
+        $this->patchJson($path, ['codigoAsistenciaActivo' => false])
+            ->assertUnauthorized();
+
+        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo']);
+        $usuario->setAttribute('_id', '507f1f77bcf86cd799439012');
+        Sanctum::actingAs($usuario);
+
+        $this->patchJson($path, ['codigoAsistenciaActivo' => false])
+            ->assertForbidden();
     }
 
     public function test_attendance_scan_page_is_available(): void
