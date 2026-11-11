@@ -12,6 +12,8 @@ use App\Services\AuditoriaService;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use App\Services\NotificationService;
+use App\Services\VoluntariadoWorkflow;
+use App\Services\VoluntariadoHorario;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +25,8 @@ class VoluntariadoController extends Controller
         private readonly AuditoriaService $auditoria,
         private readonly GridFsImageService $gridFsImages,
         private readonly NotificationService $notificaciones,
+        private readonly VoluntariadoWorkflow $workflow,
+        private readonly VoluntariadoHorario $horario,
     ) {}
 
     public function organizadores()
@@ -116,16 +120,23 @@ class VoluntariadoController extends Controller
             ->filter(fn (Asistencia $asistencia) => in_array((string) $asistencia->usuarioId, $usuarioIdsActivos, true))
             ->unique(fn (Asistencia $asistencia) => (string) $asistencia->usuarioId);
         $inscritos = $inscripcionesActivas->count();
+        $faltas = $inscripcionesActivas->filter(fn (Inscripcion $inscripcion): bool => $this->workflow->esFalta(
+            $voluntariado,
+            $inscripcion,
+            $asistenciaPorUsuario->get((string) $inscripcion->usuarioId),
+            $this->horario,
+        ))->count();
         $cupo = max(0, (int) ($voluntariado->cupo ?? 0));
         $asistentes = $asistenciasConfirmadas->count();
         $lugar = Lugar::find((string) $voluntariado->lugarId);
         $organizador = $usuarios->get($organizadorId);
 
         $participantes = $inscripciones
-            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario): array {
+            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario, $voluntariado): array {
                 $usuarioId = (string) $inscripcion->usuarioId;
                 $usuario = $usuarios->get($usuarioId);
                 $asistencia = $asistenciaPorUsuario->get($usuarioId);
+                $falto = $this->workflow->esFalta($voluntariado, $inscripcion, $asistencia, $this->horario);
 
                 return [
                     'id' => (string) $inscripcion->_id,
@@ -135,6 +146,7 @@ class VoluntariadoController extends Controller
                     'foto' => $usuario?->foto,
                     'fechaInscripcion' => $inscripcion->fechaInscripcion?->toIso8601String(),
                     'estadoInscripcion' => $inscripcion->estado,
+                    'falto' => $falto,
                     'observaciones' => $inscripcion->observaciones,
                     'asistencia' => $asistencia ? [
                         'confirmada' => (bool) $asistencia->confirmada,
@@ -151,6 +163,8 @@ class VoluntariadoController extends Controller
             'data' => [
                 'voluntariado' => [
                     ...$this->present($voluntariado),
+                    'finalizadoPorFecha' => $this->workflow->finalizado($voluntariado, $this->horario),
+                    'cancelado' => $voluntariado->estado === 'cancelado',
                     'creadoEn' => $voluntariado->created_at?->toIso8601String(),
                     'actualizadoEn' => $voluntariado->updated_at?->toIso8601String(),
                     'lugar' => $lugar ? [
@@ -171,7 +185,8 @@ class VoluntariadoController extends Controller
                     'ocupacion' => $cupo > 0 ? round(min(100, ($inscritos / $cupo) * 100), 1) : 0,
                     'asistencias' => $asistentes,
                     'porcentajeAsistencia' => $inscritos > 0 ? round(($asistentes / $inscritos) * 100, 1) : 0,
-                    'pendientes' => max(0, $inscritos - $asistentes),
+                    'pendientes' => max(0, $inscritos - $asistentes - $faltas),
+                    'faltas' => $faltas,
                     'canceladas' => $inscripciones->where('estado', 'cancelada')->count(),
                     'registrosQr' => $asistencias->where('confirmada', true)->where('metodo', 'QR')->count(),
                 ],
@@ -194,7 +209,7 @@ class VoluntariadoController extends Controller
             $validated['organizadorId'] = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
                 ? new ObjectId($organizadorId)
                 : $organizadorId;
-            $validated['estado'] = 'pendiente';
+            $validated['estado'] = $this->workflow->estadoInicial($request->user());
         }
 
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated);
@@ -231,9 +246,15 @@ class VoluntariadoController extends Controller
             $validated['longitud'] = $lugar->longitud;
         }
         $this->validateCoordinates($validated, $voluntariado);
-        if ($request->user()->rol === 'organizador') {
-            $validated['estado'] = 'pendiente';
+        $estadoAnterior = $voluntariado->estado;
+        if ($request->user()->rol !== 'admin') {
+            unset($validated['organizadorId']);
         }
+        $validated['estado'] = $this->workflow->estadoTrasEdicion(
+            $request->user(),
+            $voluntariado,
+            $validated['estado'] ?? null,
+        );
 
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated, $voluntariado);
 
@@ -247,8 +268,10 @@ class VoluntariadoController extends Controller
             $request,
             ['campos' => array_keys($validated)],
         );
-        if ($request->user()->rol === 'organizador') {
+        if ($request->user()->rol === 'organizador' && $estadoAnterior !== 'pendiente' && $voluntariado->estado === 'pendiente') {
             $this->notificaciones->voluntariadoEnviado($voluntariado);
+        } elseif ($request->user()->rol === 'admin' && $estadoAnterior !== 'publicado' && $voluntariado->estado === 'publicado') {
+            $this->notificaciones->voluntariadoAprobado($voluntariado->fresh());
         }
 
         return response()->json([

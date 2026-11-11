@@ -55,13 +55,17 @@ if (page) {
     };
 
     const activityCard = (volunteer, enrollment, attendance) => {
-        const status = attendance?.confirmada
-            ? 'Asistencia confirmada'
-            : enrollment.estado === 'completada'
-                ? 'Participación completada'
-                : enrollment.estado === 'cancelada'
-                    ? 'Inscripción cancelada'
-                    : 'Inscripción activa';
+        const status = volunteer.estado === 'cancelado'
+            ? 'Voluntariado cancelado'
+            : enrollment.estado === 'cancelada'
+                ? 'Inscripción cancelada'
+                : attendance?.confirmada
+                    ? 'Asistió'
+                    : enrollment.estado === 'completada'
+                        ? 'Participación completada'
+                        : volunteer.finalizadoPorFecha || volunteer.estado === 'finalizado'
+                            ? 'No asistió'
+                            : 'Inscripción activa';
         return `<article class="profile-list-item">
             <div class="profile-list-copy">
                 <h4><a href="/voluntariados/${encodeURIComponent(volunteer.id)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a></h4>
@@ -95,7 +99,7 @@ if (page) {
             setCount('[data-user-enrollment-count]', activeEnrollments.length);
             setCount('[data-user-attendance-count]', attendances.length);
 
-            const volunteerIds = [...new Set(activeEnrollments.map(item => String(item.voluntariadoId)).filter(Boolean))];
+            const volunteerIds = [...new Set(enrollments.map(item => String(item.voluntariadoId)).filter(Boolean))];
             const volunteerResults = await Promise.allSettled(
                 volunteerIds.map(async id => {
                     const response = await api(`/api/voluntariados/${encodeURIComponent(id)}`);
@@ -115,11 +119,14 @@ if (page) {
             const now = Date.now();
             const upcomingItems = [];
             const historyItems = [];
-            activeEnrollments.forEach(enrollment => {
+            enrollments.forEach(enrollment => {
                 const volunteer = volunteers.get(String(enrollment.voluntariadoId));
                 if (!volunteer) return;
                 const attendance = attendanceByVolunteer.get(String(enrollment.voluntariadoId));
-                const isUpcoming = new Date(volunteer.fechaInicio).getTime() >= now
+                const isUpcoming = enrollment.estado !== 'cancelada'
+                    && volunteer.estado !== 'cancelado'
+                    && !volunteer.finalizadoPorFecha
+                    && volunteer.estado !== 'finalizado'
                     && enrollment.estado !== 'completada'
                     && !attendance;
                 (isUpcoming ? upcomingItems : historyItems).push({

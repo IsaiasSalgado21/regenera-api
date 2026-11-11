@@ -225,30 +225,36 @@
 
             </div>
 
-            {{-- Acciones de inscripción --}}
-            <div class="volunteer-enrollment-actions" data-enrollment-actions>
-                <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
-                    class="volunteer-cta"
-                    data-voluntariado-id="{{ (string) $voluntariado->_id }}">
-                    <span aria-hidden="true">🙌</span>
-                    Quiero participar
-                    <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
-                </a>
+            @if ($voluntariadoCancelado)
+                <p class="volunteer-cta-note" role="status">Este voluntariado fue cancelado.</p>
+            @elseif ($voluntariadoFinalizado)
+                <p class="volunteer-cta-note" role="status">Este voluntariado ya finalizó.</p>
+            @else
+                {{-- Acciones de inscripción --}}
+                <div class="volunteer-enrollment-actions" data-enrollment-actions>
+                    <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
+                        class="volunteer-cta"
+                        data-voluntariado-id="{{ (string) $voluntariado->_id }}">
+                        <span aria-hidden="true">🙌</span>
+                        Quiero participar
+                        <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
+                    </a>
 
-                <button type="button" class="volunteer-cancel-cta"
-                    data-enrollment-cancel hidden>
-                    Cancelar participación
-                </button>
-            </div>
+                    <button type="button" class="volunteer-cancel-cta"
+                        data-enrollment-cancel hidden>
+                        Cancelar participación
+                    </button>
+                </div>
 
-            <p class="volunteer-cta-note" data-enrollment-note>
-                Súmate y forma parte del cambio en Baja California Sur.
-            </p>
+                <p class="volunteer-cta-note" data-enrollment-note>
+                    Súmate y forma parte del cambio en Baja California Sur.
+                </p>
 
-            <p id="enrollmentMessage"
-                class="volunteer-enrollment-message"
-                role="status"
-                aria-live="polite"></p>
+                <p id="enrollmentMessage"
+                    class="volunteer-enrollment-message"
+                    role="status"
+                    aria-live="polite"></p>
+            @endif
 
         </section>
         </div>

@@ -338,7 +338,7 @@ function initializeDashboard() {
                     actions += action('Rechazar', 'reject-voluntariado', voluntariado.id, 'danger');
                 }
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
-            } else if (['pendiente', 'rechazado'].includes(voluntariado.estado)) {
+            } else if (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado)) {
                 actions += action('Editar y reenviar', 'edit-voluntariado', voluntariado.id);
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
             }
@@ -405,7 +405,9 @@ function initializeDashboard() {
     function renderVolunteerDashboard(data) {
         const { voluntariado, estadisticas, participantes } = data;
         const qrActivo = Boolean(voluntariado.codigoAsistenciaActivo);
-        const canEdit = user.rol === 'admin' || ['pendiente', 'rechazado'].includes(voluntariado.estado);
+        const ownsVolunteer = String(voluntariado.organizadorId) === String(user.id);
+        const canEdit = user.rol === 'admin'
+            || (ownsVolunteer && (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado)));
         const image = voluntariado.imagen
             ? `<img class="volunteer-detail-cover" src="${escapeHtml(voluntariado.imagen)}" alt="" loading="lazy">`
             : '';
@@ -417,7 +419,21 @@ function initializeDashboard() {
             const estadoInscripcion = participante.estadoInscripcion || 'desconocido';
             const cancelado = estadoInscripcion === 'cancelada';
             const confirmada = Boolean(participante.asistencia?.confirmada);
-            const estadoAsistencia = cancelado ? 'cancelada' : confirmada ? 'confirmada' : 'pendiente';
+            const eventoCancelado = voluntariado.cancelado || voluntariado.estado === 'cancelado';
+            const estadoAsistencia = cancelado
+                ? 'cancelada'
+                : confirmada
+                    ? 'confirmada'
+                    : participante.falto
+                        ? 'falta'
+                        : eventoCancelado ? 'voluntariado-cancelado' : 'pendiente';
+            const etiquetaAsistencia = cancelado
+                ? 'Canceló inscripción'
+                : confirmada
+                    ? 'Asistió'
+                    : participante.falto
+                        ? 'No asistió'
+                        : eventoCancelado ? 'Voluntariado cancelado' : 'Pendiente';
             const nombre = participante.nombre || 'Usuario sin nombre';
             const inicial = escapeHtml(nombre.trim().charAt(0).toLocaleUpperCase() || '?');
             const avatar = typeof participante.foto === 'string' && participante.foto
@@ -432,7 +448,7 @@ function initializeDashboard() {
                 <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${escapeHtml(nombre)}</strong><small>${escapeHtml(participante.correo || 'Sin correo')}</small></span></div></td>
                 <td>${formatDateTime(participante.fechaInscripcion)}</td>
                 <td><span class="volunteer-state volunteer-state-${escapeHtml(estadoInscripcion)}">${escapeHtml(estadoInscripcion)}</span></td>
-                <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${cancelado ? 'Cancelada' : confirmada ? 'Confirmada' : 'Pendiente'}</span></td>
+                <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${etiquetaAsistencia}</span></td>
                 <td>${escapeHtml(fechaAsistencia)}</td>
                 <td>${escapeHtml(participante.asistencia?.metodo || '—')}</td>
                 <td><details class="volunteer-person-details"><summary>Ficha</summary><div><span>Identificador</span><code>${escapeHtml(participante.usuarioId || '—')}</code>${participante.observaciones ? `<span>Observaciones</span><p>${escapeHtml(participante.observaciones)}</p>` : ''}</div></details></td>
@@ -474,7 +490,7 @@ function initializeDashboard() {
                 <article class="volunteer-stat-card"><span>Inscritos</span><strong>${Number(estadisticas.inscritos) || 0}<small> / ${Number(estadisticas.cupo) || 0}</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.ocupacion) || 0))}%"></i></div><small>${Number(estadisticas.disponibles) || 0} lugares disponibles</small></article>
                 <article class="volunteer-stat-card"><span>Ocupación</span><strong>${Number(estadisticas.ocupacion) || 0}<small>%</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.ocupacion) || 0))}%"></i></div><small>Del cupo total</small></article>
                 <article class="volunteer-stat-card"><span>Asistencias confirmadas</span><strong>${Number(estadisticas.asistencias) || 0}<small> / ${Number(estadisticas.inscritos) || 0}</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.porcentajeAsistencia) || 0))}%"></i></div><small>${Number(estadisticas.porcentajeAsistencia) || 0}% de inscritos</small></article>
-                <article class="volunteer-stat-card"><span>Pendientes de asistencia</span><strong>${Number(estadisticas.pendientes) || 0}</strong><small>${Number(estadisticas.canceladas) || 0} inscripciones canceladas</small></article>
+                <article class="volunteer-stat-card"><span>Pendientes de asistencia</span><strong>${Number(estadisticas.pendientes) || 0}</strong><small>${Number(estadisticas.faltas) || 0} faltas · ${Number(estadisticas.canceladas) || 0} inscripciones canceladas</small></article>
             </div>
             <div class="volunteer-dashboard-columns">
                 <section class="volunteer-panel volunteer-participants-panel">
@@ -482,7 +498,7 @@ function initializeDashboard() {
                     <div class="volunteer-participant-filters">
                         <label class="volunteer-search"><span aria-hidden="true">⌕</span><input type="search" data-participant-search placeholder="Buscar nombre o correo" aria-label="Buscar participantes"></label>
                         <select data-participant-inscription aria-label="Filtrar por estado de inscripción"><option value="">Todas las inscripciones</option><option value="inscrita">Inscrita</option><option value="activa">Activa</option><option value="completada">Completada</option><option value="cancelada">Cancelada</option></select>
-                        <select data-participant-attendance aria-label="Filtrar por asistencia"><option value="">Todas las asistencias</option><option value="confirmada">Confirmada</option><option value="pendiente">Pendiente</option><option value="cancelada">Cancelada</option></select>
+                        <select data-participant-attendance aria-label="Filtrar por asistencia"><option value="">Todas las asistencias</option><option value="confirmada">Asistió</option><option value="falta">No asistió</option><option value="pendiente">Pendiente</option><option value="cancelada">Canceló inscripción</option><option value="voluntariado-cancelado">Voluntariado cancelado</option></select>
                     </div>
                     <div class="volunteer-participant-scroll"><table class="volunteer-participant-table"><thead><tr><th>Participante</th><th>Fecha de inscripción</th><th>Estado de inscripción</th><th>Asistencia</th><th>Registro de asistencia</th><th>Método</th><th></th></tr></thead><tbody>${people || '<tr><td class="volunteer-table-empty" colspan="7">Todavía no hay inscripciones para este voluntariado.</td></tr>'}</tbody></table></div>
                 </section>

@@ -62,12 +62,12 @@ Route::post('/lugares', [LugarController::class, 'store'])->middleware('auth:san
 Route::get('/lugares/{id}', [LugarController::class, 'show'])->middleware('auth.optional');
 Route::put('/lugares/{id}', [LugarController::class, 'update'])->middleware('auth:sanctum');
 
-Route::get('/voluntariados', [VoluntariadoController::class, 'index']);
+Route::get('/voluntariados', [VoluntariadoController::class, 'index'])->middleware('auth.optional');
 Route::post('/voluntariados', [VoluntariadoController::class, 'store'])->middleware('auth:sanctum');
-Route::get('/voluntariados/{id}', [VoluntariadoController::class, 'show']);
-Route::put('/voluntariados/{id}', [VoluntariadoController::class, 'update']);
-Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update']);
-Route::delete('/voluntariados/{id}', [VoluntariadoController::class, 'destroy']);
+Route::get('/voluntariados/{id}', [VoluntariadoController::class, 'show'])->middleware('auth.optional');
+Route::put('/voluntariados/{id}', [VoluntariadoController::class, 'update'])->middleware('auth:sanctum');
+Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/voluntariados/{id}', [VoluntariadoController::class, 'destroy'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inscripciones', [InscripcionController::class, 'index']);

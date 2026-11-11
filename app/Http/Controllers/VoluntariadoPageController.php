@@ -8,6 +8,7 @@ use App\Models\Voluntariado;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use App\Services\VoluntariadoHorario;
+use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -17,6 +18,7 @@ class VoluntariadoPageController extends Controller
         private readonly GridFsImageService $gridFsImages,
         private readonly BajaCaliforniaSurBoundary $boundary,
         private readonly VoluntariadoHorario $horario,
+        private readonly VoluntariadoWorkflow $workflow,
     ) {}
 
     /**
@@ -92,7 +94,7 @@ class VoluntariadoPageController extends Controller
     {
         $voluntariado = Voluntariado::find($id);
 
-        if (! $voluntariado || $voluntariado->estado !== 'publicado') {
+        if (! $voluntariado || ! in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true)) {
             abort(404);
         }
 
@@ -122,7 +124,8 @@ class VoluntariadoPageController extends Controller
             'lugar' => $lugar,
             'inicioFechaHora' => $inicioFechaHora,
             'finFechaHora' => $finFechaHora,
-            'voluntariadoFinalizado' => $finFechaHora?->isPast() ?? false,
+            'voluntariadoFinalizado' => $this->workflow->finalizado($voluntariado, $this->horario),
+            'voluntariadoCancelado' => $voluntariado->estado === 'cancelado',
             'ubicacion' => $hasValidLocation ? [
                 'latitud' => (float) $latitude,
                 'longitud' => (float) $longitude,

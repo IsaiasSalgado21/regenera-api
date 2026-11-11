@@ -240,7 +240,7 @@
                         <span class="dashboard-capacity-unit">personas</span>
                     </div>
                 </div>
-                <div class="dashboard-status-field" data-status-select>
+                <div class="dashboard-status-field" data-status-select data-admin-only>
                     <span class="dashboard-field-label">Estado</span>
                     <input type="hidden" name="estado" value="pendiente">
                     <div class="dashboard-status-options">

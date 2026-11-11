@@ -2,23 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Inscripcion;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
+use App\Services\NotificationService;
+use App\Services\VoluntariadoHorario;
+use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class VoluntariadoController extends Controller
 {
-    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+    public function __construct(
+        private readonly GridFsImageService $gridFsImages,
+        private readonly NotificationService $notificaciones,
+        private readonly VoluntariadoWorkflow $workflow,
+        private readonly VoluntariadoHorario $horario,
+    ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $voluntariados = Voluntariado::orderBy('fechaInicio')->get();
+        $voluntariados = Voluntariado::where('estado', 'publicado')
+            ->orderBy('fechaInicio')
+            ->get();
 
         return response()->json([
             'success' => true,
-            'voluntariados' => $voluntariados->map(function (Voluntariado $voluntariado) {
+            'voluntariados' => $voluntariados->map(function ($voluntariado) {
                 $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
 
                 return $voluntariado;
@@ -56,13 +67,7 @@ class VoluntariadoController extends Controller
             'imagen' => 'nullable|file|image|max:5120',
         ]);
 
-        // El estado se define exclusivamente en el backend según el rol del usuario.
-        // Nunca se confía en el valor enviado desde el frontend.
-        $puedePublicarDirectamente =
-            $user->rol === 'admin' ||
-            ($user->rol === 'organizador' && (bool) $user->organizadorVerificado);
-
-        $validated['estado'] = $puedePublicarDirectamente ? 'publicado' : 'pendiente';
+        $validated['estado'] = $this->workflow->estadoInicial($user);
         $validated['organizadorId'] = $user->getAuthIdentifier();
         $validated['requisitos'] = $validated['requisitos'] ?? [];
         $validated['materiales'] = $validated['materiales'] ?? [];
@@ -73,6 +78,9 @@ class VoluntariadoController extends Controller
         }
 
         $voluntariado = Voluntariado::create($validated);
+        if ($voluntariado->estado === 'pendiente') {
+            $this->notificaciones->voluntariadoEnviado($voluntariado);
+        }
         $message = $voluntariado->estado === 'publicado'
             ? 'Voluntariado publicado correctamente.'
             : 'Tu voluntariado quedó pendiente de aprobación del equipo.';
@@ -84,7 +92,7 @@ class VoluntariadoController extends Controller
         ], 201);
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $voluntariado = Voluntariado::find($id);
 
@@ -95,10 +103,25 @@ class VoluntariadoController extends Controller
             ], 404);
         }
 
+        if (! in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true)) {
+            $user = $request->user();
+            $isOwner = $user && (string) $voluntariado->organizadorId === (string) $user->getAuthIdentifier();
+            $isAdmin = $user?->rol === 'admin';
+            $isParticipant = $user && Inscripcion::where('usuarioId', (string) $user->getAuthIdentifier())
+                ->where('voluntariadoId', (string) $voluntariado->_id)
+                ->exists();
+
+            abort_unless($isAdmin || $isOwner || $isParticipant, 404);
+        }
+
         return response()->json([
             'success' => true,
             'voluntariado' => tap($voluntariado, function (Voluntariado $voluntariado): void {
                 $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
+                $voluntariado->setAttribute(
+                    'finalizadoPorFecha',
+                    $this->workflow->finalizado($voluntariado, $this->horario),
+                );
             }),
         ]);
     }
@@ -114,11 +137,12 @@ class VoluntariadoController extends Controller
             ], 404);
         }
 
+        $this->ensureCanManage($request, $voluntariado);
+
         $validated = $request->validate([
             'titulo' => 'sometimes|required|string|max:150',
             'descripcion' => 'sometimes|required|string|max:3000',
             'lugarId' => 'sometimes|required|string|max:100',
-            'organizadorId' => 'sometimes|required|string|max:100',
             'latitud' => 'sometimes|nullable|numeric|between:-90,90',
             'longitud' => 'sometimes|nullable|numeric|between:-180,180',
             'fechaInicio' => 'sometimes|required|date',
@@ -143,12 +167,22 @@ class VoluntariadoController extends Controller
             ],
         ]);
 
+        $estadoAnterior = $voluntariado->estado;
+        $validated['estado'] = $this->workflow->estadoTrasEdicion(
+            $request->user(),
+            $voluntariado,
+            $validated['estado'] ?? null,
+        );
+
         if ($request->hasFile('imagen')) {
             $validated['imagen'] = Storage::disk('gridfs')
                 ->putFile('voluntariados', $request->file('imagen'));
         }
 
         $voluntariado->update($validated);
+        if ($estadoAnterior !== 'pendiente' && $voluntariado->estado === 'pendiente') {
+            $this->notificaciones->voluntariadoEnviado($voluntariado);
+        }
 
         return response()->json([
             'success' => true,
@@ -159,7 +193,7 @@ class VoluntariadoController extends Controller
         ]);
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $voluntariado = Voluntariado::find($id);
 
@@ -170,11 +204,22 @@ class VoluntariadoController extends Controller
             ], 404);
         }
 
+        $this->ensureCanManage($request, $voluntariado);
+
         $voluntariado->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Voluntariado eliminado correctamente.',
         ]);
+    }
+
+    private function ensureCanManage(Request $request, Voluntariado $voluntariado): void
+    {
+        abort_unless(
+            $request->user()->rol === 'admin'
+                || (string) $voluntariado->organizadorId === (string) $request->user()->getAuthIdentifier(),
+            403,
+        );
     }
 }

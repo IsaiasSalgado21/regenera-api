@@ -16,7 +16,13 @@ class ArticuloPolicy
 
     public function create(User $user): bool
     {
-        return in_array($user->rol, ['admin', 'organizador'], true);
+        return $this->puedeCrear($user);
+    }
+
+    public function puedeCrear(User $user): bool
+    {
+        // Authenticated community members can submit articles for review.
+        return in_array($user->rol, ['usuario', 'organizador', 'admin'], true);
     }
 
     public function update(User $user, Articulo $articulo): bool

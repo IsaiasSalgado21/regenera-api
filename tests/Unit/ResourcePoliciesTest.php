@@ -29,4 +29,23 @@ class ResourcePoliciesTest extends TestCase
         $this->assertFalse($floraFaunaPolicy->update($organizador, $registroAjeno));
         $this->assertFalse($floraFaunaPolicy->archivar($organizador, $registroAjeno));
     }
+
+    public function test_only_admins_can_create_or_manage_flora_fauna(): void
+    {
+        $admin = new User(['rol' => 'admin']);
+        $organizador = new User(['rol' => 'organizador']);
+        $usuario = new User(['rol' => 'usuario']);
+        $registroPropio = new FloraFauna([
+            'estado' => 'publicado',
+            'creadoPor' => '507f1f77bcf86cd799439011',
+        ]);
+        $organizador->setAttribute('_id', '507f1f77bcf86cd799439011');
+        $policy = new FloraFaunaPolicy;
+
+        $this->assertTrue($policy->create($admin));
+        $this->assertTrue($policy->update($admin, $registroPropio));
+        $this->assertFalse($policy->create($organizador));
+        $this->assertFalse($policy->update($organizador, $registroPropio));
+        $this->assertFalse($policy->create($usuario));
+    }
 }

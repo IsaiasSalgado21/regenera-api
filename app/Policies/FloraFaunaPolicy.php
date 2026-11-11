@@ -20,13 +20,12 @@ class FloraFaunaPolicy
     }
     public function create(User $user): bool
     {
-        return in_array($user->rol, ['admin', 'organizador'], true);
+        return $user->rol === 'admin';
     }
 
     public function update(User $user, FloraFauna $registro): bool
     {
-        return $user->rol === 'admin'
-            || ($user->rol === 'organizador' && (string) $registro->creadoPor === (string) $user->getAuthIdentifier());
+        return $user->rol === 'admin';
     }
 
     public function archivar(User $user, FloraFauna $registro): bool

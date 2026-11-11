@@ -9,6 +9,15 @@ use Tests\TestCase;
 
 class ArticuloPolicyTest extends TestCase
 {
+    public function test_all_authenticated_roles_can_create_articles(): void
+    {
+        $policy = new ArticuloPolicy;
+
+        foreach (['usuario', 'organizador', 'admin'] as $rol) {
+            $this->assertTrue($policy->create(new User(['rol' => $rol])));
+        }
+    }
+
     public function test_unverified_organizer_can_create_and_submit_only_owned_drafts_or_rejected_articles(): void
     {
         $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false]);
