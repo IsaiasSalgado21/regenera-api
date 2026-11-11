@@ -72,12 +72,19 @@ class MapApiController extends Controller
             $cupo = (int) ($voluntariado->cupo ?? 0);
             $inscripcionesActivas = (int) $inscripcionesPorVoluntariado->get((string) $voluntariado->_id, 0);
             $lleno = $cupo < 1 || $inscripcionesActivas >= $cupo;
+            $imagePaths = $this->gridFsImages->paths(
+                $voluntariado->imagenes,
+                $voluntariado->imagen,
+            );
+            $imageUrls = $this->gridFsImages->urls($imagePaths);
 
             return [
                 'id' => (string) $voluntariado->_id,
                 'tipo' => 'voluntariado',
                 'titulo' => $voluntariado->titulo,
                 'descripcion' => $voluntariado->descripcion,
+                'imagen' => $imageUrls[0] ?? null,
+                'imagenes' => $imageUrls,
                 'categoria' => $voluntariado->categoria,
                 'estado' => $voluntariado->estado,
                 'fecha_inicio' => $voluntariado->fechaInicio?->toISOString(),
