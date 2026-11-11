@@ -202,6 +202,25 @@ class RegeneraBCSSeeder extends Seeder
             ]
         );
 
+        $fechaCupoLleno = now()->addDays(28)->startOfDay();
+        $cupoLleno = Voluntariado::firstOrCreate(
+            ['titulo' => 'Prueba de inscripción con cupo lleno'],
+            [
+                'descripcion' => 'Evento de prueba con el único lugar ocupado para verificar el rechazo de nuevas inscripciones.',
+                'lugarId' => (string) $playaBalandra->_id,
+                'organizadorId' => (string) $organizador->_id,
+                'fechaInicio' => $fechaCupoLleno->copy()->setTime(8, 0),
+                'fechaFin' => $fechaCupoLleno->copy()->setTime(10, 0),
+                'horaInicio' => '08:00',
+                'horaFin' => '10:00',
+                'cupo' => 1,
+                'requisitos' => ['Inscripción de prueba para validar el límite de cupo.'],
+                'materiales' => [],
+                'imagen' => null,
+                'estado' => 'publicado',
+            ]
+        );
+
         DB::purge('mongodb');
         DB::reconnect('mongodb');
 
@@ -222,6 +241,7 @@ class RegeneraBCSSeeder extends Seeder
                 'voluntariadoId' => (string) $limpieza->_id,
             ],
             [
+                'claveRegistroActiva' => (string) $usuario1->_id.'|'.(string) $limpieza->_id,
                 'fechaInscripcion' => now(),
                 'estado' => 'inscrita',
                 'observaciones' => 'Inscripción de prueba para la jornada de limpieza.',
@@ -234,6 +254,7 @@ class RegeneraBCSSeeder extends Seeder
                 'voluntariadoId' => (string) $limpieza->_id,
             ],
             [
+                'claveRegistroActiva' => (string) $usuario2->_id.'|'.(string) $limpieza->_id,
                 'fechaInscripcion' => now(),
                 'estado' => 'inscrita',
                 'observaciones' => 'Participación de prueba en la jornada de limpieza.',
@@ -246,11 +267,30 @@ class RegeneraBCSSeeder extends Seeder
                 'voluntariadoId' => (string) $reforestacion->_id,
             ],
             [
+                'claveRegistroActiva' => (string) $usuario1->_id.'|'.(string) $reforestacion->_id,
                 'fechaInscripcion' => now(),
                 'estado' => 'inscrita',
                 'observaciones' => 'Inscripción de prueba para reforestación.',
             ]
         );
+
+        Inscripcion::firstOrCreate(
+            [
+                'usuarioId' => (string) $usuario1->_id,
+                'voluntariadoId' => (string) $cupoLleno->_id,
+            ],
+            [
+                'claveRegistroActiva' => (string) $usuario1->_id.'|'.(string) $cupoLleno->_id,
+                'fechaInscripcion' => now(),
+                'estado' => 'inscrita',
+                'observaciones' => 'Lugar ocupado para probar el rechazo por cupo lleno.',
+            ]
+        );
+
+        $this->syncActiveCupo($limpieza);
+        $this->syncActiveCupo($reforestacion);
+        $this->syncActiveCupo($educacion);
+        $this->syncActiveCupo($cupoLleno);
 
         /*
         |--------------------------------------------------------------------------
@@ -496,6 +536,21 @@ class RegeneraBCSSeeder extends Seeder
         ) {
             Storage::disk('gridfs')->delete($previousPath);
         }
+    }
+
+    private function syncActiveCupo(Voluntariado $voluntariado): void
+    {
+        $inscripciones = Inscripcion::where('voluntariadoId', (string) $voluntariado->getKey())
+            ->whereIn('estado', ['inscrita', 'activa'])
+            ->get();
+
+        $voluntariado->forceFill([
+            'inscritosActivos' => $inscripciones->count(),
+            'reservasCupo' => $inscripciones
+                ->map(fn (Inscripcion $inscripcion) => (string) $inscripcion->getKey())
+                ->values()
+                ->all(),
+        ])->save();
     }
 
     private function replaceImages(object $model, string $filename, string $directory): void

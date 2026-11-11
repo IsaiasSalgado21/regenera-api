@@ -12,6 +12,7 @@ use App\Services\AuditoriaService;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use App\Services\NotificationService;
+use App\Services\VoluntariadoCupoService;
 use App\Services\VoluntariadoWorkflow;
 use App\Services\VoluntariadoHorario;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class VoluntariadoController extends Controller
         private readonly NotificationService $notificaciones,
         private readonly VoluntariadoWorkflow $workflow,
         private readonly VoluntariadoHorario $horario,
+        private readonly VoluntariadoCupoService $cupos,
     ) {}
 
     public function organizadores()
@@ -86,7 +88,7 @@ class VoluntariadoController extends Controller
             if (preg_match('/^[a-f0-9]{24}$/i', $voluntariadoId)) {
                 $query->orWhere('voluntariadoId', new ObjectId($voluntariadoId));
             }
-        })->get();
+        })->where('estado', '!=', 'reservando')->get();
 
         $asistencias = Asistencia::where(function ($query) use ($voluntariadoId): void {
             $query->where('voluntariadoId', $voluntariadoId);
@@ -249,6 +251,7 @@ class VoluntariadoController extends Controller
         }
         $this->validateCoordinates($validated, $voluntariado);
         $estadoAnterior = $voluntariado->estado;
+        $camposActualizados = array_keys($validated);
         if ($request->user()->rol !== 'admin') {
             unset($validated['organizadorId']);
         }
@@ -261,7 +264,19 @@ class VoluntariadoController extends Controller
 
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated, $voluntariado);
 
-        $voluntariado->update($validated);
+        if (array_key_exists('cupo', $validated)) {
+            if (! $this->cupos->actualizarCupo($voluntariado, (int) $validated['cupo'], $validated)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cupo no puede ser menor que las inscripciones activas.',
+                ], 409);
+            }
+
+            $validated = [];
+            $voluntariado->refresh();
+        } elseif ($validated !== []) {
+            $voluntariado->update($validated);
+        }
         if ($hayCambiosImportantes) {
             $voluntariadoActualizado = $voluntariado->fresh();
             $this->notificaciones->voluntariadoActualizado(
@@ -276,7 +291,7 @@ class VoluntariadoController extends Controller
             'voluntariado',
             (string) $voluntariado->_id,
             $request,
-            ['campos' => array_keys($validated)],
+            ['campos' => $camposActualizados],
         );
         if ($request->user()->rol === 'organizador' && $estadoAnterior !== 'pendiente' && $voluntariado->estado === 'pendiente') {
             $this->notificaciones->voluntariadoEnviado($voluntariado);

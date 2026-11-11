@@ -5,21 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Inscripcion;
 use App\Models\Voluntariado;
 use App\Services\NotificationService;
+use App\Services\VoluntariadoCupoService;
 use App\Services\VoluntariadoHorario;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use MongoDB\Driver\Exception\BulkWriteException;
+use Throwable;
 
 class InscripcionController extends Controller
 {
     public function __construct(
         private readonly NotificationService $notificaciones,
         private readonly VoluntariadoHorario $horario,
+        private readonly VoluntariadoCupoService $cupos,
     ) {}
 
     public function index(Request $request)
     {
-        $query = Inscripcion::query();
+        $query = Inscripcion::query()->where('estado', '!=', 'reservando');
         if ($request->user()->rol !== 'admin') {
             $query->where('usuarioId', (string) $request->user()->getAuthIdentifier());
         }
@@ -84,19 +86,6 @@ class InscripcionController extends Controller
             ], 409);
         }
 
-        $cupo = (int) ($voluntariado->cupo ?? 0);
-        $inscripcionesActivas = Inscripcion::where(
-            'voluntariadoId',
-            (string) $voluntariado->_id
-        )->whereIn('estado', ['inscrita', 'activa'])->count();
-
-        if ($cupo < 1 || $inscripcionesActivas >= $cupo) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Este voluntariado ya no tiene cupo disponible.',
-            ], 409);
-        }
-
         $inscripcionExistente = Inscripcion::where(
             'usuarioId',
             (string) $usuario->_id
@@ -109,7 +98,7 @@ class InscripcionController extends Controller
             'cancelada'
         )->first();
 
-        if ($inscripcionExistente) {
+        if ($inscripcionExistente && $inscripcionExistente->estado !== 'reservando') {
             return response()->json([
                 'success' => false,
                 'message' => 'El usuario ya tiene una inscripción activa para este voluntariado.',
@@ -118,29 +107,102 @@ class InscripcionController extends Controller
 
         $usuarioId = (string) $usuario->getAuthIdentifier();
         $voluntariadoId = (string) $voluntariado->_id;
-        try {
-            $inscripcion = Inscripcion::create([
+        $inscripcion = $inscripcionExistente;
+        if (! $inscripcion) {
+            $inscripcionId = bin2hex(random_bytes(16));
+            $inscripcion = new Inscripcion([
                 'usuarioId' => $usuarioId,
                 'voluntariadoId' => $voluntariadoId,
                 'claveRegistroActiva' => $usuarioId.'|'.$voluntariadoId,
                 'fechaInscripcion' => now(),
-                'estado' => 'inscrita',
+                'estado' => 'reservando',
                 'observaciones' => $validated['observaciones'] ?? null,
             ]);
-        } catch (BulkWriteException $exception) {
-            $inscripcionActiva = Inscripcion::where('usuarioId', $usuarioId)
-                ->where('voluntariadoId', $voluntariadoId)
-                ->where('estado', '!=', 'cancelada')
-                ->exists();
-            if (! $inscripcionActiva) {
+            $inscripcion->setAttribute('_id', $inscripcionId);
+            try {
+                $inscripcion->save();
+            } catch (Throwable $exception) {
+                $inscripcionExistente = Inscripcion::where('usuarioId', $usuarioId)
+                    ->where('voluntariadoId', $voluntariadoId)
+                    ->where('estado', '!=', 'cancelada')
+                    ->first();
+                if ($inscripcionExistente) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El usuario ya tiene una inscripción activa para este voluntariado.',
+                    ], 409);
+                }
+
                 throw $exception;
             }
+        }
+
+        $inscripcionId = (string) $inscripcion->getKey();
+        if (! $this->cupos->reservar($voluntariado, $inscripcionId)) {
+            Inscripcion::where('_id', $inscripcion->getKey())
+                ->where('estado', 'reservando')
+                ->delete();
 
             return response()->json([
                 'success' => false,
-                'message' => 'El usuario ya tiene una inscripción activa para este voluntariado.',
+                'message' => 'Este voluntariado ya no tiene cupo disponible.',
             ], 409);
         }
+
+        try {
+            $finalizada = Inscripcion::where('_id', $inscripcion->getKey())
+                ->where('estado', 'reservando')
+                ->update(['estado' => 'inscrita']);
+        } catch (Throwable $exception) {
+            report($exception);
+            try {
+                $persistida = Inscripcion::find($inscripcion->getKey());
+            } catch (Throwable $lookupError) {
+                report($lookupError);
+                throw $exception;
+            }
+
+            if ($persistida?->estado === 'inscrita') {
+                $inscripcion = $persistida;
+                $finalizada = 1;
+            } else {
+                try {
+                    $this->cupos->liberar($voluntariado, $inscripcionId);
+                } catch (Throwable $compensationError) {
+                    report($compensationError);
+                    throw $exception;
+                }
+
+                if ($persistida) {
+                    $persistida->delete();
+                }
+
+                throw $exception;
+            }
+        }
+
+        if ($finalizada !== 1) {
+            $inscripcion = Inscripcion::find($inscripcion->getKey());
+            if ($inscripcion?->estado !== 'inscrita') {
+                $this->cupos->liberar($voluntariado, $inscripcionId);
+                if ($inscripcion) {
+                    $inscripcion->delete();
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo completar la inscripción; el cupo quedó liberado.',
+                ], 409);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Inscripción registrada correctamente.',
+                'inscripcion' => $inscripcion,
+            ], 201);
+        }
+
+        $inscripcion = $inscripcion->fresh();
         $this->notificaciones->inscripcionConfirmada($inscripcion, $voluntariado);
         $this->notificaciones->nuevaInscripcionParaOrganizador($inscripcion, $voluntariado);
 
@@ -176,7 +238,6 @@ class InscripcionController extends Controller
                 'message' => 'Inscripción no encontrada.',
             ], 404);
         }
-
         abort_unless(
             $request->user()->rol === 'admin'
                 || (string) $inscripcion->usuarioId === (string) $request->user()->getAuthIdentifier(),
@@ -234,7 +295,37 @@ class InscripcionController extends Controller
                 ? null
                 : (string) $inscripcion->usuarioId.'|'.(string) $inscripcion->voluntariadoId;
         }
-        $inscripcion->update($validated);
+        $estadoNuevo = $validated['estado'] ?? $estadoAnterior;
+        $antesActivo = in_array($estadoAnterior, ['inscrita', 'activa'], true);
+        $despuesActivo = in_array($estadoNuevo, ['inscrita', 'activa'], true);
+        $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
+        $inscripcionId = (string) $inscripcion->getKey();
+
+        if ($voluntariado && ! $antesActivo && $despuesActivo
+            && ! $this->cupos->reservar($voluntariado, $inscripcionId, false)) {
+            abort(409, 'No hay cupo disponible para reactivar esta inscripción.');
+        }
+
+        if ($antesActivo !== $despuesActivo) {
+            $actualizadas = Inscripcion::where('_id', $inscripcion->getKey())
+                ->where('estado', $estadoAnterior)
+                ->update($validated);
+
+            if ($actualizadas !== 1) {
+                $actual = Inscripcion::find($inscripcion->getKey());
+                if ($voluntariado && ! in_array($actual?->estado, ['inscrita', 'activa'], true)) {
+                    $this->cupos->liberar($voluntariado, $inscripcionId);
+                }
+
+                abort(409, 'La inscripción cambió mientras se intentaba actualizar.');
+            }
+        } else {
+            $inscripcion->update($validated);
+        }
+
+        if ($voluntariado && ! $despuesActivo && array_key_exists('estado', $validated)) {
+            $this->cupos->liberar($voluntariado, $inscripcionId);
+        }
         if (($validated['estado'] ?? null) === 'cancelada' && $estadoAnterior !== 'cancelada') {
             $this->notificarCancelacion($inscripcion);
         }
@@ -255,18 +346,46 @@ class InscripcionController extends Controller
             404,
             'No se encontró una inscripción activa para tu perfil.',
         );
+        $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
+        $inscripcionId = (string) $inscripcion->getKey();
+        if ($inscripcion->estado === 'cancelada') {
+            if ($voluntariado) {
+                $this->cupos->liberar($voluntariado, $inscripcionId);
+            }
+
+            return response()->json(['success' => true, 'message' => 'Tu participación ya estaba cancelada.']);
+        }
         abort_unless(in_array($inscripcion->estado, ['inscrita', 'activa'], true), 409, 'Esta inscripción ya no está activa.');
 
-        $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
         $startsAt = $voluntariado ? $this->horario->inicio($voluntariado) : null;
         if ($startsAt?->isPast()) {
             abort(409, 'Ya no se puede cancelar la participación porque la actividad comenzó.');
         }
 
-        $inscripcion->update([
-            'estado' => 'cancelada',
-            'claveRegistroActiva' => null,
-        ]);
+        $cancelacionAplicada = Inscripcion::where('_id', $inscripcion->getKey())
+            ->whereIn('estado', ['inscrita', 'activa'])
+            ->update([
+                'estado' => 'cancelada',
+                'claveRegistroActiva' => null,
+            ]);
+
+        if ($cancelacionAplicada !== 1) {
+            $actual = Inscripcion::find($inscripcion->getKey());
+            if ($actual?->estado === 'cancelada') {
+                if ($voluntariado) {
+                    $this->cupos->liberar($voluntariado, $inscripcionId);
+                }
+
+                return response()->json(['success' => true, 'message' => 'Tu participación ya estaba cancelada.']);
+            }
+
+            abort(409, 'Esta inscripción ya no está activa.');
+        }
+
+        if ($voluntariado) {
+            $this->cupos->liberar($voluntariado, $inscripcionId);
+        }
+
         if ($voluntariado) {
             $this->notificaciones->inscripcionCancelada($inscripcion->fresh(), $voluntariado);
             $this->notificaciones->inscripcionCanceladaParaOrganizador($inscripcion->fresh(), $voluntariado);
@@ -290,7 +409,27 @@ class InscripcionController extends Controller
             ], 404);
         }
 
-        $inscripcion->delete();
+        $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
+        $inscripcionId = (string) $inscripcion->getKey();
+        $estadoParaEliminar = $inscripcion->estado;
+        if (in_array($estadoParaEliminar, ['inscrita', 'activa'], true)) {
+            $actualizadas = Inscripcion::where('_id', $inscripcion->getKey())
+                ->whereIn('estado', ['inscrita', 'activa'])
+                ->update(['estado' => 'cancelada', 'claveRegistroActiva' => null]);
+            if ($actualizadas !== 1) {
+                abort(409, 'La inscripción cambió mientras se intentaba eliminar.');
+            }
+            $estadoParaEliminar = 'cancelada';
+        }
+
+        if ($voluntariado) {
+            $this->cupos->liberar($voluntariado, $inscripcionId);
+        }
+
+        $eliminada = Inscripcion::where('_id', $inscripcion->getKey())
+            ->where('estado', $estadoParaEliminar)
+            ->delete();
+        abort_unless($eliminada === 1, 409, 'La inscripción cambió mientras se intentaba eliminar.');
 
         return response()->json([
             'success' => true,
