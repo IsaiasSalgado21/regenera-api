@@ -351,13 +351,13 @@ class VoluntariadoController extends Controller
 
     private function rules(bool $partial = false): array
     {
-        $required = $partial ? 'sometimes|required' : 'required';
+        $required = $partial ? ['sometimes', 'required'] : ['required'];
 
         return [
-            'titulo' => [$required, 'string', 'max:150'],
-            'descripcion' => [$required, 'string', 'max:3000'],
-            'categoria' => [$required, 'string', 'max:100'],
-            'lugarId' => [$required, 'string', 'max:100'],
+            'titulo' => [...$required, 'string', 'max:150'],
+            'descripcion' => [...$required, 'string', 'max:3000'],
+            'categoria' => [...$required, 'string', 'max:100'],
+            'lugarId' => [...$required, 'string', 'max:100'],
             'organizadorId' => [
                 Rule::requiredIf(fn () => request()->user()?->rol === 'admin'),
                 'nullable',
@@ -366,11 +366,11 @@ class VoluntariadoController extends Controller
             ],
             'latitud' => [$partial ? 'sometimes' : 'nullable', 'nullable', 'numeric', 'between:-90,90'],
             'longitud' => [$partial ? 'sometimes' : 'nullable', 'nullable', 'numeric', 'between:-180,180'],
-            'fechaInicio' => [$required, 'date'],
-            'fechaFin' => [$required, 'date', 'after_or_equal:fechaInicio'],
-            'horaInicio' => [$required, 'date_format:H:i'],
-            'horaFin' => [$required, 'date_format:H:i', 'after:horaInicio'],
-            'cupo' => [$required, 'integer', 'min:1', 'max:10000'],
+            'fechaInicio' => [...$required, 'date'],
+            'fechaFin' => [...$required, 'date', 'after_or_equal:fechaInicio'],
+            'horaInicio' => [...$required, 'date_format:H:i'],
+            'horaFin' => [...$required, 'date_format:H:i', 'after:horaInicio'],
+            'cupo' => [...$required, 'integer', 'min:1', 'max:10000'],
             'requisitos' => [$partial ? 'sometimes' : 'nullable', 'array'],
             'requisitos.*' => ['string', 'max:255'],
             'materiales' => [$partial ? 'sometimes' : 'nullable', 'array'],

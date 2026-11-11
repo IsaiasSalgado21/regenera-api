@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\Admin\VoluntariadoController;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -22,5 +24,20 @@ class VoluntariadoDashboardTest extends TestCase
 
         $this->getJson('/api/admin/voluntariados/507f1f77bcf86cd799439011/dashboard')
             ->assertForbidden();
+    }
+
+    public function test_voluntariado_update_validation_accepts_partial_payloads(): void
+    {
+        $controller = (new \ReflectionClass(VoluntariadoController::class))
+            ->newInstanceWithoutConstructor();
+        $rulesMethod = new \ReflectionMethod(VoluntariadoController::class, 'rules');
+        $rulesMethod->setAccessible(true);
+
+        $validator = Validator::make(
+            ['titulo' => 'Título actualizado'],
+            $rulesMethod->invoke($controller, true),
+        );
+
+        $this->assertTrue($validator->passes(), $validator->errors()->toJson());
     }
 }
