@@ -185,7 +185,9 @@ class VoluntariadoController extends Controller
                     'ocupacion' => $cupo > 0 ? round(min(100, ($inscritos / $cupo) * 100), 1) : 0,
                     'asistencias' => $asistentes,
                     'porcentajeAsistencia' => $inscritos > 0 ? round(($asistentes / $inscritos) * 100, 1) : 0,
-                    'pendientes' => max(0, $inscritos - $asistentes - $faltas),
+                    'pendientes' => $voluntariado->estado === 'cancelado'
+                        ? 0
+                        : max(0, $inscritos - $asistentes - $faltas),
                     'faltas' => $faltas,
                     'canceladas' => $inscripciones->where('estado', 'cancelada')->count(),
                     'registrosQr' => $asistencias->where('confirmada', true)->where('metodo', 'QR')->count(),
@@ -224,7 +226,7 @@ class VoluntariadoController extends Controller
             $request,
             ['campos' => array_keys($validated)],
         );
-        if ($request->user()->rol === 'organizador') {
+        if ($request->user()->rol === 'organizador' && $voluntariado->estado === 'pendiente') {
             $this->notificaciones->voluntariadoEnviado($voluntariado);
         }
 
@@ -255,10 +257,18 @@ class VoluntariadoController extends Controller
             $voluntariado,
             $validated['estado'] ?? null,
         );
+        $hayCambiosImportantes = $this->workflow->hayCambiosImportantes($voluntariado, $validated);
 
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated, $voluntariado);
 
         $voluntariado->update($validated);
+        if ($hayCambiosImportantes) {
+            $voluntariadoActualizado = $voluntariado->fresh();
+            $this->notificaciones->voluntariadoActualizado(
+                $voluntariadoActualizado,
+                $voluntariadoActualizado->estado === 'cancelado',
+            );
+        }
         $this->gridFsImages->deleteStored($removedImages);
         $this->auditoria->registrar(
             $request->user(),
@@ -322,25 +332,6 @@ class VoluntariadoController extends Controller
         $this->auditoria->registrar($request->user(), 'rechazar', 'voluntariado', (string) $voluntariado->_id, $request, ['motivo' => $validated['motivo']]);
 
         return response()->json(['data' => $this->present($voluntariado), 'message' => 'Voluntariado rechazado y el organizador fue notificado.']);
-    }
-
-    public function actualizarCodigoAsistencia(Request $request, string $id)
-    {
-        $validated = $request->validate([
-            'codigoAsistenciaActivo' => ['required', 'boolean'],
-        ]);
-        $voluntariado = Voluntariado::findOrFail($id);
-        $this->ensureCanManage($request, $voluntariado);
-        $voluntariado->update([
-            'codigoAsistenciaActivo' => $validated['codigoAsistenciaActivo'],
-        ]);
-
-        return response()->json([
-            'data' => $this->present($voluntariado->fresh()),
-            'message' => $validated['codigoAsistenciaActivo']
-                ? 'El código de asistencia fue activado.'
-                : 'El código de asistencia fue desactivado.',
-        ]);
     }
 
     private function rules(bool $partial = false): array
@@ -414,7 +405,7 @@ class VoluntariadoController extends Controller
             'imagenes' => $this->gridFsImages->urls($this->imagePaths($voluntariado)),
             'estado' => $voluntariado->estado,
             'tokenAsistencia' => $voluntariado->tokenAsistencia,
-            'codigoAsistenciaActivo' => (bool) $voluntariado->codigoAsistenciaActivo,
+            'codigoCorto' => $voluntariado->codigoCorto,
         ];
     }
 

@@ -48,8 +48,8 @@
                     Completa el formulario con tu artículo. Según tu perfil, quedará:
                 </p>
                 <ul class="art-info-list">
-                    <li id="artInfoAdmin" hidden><strong>Administrador o organizador verificado:</strong> se publica inmediatamente.</li>
-                    <li id="artInfoUser" hidden><strong>Usuario normal:</strong> quedará pendiente de revisión administrativa.</li>
+                    <li id="artInfoAdmin" hidden><strong>Administrador:</strong> se guarda como borrador para revisar y publicar desde el panel.</li>
+                    <li id="artInfoUser" hidden><strong>Usuario u organizador:</strong> queda pendiente de aprobación administrativa.</li>
                 </ul>
             </div>
 
@@ -108,6 +108,54 @@
             const createFormContainer = document.getElementById('artCreateFormContainer');
             const infoAdmin = document.getElementById('artInfoAdmin');
             const infoUser = document.getElementById('artInfoUser');
+            const form = document.getElementById('artCreateForm');
+            const message = document.getElementById('artCreateMessage');
+            const submitButton = document.getElementById('artSubmitBtn');
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!form.reportValidity()) return;
+
+                const token = sessionStorage.getItem('regenera_access_token');
+                if (!token) {
+                    authRequired.hidden = false;
+                    createFormContainer.hidden = true;
+                    return;
+                }
+
+                submitButton.disabled = true;
+                submitButton.textContent = 'Enviando…';
+                message.textContent = '';
+                message.className = 'form-message';
+
+                try {
+                    const formData = new FormData(form);
+                    if (!form.elements.imagen.files.length) formData.delete('imagen');
+                    const response = await fetch('/api/articulos', {
+                        method: 'POST',
+                        headers: {
+                            Accept: 'application/json',
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: formData,
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        const validationMessage = Object.values(result.errors || {}).flat()[0];
+                        throw new Error(validationMessage || result.message || 'No se pudo enviar el artículo.');
+                    }
+
+                    message.textContent = result.message || 'Artículo enviado correctamente.';
+                    message.classList.add('is-success');
+                    form.reset();
+                } catch (error) {
+                    message.textContent = error.message || 'No se pudo enviar el artículo.';
+                    message.classList.add('is-error');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Enviar artículo';
+                }
+            });
 
             async function initializeArticleForm() {
                 const token = sessionStorage.getItem('regenera_access_token');
@@ -145,10 +193,9 @@
                         return;
                     }
 
-                    const canPublishImmediately = user.rol === 'admin'
-                        || (user.rol === 'organizador' && Boolean(user.organizadorVerificado));
-                    infoAdmin.hidden = !canPublishImmediately;
-                    infoUser.hidden = canPublishImmediately;
+                    const isAdmin = user.rol === 'admin';
+                    infoAdmin.hidden = !isAdmin;
+                    infoUser.hidden = isAdmin;
                     authRequired.hidden = true;
                     createFormContainer.hidden = false;
                 } catch (error) {

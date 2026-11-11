@@ -67,6 +67,7 @@ class AuthController extends Controller
                 'nombre' => $user->nombre,
                 'correo' => $user->correo,
                 'rol' => $user->rol,
+                'organizadorVerificado' => (bool) $user->organizadorVerificado,
                 'estado' => $user->estado,
             ],
         ], 201);
@@ -122,6 +123,7 @@ class AuthController extends Controller
                 'nombre' => $usuario->nombre,
                 'correo' => $usuario->correo,
                 'rol' => $usuario->rol,
+                'organizadorVerificado' => (bool) $usuario->organizadorVerificado,
                 'estado' => $usuario->estado,
             ],
         ]);

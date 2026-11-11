@@ -41,7 +41,7 @@ class AttendanceQrTest extends TestCase
         );
 
         $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{64}$/', $voluntariado->tokenAsistencia);
-        $this->assertTrue($voluntariado->codigoAsistenciaActivo);
+        $this->assertMatchesRegularExpression('/^[A-HJ-NP-Z2-9]{8}$/', $voluntariado->codigoCorto);
         $this->assertArrayNotHasKey('tokenAsistencia', $voluntariado->toArray());
     }
 

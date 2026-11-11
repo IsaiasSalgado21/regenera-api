@@ -102,6 +102,24 @@ class NotificationService
         );
     }
 
+    public function nuevaInscripcionParaOrganizador(Inscripcion $inscripcion, Voluntariado $voluntariado): ?Notificacion
+    {
+        $organizadorId = (string) $voluntariado->organizadorId;
+        if ($organizadorId === '' || $organizadorId === (string) $inscripcion->usuarioId) {
+            return null;
+        }
+
+        return $this->crear(
+            $organizadorId,
+            'nueva_inscripcion_voluntariado',
+            'Nueva inscripción en tu voluntariado',
+            'Una persona se inscribió en «'.$voluntariado->titulo.'».',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            ['estado' => 'inscrita', 'inscripcionId' => (string) $inscripcion->_id],
+        );
+    }
+
     public function inscripcionCancelada(Inscripcion $inscripcion, Voluntariado $voluntariado): Notificacion
     {
         return $this->crear(
@@ -113,6 +131,59 @@ class NotificationService
             (string) $voluntariado->_id,
             ['estado' => 'cancelada'],
         );
+    }
+
+    public function inscripcionCanceladaParaOrganizador(Inscripcion $inscripcion, Voluntariado $voluntariado): ?Notificacion
+    {
+        $organizadorId = (string) $voluntariado->organizadorId;
+        if ($organizadorId === '' || $organizadorId === (string) $inscripcion->usuarioId) {
+            return null;
+        }
+
+        return $this->crear(
+            $organizadorId,
+            'inscripcion_cancelada_voluntariado',
+            'Cancelaron una inscripción',
+            'Una persona canceló su lugar en «'.$voluntariado->titulo.'».',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            ['estado' => 'cancelada', 'inscripcionId' => (string) $inscripcion->_id],
+        );
+    }
+
+    public function voluntariadoActualizado(Voluntariado $voluntariado, bool $cancelado = false): void
+    {
+        $voluntariadoId = (string) $voluntariado->_id;
+        $inscripciones = Inscripcion::where(function ($query) use ($voluntariadoId): void {
+            $query->where('voluntariadoId', $voluntariadoId);
+            if (preg_match('/^[a-f0-9]{24}$/i', $voluntariadoId)) {
+                $query->orWhere('voluntariadoId', new ObjectId($voluntariadoId));
+            }
+        })->whereIn('estado', ['inscrita', 'activa'])->get();
+
+        $notifiedUsers = [];
+        foreach ($inscripciones as $inscripcion) {
+            $usuarioId = (string) $inscripcion->usuarioId;
+            if ($usuarioId === '' || isset($notifiedUsers[$usuarioId])) {
+                continue;
+            }
+            $notifiedUsers[$usuarioId] = true;
+            $url = in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true)
+                ? url('/voluntariados/'.$voluntariadoId)
+                : url('/perfil');
+
+            $this->crear(
+                $usuarioId,
+                $cancelado ? 'voluntariado_cancelado' : 'voluntariado_actualizado',
+                $cancelado ? 'Se canceló un voluntariado' : 'Actualización de un voluntariado',
+                $cancelado
+                    ? '«'.$voluntariado->titulo.'» fue cancelado. Revisa tu historial para más información.'
+                    : 'Hubo cambios importantes en «'.$voluntariado->titulo.'». Consulta los detalles actualizados.',
+                'voluntariado',
+                $voluntariadoId,
+                ['estado' => $voluntariado->estado, 'url' => $url],
+            );
+        }
     }
 
     public function asistenciaRegistrada(string $usuarioId, Voluntariado $voluntariado): Notificacion

@@ -14,9 +14,14 @@ class Inscripcion extends Model
     protected $fillable = [
         'usuarioId',
         'voluntariadoId',
+        'claveRegistroActiva',
         'fechaInscripcion',
         'estado',
         'observaciones',
+    ];
+
+    protected $hidden = [
+        'claveRegistroActiva',
     ];
 
     protected function casts(): array

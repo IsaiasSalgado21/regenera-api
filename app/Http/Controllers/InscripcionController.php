@@ -8,6 +8,7 @@ use App\Services\NotificationService;
 use App\Services\VoluntariadoHorario;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use MongoDB\Driver\Exception\BulkWriteException;
 
 class InscripcionController extends Controller
 {
@@ -115,14 +116,33 @@ class InscripcionController extends Controller
             ], 409);
         }
 
-        $inscripcion = Inscripcion::create([
-            'usuarioId' => (string) $usuario->_id,
-            'voluntariadoId' => $validated['voluntariadoId'],
-            'fechaInscripcion' => now(),
-            'estado' => 'inscrita',
-            'observaciones' => $validated['observaciones'] ?? null,
-        ]);
+        $usuarioId = (string) $usuario->getAuthIdentifier();
+        $voluntariadoId = (string) $voluntariado->_id;
+        try {
+            $inscripcion = Inscripcion::create([
+                'usuarioId' => $usuarioId,
+                'voluntariadoId' => $voluntariadoId,
+                'claveRegistroActiva' => $usuarioId.'|'.$voluntariadoId,
+                'fechaInscripcion' => now(),
+                'estado' => 'inscrita',
+                'observaciones' => $validated['observaciones'] ?? null,
+            ]);
+        } catch (BulkWriteException $exception) {
+            $inscripcionActiva = Inscripcion::where('usuarioId', $usuarioId)
+                ->where('voluntariadoId', $voluntariadoId)
+                ->where('estado', '!=', 'cancelada')
+                ->exists();
+            if (! $inscripcionActiva) {
+                throw $exception;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El usuario ya tiene una inscripción activa para este voluntariado.',
+            ], 409);
+        }
         $this->notificaciones->inscripcionConfirmada($inscripcion, $voluntariado);
+        $this->notificaciones->nuevaInscripcionParaOrganizador($inscripcion, $voluntariado);
 
         return response()->json([
             'success' => true,
@@ -209,6 +229,11 @@ class InscripcionController extends Controller
         }
 
         $estadoAnterior = $inscripcion->estado;
+        if (array_key_exists('estado', $validated)) {
+            $validated['claveRegistroActiva'] = $validated['estado'] === 'cancelada'
+                ? null
+                : (string) $inscripcion->usuarioId.'|'.(string) $inscripcion->voluntariadoId;
+        }
         $inscripcion->update($validated);
         if (($validated['estado'] ?? null) === 'cancelada' && $estadoAnterior !== 'cancelada') {
             $this->notificarCancelacion($inscripcion);
@@ -238,9 +263,13 @@ class InscripcionController extends Controller
             abort(409, 'Ya no se puede cancelar la participación porque la actividad comenzó.');
         }
 
-        $inscripcion->update(['estado' => 'cancelada']);
+        $inscripcion->update([
+            'estado' => 'cancelada',
+            'claveRegistroActiva' => null,
+        ]);
         if ($voluntariado) {
             $this->notificaciones->inscripcionCancelada($inscripcion->fresh(), $voluntariado);
+            $this->notificaciones->inscripcionCanceladaParaOrganizador($inscripcion->fresh(), $voluntariado);
         }
 
         return response()->json([
@@ -274,6 +303,7 @@ class InscripcionController extends Controller
         $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
         if ($voluntariado) {
             $this->notificaciones->inscripcionCancelada($inscripcion->fresh(), $voluntariado);
+            $this->notificaciones->inscripcionCanceladaParaOrganizador($inscripcion->fresh(), $voluntariado);
         }
     }
 }

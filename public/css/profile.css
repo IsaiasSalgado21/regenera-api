@@ -134,6 +134,12 @@
     color: #17613e;
 }
 
+.profile-badge-verification.is-verified::before {
+    content: '✓';
+    font-weight: 800;
+    margin-right: .3rem;
+}
+
 .profile-joined {
     border-left: 1px solid #e5e9e2;
     display: grid;

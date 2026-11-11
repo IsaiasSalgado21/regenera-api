@@ -1739,7 +1739,7 @@
 .volunteer-qr-frame {
     display: grid;
     width: 100%;
-    min-height: 270px;
+    min-height: 0;
     place-items: center;
     border: 1px solid var(--volunteer-border);
     border-radius: 13px;
@@ -1778,14 +1778,13 @@
 
 .volunteer-token-row code {
     min-width: 0;
-    overflow: hidden;
+    overflow-wrap: anywhere;
     border: 1px solid var(--volunteer-border);
     border-radius: 8px;
     padding: 10px;
     background: #111b15;
     color: #b9d8c2;
     font-size: .66rem;
-    text-overflow: ellipsis;
 }
 
 .volunteer-token-row .button {

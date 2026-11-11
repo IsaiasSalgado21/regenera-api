@@ -3,6 +3,51 @@ import '../css/asistencia.css';
 const message = document.getElementById('attendanceMessage');
 const submit = document.getElementById('attendanceSubmit');
 const login = document.getElementById('attendanceLogin');
+const codeForm = document.getElementById('attendanceCodeForm');
+
+if (codeForm) {
+    const codeInput = document.getElementById('attendanceCode');
+    const codeMessage = document.getElementById('attendanceCodeMessage');
+
+    codeForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const codigo = codeInput.value.trim().toUpperCase();
+        const accessToken = sessionStorage.getItem('regenera_access_token');
+        codeMessage.classList.remove('is-error', 'is-success');
+
+        if (!accessToken) {
+            codeMessage.textContent = 'Inicia sesión con la cuenta inscrita para registrar tu asistencia.';
+            codeMessage.classList.add('is-error');
+            return;
+        }
+
+        codeMessage.textContent = 'Verificando código…';
+        try {
+            const response = await fetch('/api/asistencias', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({ metodo: 'QR', tokenAsistencia: codigo }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                codeMessage.textContent = result.message || 'No se pudo registrar la asistencia.';
+                codeMessage.classList.add('is-error');
+                return;
+            }
+            codeMessage.textContent = result.message || 'Asistencia registrada.';
+            codeMessage.classList.add('is-success');
+            codeInput.value = '';
+        } catch (error) {
+            console.error('No se pudo registrar la asistencia con código.', error);
+            codeMessage.textContent = 'No hay conexión con el servidor. Inténtalo de nuevo.';
+            codeMessage.classList.add('is-error');
+        }
+    });
+}
 
 if (message && submit && login) {
     let token = '';

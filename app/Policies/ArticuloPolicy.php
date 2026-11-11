@@ -11,7 +11,7 @@ class ArticuloPolicy
     {
         return $articulo->estado === 'publicado'
             || $user?->rol === 'admin'
-            || ($user?->rol === 'organizador' && (string) $articulo->autorId === (string) $user->getAuthIdentifier());
+            || ($user && (string) $articulo->autorId === (string) $user->getAuthIdentifier());
     }
 
     public function create(User $user): bool

@@ -87,19 +87,15 @@ class AsistenciaController extends Controller
                 ], 403);
             }
 
-            $voluntariado = Voluntariado::where('tokenAsistencia', $validated['tokenAsistencia'])->first();
+            $codigo = strtoupper(trim($validated['tokenAsistencia']));
+            $voluntariado = strlen($codigo) === 8
+                ? Voluntariado::where('codigoCorto', $codigo)->first()
+                : Voluntariado::where('tokenAsistencia', $validated['tokenAsistencia'])->first();
             if (! $voluntariado) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El código QR no es válido.',
+                    'message' => 'El código no es válido.',
                 ], 404);
-            }
-
-            if (! $voluntariado->codigoAsistenciaActivo) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El código QR de este voluntariado está desactivado.',
-                ], 410);
             }
         } else {
             if (! in_array($request->user()->rol, ['admin', 'organizador'], true)) {

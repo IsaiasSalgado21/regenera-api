@@ -15,6 +15,8 @@ class CrudAccessTest extends TestCase
         $this->putJson('/api/lugares/507f1f77bcf86cd799439011', [])->assertUnauthorized();
         $this->postJson('/api/flora-fauna', [])->assertUnauthorized();
         $this->putJson('/api/flora-fauna/507f1f77bcf86cd799439011', [])->assertUnauthorized();
+        $this->postJson('/api/inscripciones', [])->assertUnauthorized();
+        $this->postJson('/api/asistencias', [])->assertUnauthorized();
         $this->getJson('/api/admin/lugares')->assertUnauthorized();
         $this->getJson('/api/admin/flora-fauna')->assertUnauthorized();
         $this->getJson('/api/admin/voluntariados')->assertUnauthorized();

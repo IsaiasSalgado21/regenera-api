@@ -55,20 +55,25 @@ if (page) {
     };
 
     const activityCard = (volunteer, enrollment, attendance) => {
-        const status = volunteer.estado === 'cancelado'
-            ? 'Voluntariado cancelado'
-            : enrollment.estado === 'cancelada'
-                ? 'Inscripción cancelada'
+        const status = enrollment.estado === 'cancelada'
+            ? 'Inscripción cancelada'
+            : volunteer.estado === 'cancelado'
+                ? 'Voluntariado cancelado'
                 : attendance?.confirmada
                     ? 'Asistió'
                     : enrollment.estado === 'completada'
                         ? 'Participación completada'
                         : volunteer.finalizadoPorFecha || volunteer.estado === 'finalizado'
                             ? 'No asistió'
-                            : 'Inscripción activa';
+                            : volunteer.estado === 'pendiente'
+                                ? 'Voluntariado en revisión'
+                                : 'Inscripción activa';
+            const title = ['publicado', 'cancelado', 'finalizado'].includes(volunteer.estado)
+                ? `<a href="/voluntariados/${encodeURIComponent(volunteer.id)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a>`
+                : escapeHtml(volunteer.titulo || 'Voluntariado');
         return `<article class="profile-list-item">
             <div class="profile-list-copy">
-                <h4><a href="/voluntariados/${encodeURIComponent(volunteer.id)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a></h4>
+                    <h4>${title}</h4>
                 <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}${volunteer.lugar?.nombre ? ` · ${escapeHtml(volunteer.lugar.nombre)}` : ''}</p>
             </div>
             <span class="profile-item-status">${escapeHtml(status)}</span>
@@ -127,6 +132,7 @@ if (page) {
                     && volunteer.estado !== 'cancelado'
                     && !volunteer.finalizadoPorFecha
                     && volunteer.estado !== 'finalizado'
+                    && new Date(volunteer.fechaInicio).getTime() >= now
                     && enrollment.estado !== 'completada'
                     && !attendance;
                 (isUpcoming ? upcomingItems : historyItems).push({
@@ -270,11 +276,10 @@ if (page) {
                 avatar.textContent = (usuario.nombre || 'R').trim().charAt(0).toLocaleUpperCase('es-MX');
             }
             const verification = page.querySelector('[data-profile-verification]');
-            if (usuario.rol === 'organizador') {
-                verification.hidden = false;
-                verification.textContent = usuario.organizadorVerificado ? 'Organizador verificado' : 'Verificación pendiente';
-                verification.classList.toggle('is-verified', Boolean(usuario.organizadorVerificado));
-            }
+            const isVerifiedOrganizer = usuario.rol === 'organizador' && Boolean(usuario.organizadorVerificado);
+            verification.hidden = usuario.rol !== 'organizador';
+            verification.textContent = isVerifiedOrganizer ? 'Organizador verificado' : 'Verificación pendiente';
+            verification.classList.toggle('is-verified', isVerifiedOrganizer);
             page.querySelectorAll('[data-profile-section]').forEach(section => {
                 section.hidden = section.dataset.profileSection !== usuario.rol;
             });

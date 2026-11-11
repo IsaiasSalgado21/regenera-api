@@ -35,6 +35,22 @@
     padding: .12rem .35rem;
 }
 
+.verified-organizer-mark {
+    align-items: center;
+    background: #e3f2e8;
+    border: 1px solid #8fc1a1;
+    border-radius: 50%;
+    color: #17613e;
+    display: inline-flex;
+    font-size: .68rem;
+    font-weight: 800;
+    height: 1rem;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
+    width: 1rem;
+}
+
 .notification-drawer-backdrop {
     background: rgb(10 35 26 / 25%);
     inset: 0;

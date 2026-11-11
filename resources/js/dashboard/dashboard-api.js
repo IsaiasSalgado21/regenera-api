@@ -60,7 +60,6 @@ export const dashboardApi = {
     saveVoluntariado: (id, data) => request('post', id ? `/api/admin/voluntariados/${id}` : '/api/admin/voluntariados', id ? methodOverride(data, 'put') : data),
     saveArticle: (id, data) => request('post', id ? `/api/articulos/${id}` : '/api/articulos', id ? methodOverride(data, 'put') : data),
     deleteVoluntariado: id => request('delete', `/api/admin/voluntariados/${id}`),
-    setAttendanceQrActive: (id, codigoAsistenciaActivo) => request('patch', `/api/admin/voluntariados/${id}/codigo-asistencia`, { codigoAsistenciaActivo }),
     approveVoluntariado: id => request('patch', `/api/admin/voluntariados/${id}/aprobar`),
     rejectVoluntariado: (id, motivo) => request('patch', `/api/admin/voluntariados/${id}/rechazar`, { motivo }),
     archivePlace: id => request('patch', `/api/admin/lugares/${id}/archivar`),

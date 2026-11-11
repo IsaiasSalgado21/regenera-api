@@ -64,7 +64,7 @@
                 </button>
 
                 @auth
-                    <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}</a>
+                    <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}@if (Auth::user()->rol === 'organizador' && (bool) Auth::user()->organizadorVerificado) <span class="verified-organizer-mark" aria-label="Organizador verificado" title="Organizador verificado">✓</span>@endif</a>
                     <a href="{{ url('/logout') }}" class="user-nav" data-auth-logout>Salir</a>
                 @else
                     <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
@@ -97,7 +97,7 @@
             <a href="{{ route('notifications.index') }}" class="user-nav" data-auth-required hidden>Centro de notificaciones</a>
 
             @auth
-                <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}</a>
+                <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}@if (Auth::user()->rol === 'organizador' && (bool) Auth::user()->organizadorVerificado) <span class="verified-organizer-mark" aria-label="Organizador verificado" title="Organizador verificado">✓</span>@endif</a>
                 <a href="{{ url('/logout') }}" class="user-nav" data-auth-logout>Salir</a>
             @else
                 <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>

@@ -329,7 +329,6 @@ function initializeDashboard() {
 
         byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
             const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
-            const qrActivo = Boolean(voluntariado.codigoAsistenciaActivo);
             let actions = '';
             if (user.rol === 'admin') {
                 actions += action('Editar', 'edit-voluntariado', voluntariado.id);
@@ -342,13 +341,12 @@ function initializeDashboard() {
                 actions += action('Editar y reenviar', 'edit-voluntariado', voluntariado.id);
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
             }
-            actions += `<button class="button button-${qrActivo ? 'danger' : 'secondary'}" type="button" data-action="toggle-attendance-qr" data-id="${escapeHtml(voluntariado.id)}" data-active="${qrActivo ? 'false' : 'true'}">${qrActivo ? 'Desactivar QR' : 'Activar QR'}</button>`;
 
             const attendanceQr = voluntariado.tokenAsistencia
                 ? `<div class="dashboard-attendance-qr">
                     <canvas data-attendance-qr="${escapeHtml(voluntariado.tokenAsistencia)}" aria-label="Código QR de asistencia para ${escapeHtml(voluntariado.titulo)}"></canvas>
-                    <div><strong>Asistencia por QR · ${qrActivo ? 'Activo' : 'Desactivado'}</strong>
-                    <p>${qrActivo ? 'Escanéalo durante el horario de la actividad.' : 'Actívalo para permitir registros de asistencia.'}</p></div>
+                    <div><strong>Asistencia por QR</strong>
+                    <p>Código para asistentes: <code>${escapeHtml(voluntariado.codigoCorto || '')}</code></p></div>
                 </div>`
                 : '<p class="dashboard-attendance-qr-error">No se pudo cargar el token de asistencia. Actualiza la página o contacta al administrador.</p>';
 
@@ -404,7 +402,6 @@ function initializeDashboard() {
 
     function renderVolunteerDashboard(data) {
         const { voluntariado, estadisticas, participantes } = data;
-        const qrActivo = Boolean(voluntariado.codigoAsistenciaActivo);
         const ownsVolunteer = String(voluntariado.organizadorId) === String(user.id);
         const canEdit = user.rol === 'admin'
             || (ownsVolunteer && (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado)));
@@ -459,13 +456,11 @@ function initializeDashboard() {
             ? `<div class="volunteer-qr-layout">
                 <div class="volunteer-qr-frame"><canvas id="volunteerDetailQr" aria-label="Código QR de asistencia"></canvas></div>
                 <div class="volunteer-qr-info">
-                    <span class="volunteer-status ${qrActivo ? 'is-active' : 'is-inactive'}"><i></i>${qrActivo ? 'Código activo' : 'Código desactivado'}</span>
-                    <p>Este QR utiliza el token almacenado para este voluntariado. Solo permite registrar asistencia cuando está activo.</p>
-                    <label for="volunteerQrToken">Token de asistencia</label>
-                    <div class="volunteer-token-row"><code id="volunteerQrToken">${escapeHtml(qrToken)}</code><button class="button button-secondary" type="button" data-copy-volunteer-token>Copiar</button></div>
+                    <p>Muestra este QR o el código corto a los asistentes para registrar su asistencia.</p>
+                    <label for="volunteerShortCode">Código corto</label>
+                    <div class="volunteer-token-row"><code id="volunteerShortCode">${escapeHtml(voluntariado.codigoCorto || '')}</code><button class="button button-secondary" type="button" data-copy-volunteer-token data-copy-target="volunteerShortCode">Copiar</button></div>
                     <p class="volunteer-qr-usage">${Number(estadisticas.registrosQr) || 0} registros confirmados con método QR</p>
                     <div class="volunteer-detail-actions">
-                        <button class="button button-primary" type="button" data-action="toggle-attendance-qr" data-id="${escapeHtml(voluntariado.id)}" data-active="${qrActivo ? 'false' : 'true'}">${qrActivo ? 'Desactivar QR' : 'Activar QR'}</button>
                         <button class="button button-secondary" type="button" data-download-volunteer-qr disabled>Descargar QR</button>
                     </div>
                 </div>
@@ -1422,13 +1417,6 @@ function initializeDashboard() {
                     await dashboardApi.deleteVoluntariado(id);
                     break;
 
-                case 'toggle-attendance-qr': {
-                    const voluntariado = cache.voluntariados.find(item => String(item.id) === String(id));
-                    if (!voluntariado) throw new Error('No se encontró el voluntariado seleccionado.');
-                    await dashboardApi.setAttendanceQrActive(id, button.dataset.active === 'true');
-                    break;
-                }
-
                 case 'delete-user':
                     await dashboardApi.deleteUser(id);
                     break;
@@ -1448,9 +1436,6 @@ function initializeDashboard() {
             showNotice('La acción se completó correctamente.');
 
             await refreshCurrentSection();
-            if (actionName === 'toggle-attendance-qr' && openVolunteerId) {
-                await showVolunteerDetail(openVolunteerId, false);
-            }
 
             if (actionName === 'read-notification') {
                 await loadNotifications(true);
@@ -1831,7 +1816,7 @@ function initializeDashboard() {
             return;
         }
         if (event.target.closest('[data-copy-volunteer-token]')) {
-            const token = byId('volunteerQrToken')?.textContent || '';
+            const token = byId(event.target.closest('[data-copy-volunteer-token]').dataset.copyTarget || 'volunteerQrToken')?.textContent || '';
             try {
                 await navigator.clipboard.writeText(token);
                 showNotice('Token copiado al portapapeles.');

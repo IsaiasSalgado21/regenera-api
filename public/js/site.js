@@ -51,6 +51,18 @@
     function updateNavigation(user) {
         if (!user) return;
 
+        function setUserLabel(userLabel) {
+            userLabel.textContent = user.nombre;
+            if (user.rol !== "organizador" || !user.organizadorVerificado) return;
+
+            const badge = document.createElement("span");
+            badge.className = "verified-organizer-mark";
+            badge.textContent = "✓";
+            badge.setAttribute("aria-label", "Organizador verificado");
+            badge.title = "Organizador verificado";
+            userLabel.append(" ", badge);
+        }
+
         document.querySelectorAll(".nav, .mobile-menu").forEach(nav => {
             nav.querySelectorAll("[data-auth-required]").forEach(link => { link.hidden = false; });
             const existingDashboard = nav.querySelector("[data-auth-dashboard]");
@@ -72,7 +84,7 @@
                 userLabel.href = "/perfil";
                 userLabel.className = "user-nav";
                 userLabel.dataset.authUser = "";
-                userLabel.textContent = user.nombre;
+                setUserLabel(userLabel);
                 loginLink.replaceWith(userLabel);
             }
 
@@ -86,7 +98,7 @@
                     userLabel.replaceWith(profileLink);
                     userLabel = profileLink;
                 }
-                userLabel.textContent = user.nombre;
+                setUserLabel(userLabel);
             }
 
             if (!nav.querySelector("[data-auth-logout]")) {

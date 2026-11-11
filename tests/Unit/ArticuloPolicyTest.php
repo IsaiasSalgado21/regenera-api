@@ -18,6 +18,18 @@ class ArticuloPolicyTest extends TestCase
         }
     }
 
+    public function test_authors_can_view_their_own_pending_articles(): void
+    {
+        $usuario = new User(['rol' => 'usuario']);
+        $usuario->setAttribute('_id', '507f1f77bcf86cd799439011');
+        $articulo = new Articulo([
+            'autorId' => '507f1f77bcf86cd799439011',
+            'estado' => 'pendiente',
+        ]);
+
+        $this->assertTrue((new ArticuloPolicy)->view($usuario, $articulo));
+    }
+
     public function test_unverified_organizer_can_create_and_submit_only_owned_drafts_or_rejected_articles(): void
     {
         $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false]);

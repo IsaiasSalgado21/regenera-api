@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Asistencia;
 use App\Models\Inscripcion;
 use App\Models\Voluntariado;
+use DateTimeInterface;
 
 class VoluntariadoWorkflow
 {
@@ -58,5 +59,43 @@ class VoluntariadoWorkflow
         }
 
         return $this->finalizado($voluntariado, $horario);
+    }
+
+    public function hayCambiosImportantes(Voluntariado $voluntariado, array $attributes): bool
+    {
+        $fields = [
+            'titulo',
+            'descripcion',
+            'lugarId',
+            'fechaInicio',
+            'fechaFin',
+            'horaInicio',
+            'horaFin',
+            'cupo',
+            'estado',
+        ];
+
+        foreach ($fields as $field) {
+            if (! array_key_exists($field, $attributes)) {
+                continue;
+            }
+
+            $current = $voluntariado->getAttribute($field);
+            $next = $attributes[$field];
+            if (str_starts_with($field, 'fecha')) {
+                $current = $current instanceof DateTimeInterface
+                    ? $current->format('Y-m-d')
+                    : substr((string) $current, 0, 10);
+                $next = $next instanceof DateTimeInterface
+                    ? $next->format('Y-m-d')
+                    : substr((string) $next, 0, 10);
+            }
+
+            if ((string) $current !== (string) $next) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

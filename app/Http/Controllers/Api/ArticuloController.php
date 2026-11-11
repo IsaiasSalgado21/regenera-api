@@ -58,12 +58,14 @@ class ArticuloController extends Controller
         $this->authorize('create', Articulo::class);
         $validated = $request->validated();
         $autorId = (string) $request->user()->getAuthIdentifier();
+        $esAdmin = $request->user()->rol === 'admin';
+        $estadoInicial = $esAdmin ? 'borrador' : 'pendiente';
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated);
 
         $articulo = Articulo::create([
             ...$validated,
             'autorId' => preg_match('/^[a-f0-9]{24}$/i', $autorId) ? new ObjectId($autorId) : $autorId,
-            'estado' => 'borrador',
+            'estado' => $estadoInicial,
             'fechaPublicacion' => null,
             'fechaActualizacion' => now(),
         ]);
@@ -76,13 +78,17 @@ class ArticuloController extends Controller
                 'articulo',
                 (string) $articulo->_id,
                 $request,
-                ['estado' => 'borrador'],
+                ['estado' => $estadoInicial],
             );
+        } else {
+            $this->notificaciones->articuloEnviadoRevision($articulo);
         }
 
         return response()->json([
             'data' => $this->present($articulo),
-            'message' => 'Artículo guardado como borrador.',
+            'message' => $esAdmin
+                ? 'Artículo guardado como borrador.'
+                : 'Artículo enviado a revisión administrativa.',
         ], 201);
     }
 
@@ -108,7 +114,6 @@ class ArticuloController extends Controller
             ...$validated,
             'fechaActualizacion' => now(),
         ]);
-        $this->notificaciones->articuloEnviadoRevision($articulo->fresh());
         $this->gridFsImages->deleteStored($removedImages);
 
         if ($request->user()->rol === 'admin') {
@@ -136,6 +141,7 @@ class ArticuloController extends Controller
             'estado' => 'pendiente',
             'fechaActualizacion' => now(),
         ]);
+        $this->notificaciones->articuloEnviadoRevision($articulo->fresh());
 
         return response()->json([
             'data' => $this->present($articulo->fresh()),

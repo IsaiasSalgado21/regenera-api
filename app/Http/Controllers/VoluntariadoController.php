@@ -173,6 +173,7 @@ class VoluntariadoController extends Controller
             $voluntariado,
             $validated['estado'] ?? null,
         );
+        $hayCambiosImportantes = $this->workflow->hayCambiosImportantes($voluntariado, $validated);
 
         if ($request->hasFile('imagen')) {
             $validated['imagen'] = Storage::disk('gridfs')
@@ -180,8 +181,18 @@ class VoluntariadoController extends Controller
         }
 
         $voluntariado->update($validated);
+        if ($hayCambiosImportantes) {
+            $voluntariadoActualizado = $voluntariado->fresh();
+            $this->notificaciones->voluntariadoActualizado(
+                $voluntariadoActualizado,
+                $voluntariadoActualizado->estado === 'cancelado',
+            );
+        }
         if ($estadoAnterior !== 'pendiente' && $voluntariado->estado === 'pendiente') {
             $this->notificaciones->voluntariadoEnviado($voluntariado);
+        }
+        if ($request->user()->rol === 'admin' && $estadoAnterior !== 'publicado' && $voluntariado->estado === 'publicado') {
+            $this->notificaciones->voluntariadoAprobado($voluntariado->fresh());
         }
 
         return response()->json([

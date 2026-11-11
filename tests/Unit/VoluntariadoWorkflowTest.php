@@ -91,4 +91,27 @@ class VoluntariadoWorkflowTest extends TestCase
             $horario,
         ));
     }
+
+    public function test_only_relevant_changes_trigger_participant_updates(): void
+    {
+        $workflow = new VoluntariadoWorkflow;
+        $voluntariado = new Voluntariado([
+            'titulo' => 'Limpieza de playa',
+            'fechaInicio' => '2026-12-01',
+            'horaInicio' => '09:00',
+            'cupo' => 12,
+            'estado' => 'publicado',
+        ]);
+
+        $this->assertFalse($workflow->hayCambiosImportantes($voluntariado, [
+            'titulo' => 'Limpieza de playa',
+            'fechaInicio' => '2026-12-01',
+            'horaInicio' => '09:00',
+            'cupo' => '12',
+            'estado' => 'publicado',
+        ]));
+        $this->assertTrue($workflow->hayCambiosImportantes($voluntariado, [
+            'fechaInicio' => '2026-12-02',
+        ]));
+    }
 }

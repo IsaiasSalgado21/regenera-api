@@ -30,7 +30,7 @@ class Voluntariado extends Model
         'imagenes',
         'estado',
         'tokenAsistencia',
-        'codigoAsistenciaActivo',
+        'codigoCorto',
     ];
 
     protected $hidden = [
@@ -43,8 +43,21 @@ class Voluntariado extends Model
             if (! is_string($voluntariado->tokenAsistencia) || $voluntariado->tokenAsistencia === '') {
                 $voluntariado->tokenAsistencia = Str::random(64);
             }
-            $voluntariado->codigoAsistenciaActivo ??= true;
+            if (! is_string($voluntariado->codigoCorto) || $voluntariado->codigoCorto === '') {
+                $voluntariado->codigoCorto = self::generarCodigoCorto();
+            }
         });
+    }
+
+    public static function generarCodigoCorto(): string
+    {
+        $alfabeto = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $codigo = '';
+        for ($i = 0; $i < 8; $i++) {
+            $codigo .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+        }
+
+        return $codigo;
     }
 
     protected function casts(): array
@@ -55,7 +68,6 @@ class Voluntariado extends Model
             'cupo' => 'integer',
             'latitud' => 'float',
             'longitud' => 'float',
-            'codigoAsistenciaActivo' => 'boolean',
             'requisitos' => 'array',
             'materiales' => 'array',
         ];
