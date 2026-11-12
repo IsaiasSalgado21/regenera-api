@@ -254,7 +254,43 @@
                     class="volunteer-enrollment-message"
                     role="status"
                     aria-live="polite"></p>
+
+                <section class="volunteer-attendance-tools" data-participant-attendance hidden aria-labelledby="participantAttendanceHeading">
+                    <h3 id="participantAttendanceHeading">Registrar asistencia</h3>
+                    <p data-participant-attendance-status role="status" aria-live="polite">La actividad está en curso.</p>
+                    <form data-attendance-code-form>
+                        <label for="detailAttendanceCode">Código corto</label>
+                        <div class="volunteer-enrollment-actions">
+                            <input id="detailAttendanceCode" name="codigo" type="text" maxlength="8" autocapitalize="characters" autocomplete="off" required>
+                            <button class="button button-primary" type="submit">Registrar</button>
+                        </div>
+                    </form>
+                    <div class="volunteer-enrollment-actions">
+                        <button class="button button-secondary" type="button" data-start-attendance-camera>Escanear con cámara</button>
+                        <label class="button button-secondary" for="attendanceQrPhoto">Tomar foto del QR</label>
+                        <input id="attendanceQrPhoto" type="file" accept="image/*" capture="environment" data-attendance-qr-photo hidden>
+                    </div>
+                    <div data-attendance-camera-container hidden>
+                        <video data-attendance-camera playsinline muted></video>
+                        <button class="button button-secondary" type="button" data-stop-attendance-camera>Detener cámara</button>
+                    </div>
+                </section>
+
             @endif
+
+            <section class="volunteer-attendance-result" data-participant-attendance-result hidden aria-live="polite">
+                <h3 data-participant-attendance-result-title></h3>
+                <p data-participant-attendance-result-message></p>
+                <button class="button button-secondary" type="button" data-request-attendance-review hidden>
+                    Solicitar revisión al propietario
+                </button>
+            </section>
+
+            <section class="volunteer-owner-activity" data-owner-volunteer-activity hidden aria-labelledby="ownerActivityHeading">
+                <h3 id="ownerActivityHeading">Actividad del voluntariado</h3>
+                <p data-owner-activity-status role="status" aria-live="polite">Cargando participantes…</p>
+                <div class="volunteer-owner-participants" data-owner-activity-participants></div>
+            </section>
 
         </section>
         </div>

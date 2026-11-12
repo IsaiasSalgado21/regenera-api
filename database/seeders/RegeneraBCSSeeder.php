@@ -541,7 +541,7 @@ class RegeneraBCSSeeder extends Seeder
     private function syncActiveCupo(Voluntariado $voluntariado): void
     {
         $inscripciones = Inscripcion::where('voluntariadoId', (string) $voluntariado->getKey())
-            ->whereIn('estado', ['inscrita', 'activa'])
+            ->whereIn('estado', ['inscrita', 'activa', 'completada'])
             ->get();
 
         $voluntariado->forceFill([

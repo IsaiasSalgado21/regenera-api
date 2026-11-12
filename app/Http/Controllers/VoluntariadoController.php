@@ -11,6 +11,7 @@ use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use MongoDB\BSON\ObjectId;
 
 class VoluntariadoController extends Controller
 {
@@ -26,14 +27,50 @@ class VoluntariadoController extends Controller
         $voluntariados = Voluntariado::where('estado', 'publicado')
             ->orderBy('fechaInicio')
             ->get();
+        $propios = collect();
+        $inscritos = collect();
+
+        if ($request->user() && $request->user()->rol !== 'admin') {
+            $organizadorId = (string) $request->user()->getAuthIdentifier();
+            $propios = Voluntariado::query()
+                ->where(function ($query) use ($organizadorId): void {
+                    $query->where('organizadorId', $organizadorId);
+                    if (preg_match('/^[a-f0-9]{24}$/i', $organizadorId)) {
+                        $query->orWhere('organizadorId', new ObjectId($organizadorId));
+                    }
+                })
+                ->whereIn('estado', ['pendiente', 'publicado', 'rechazado'])
+                ->orderBy('fechaInicio')
+                ->get();
+
+            $propiosIds = $propios->map(fn (Voluntariado $item) => (string) $item->_id)->all();
+            $voluntariados = $voluntariados
+                ->reject(fn (Voluntariado $item) => in_array((string) $item->_id, $propiosIds, true))
+                ->values();
+
+            $misInscripciones = Inscripcion::query()
+                ->where('usuarioId', $organizadorId)
+                ->whereIn('estado', ['inscrita', 'activa', 'completada'])
+                ->orderBy('fechaInscripcion', 'desc')
+                ->get();
+            foreach ($misInscripciones as $inscripcion) {
+                $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
+                if (! $voluntariado || ! in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true)) {
+                    continue;
+                }
+
+                $item = $this->presentListItem($voluntariado);
+                $item['inscripcionId'] = (string) $inscripcion->getKey();
+                $item['estadoInscripcion'] = $inscripcion->estado;
+                $inscritos->push($item);
+            }
+        }
 
         return response()->json([
             'success' => true,
-            'voluntariados' => $voluntariados->map(function ($voluntariado) {
-                $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
-
-                return $voluntariado;
-            }),
+            'voluntariados' => $voluntariados->map(fn (Voluntariado $item) => $this->presentListItem($item)),
+            'misVoluntariados' => $propios->map(fn (Voluntariado $item) => $this->presentListItem($item)),
+            'misInscripciones' => $inscritos,
         ]);
     }
 
@@ -61,6 +98,17 @@ class VoluntariadoController extends Controller
                 ->unique(fn (string $categoria) => mb_strtolower($categoria))
                 ->values(),
         ]);
+    }
+
+    private function presentListItem(Voluntariado $voluntariado): array
+    {
+        $data = $voluntariado->toArray();
+        $data['id'] = (string) $voluntariado->_id;
+        $data['imagen'] = $this->gridFsImages->url($voluntariado->imagen);
+        $data['inicioIso'] = $this->horario->inicio($voluntariado)?->toIso8601String();
+        $data['finIso'] = $this->horario->fin($voluntariado)?->toIso8601String();
+
+        return $data;
     }
 
     public function store(Request $request)
@@ -133,11 +181,8 @@ class VoluntariadoController extends Controller
             $user = $request->user();
             $isOwner = $user && (string) $voluntariado->organizadorId === (string) $user->getAuthIdentifier();
             $isAdmin = $user?->rol === 'admin';
-            $isParticipant = $user && Inscripcion::where('usuarioId', (string) $user->getAuthIdentifier())
-                ->where('voluntariadoId', (string) $voluntariado->_id)
-                ->exists();
 
-            abort_unless($isAdmin || $isOwner || $isParticipant, 404);
+            abort_unless($isAdmin || $isOwner, 404);
         }
 
         return response()->json([

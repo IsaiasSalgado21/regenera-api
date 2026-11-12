@@ -71,14 +71,33 @@ if (page) {
             const title = ['publicado', 'cancelado', 'finalizado'].includes(volunteer.estado)
                 ? `<a href="/voluntariados/${encodeURIComponent(volunteer.id)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a>`
                 : escapeHtml(volunteer.titulo || 'Voluntariado');
+            const requestButton = status === 'No asistió'
+                ? `<button type="button" class="profile-request-attendance-button" data-request-attendance="${escapeHtml(volunteer.id)}">Solicitar revisión al propietario</button>`
+                : '';
         return `<article class="profile-list-item">
             <div class="profile-list-copy">
                     <h4>${title}</h4>
                 <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}${volunteer.lugar?.nombre ? ` · ${escapeHtml(volunteer.lugar.nombre)}` : ''}</p>
             </div>
-            <span class="profile-item-status">${escapeHtml(status)}</span>
+                <div class="profile-activity-status"><span class="profile-item-status">${escapeHtml(status)}</span>${requestButton}</div>
         </article>`;
     };
+
+        page.addEventListener('click', async event => {
+            const button = event.target.closest('[data-request-attendance]');
+            if (!button) return;
+            button.disabled = true;
+            try {
+                const token = sessionStorage.getItem('regenera_access_token');
+                const response = await axios.post('/api/asistencias/solicitudes', {
+                    voluntariadoId: button.dataset.requestAttendance,
+                }, { headers: headers() });
+                button.textContent = response.data.message || 'Solicitud enviada al propietario.';
+            } catch (error) {
+                button.disabled = false;
+                button.textContent = error.response?.data?.message || 'No se pudo enviar la solicitud.';
+            }
+        });
 
     const loadUserActivity = async (usuario) => {
         const upcoming = page.querySelector('[data-upcoming-list]');

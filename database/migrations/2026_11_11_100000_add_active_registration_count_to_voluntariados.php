@@ -22,7 +22,7 @@ return new class extends Migration
 
             $activas = $inscripciones->find([
                 'voluntariadoId' => ['$in' => $ids],
-                'estado' => ['$in' => ['inscrita', 'activa']],
+                'estado' => ['$in' => ['inscrita', 'activa', 'completada']],
             ], ['projection' => ['_id' => 1]]);
             $reservasCupo = array_map(fn ($inscripcion) => (string) $inscripcion['_id'], $activas->toArray());
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Asistencia;
 use App\Models\Inscripcion;
 use App\Models\Lugar;
+use App\Models\Notificacion;
 use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\AuditoriaService;
@@ -81,6 +82,11 @@ class VoluntariadoController extends Controller
     {
         $voluntariado = Voluntariado::findOrFail($id);
         $this->ensureCanManage($request, $voluntariado);
+        abort_unless(
+            $request->user()->rol === 'admin'
+                || in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true),
+            404,
+        );
         $voluntariadoId = (string) $voluntariado->_id;
 
         $inscripciones = Inscripcion::where(function ($query) use ($voluntariadoId): void {
@@ -105,6 +111,15 @@ class VoluntariadoController extends Controller
             ->values()
             ->all();
         $organizadorId = (string) $voluntariado->organizadorId;
+        $organizadorStoredId = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
+            ? new ObjectId($organizadorId)
+            : $organizadorId;
+        $solicitudesAsistencia = Notificacion::query()
+            ->where('usuarioId', $organizadorStoredId)
+            ->where('tipo', 'solicitud_asistencia')
+            ->where('entidad.id', $voluntariadoId)
+            ->get()
+            ->keyBy(fn (Notificacion $notificacion) => (string) data_get($notificacion->datos, 'inscripcionId'));
         $usuarios = User::whereIn('_id', array_values(array_unique([...$usuarioIds, $organizadorId])))
             ->get(['_id', 'nombre', 'correo', 'foto'])
             ->keyBy(fn (User $usuario) => (string) $usuario->_id);
@@ -134,11 +149,12 @@ class VoluntariadoController extends Controller
         $organizador = $usuarios->get($organizadorId);
 
         $participantes = $inscripciones
-            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario, $voluntariado): array {
+            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario, $voluntariado, $solicitudesAsistencia): array {
                 $usuarioId = (string) $inscripcion->usuarioId;
                 $usuario = $usuarios->get($usuarioId);
                 $asistencia = $asistenciaPorUsuario->get($usuarioId);
                 $falto = $this->workflow->esFalta($voluntariado, $inscripcion, $asistencia, $this->horario);
+                $solicitud = $solicitudesAsistencia->get((string) $inscripcion->_id);
 
                 return [
                     'id' => (string) $inscripcion->_id,
@@ -149,6 +165,11 @@ class VoluntariadoController extends Controller
                     'fechaInscripcion' => $inscripcion->fechaInscripcion?->toIso8601String(),
                     'estadoInscripcion' => $inscripcion->estado,
                     'falto' => $falto,
+                    'solicitudAsistencia' => $solicitud ? [
+                        'id' => (string) $solicitud->_id,
+                        'estado' => data_get($solicitud->datos, 'estadoSolicitud'),
+                        'motivoRespuesta' => data_get($solicitud->datos, 'motivoRespuesta'),
+                    ] : null,
                     'observaciones' => $inscripcion->observaciones,
                     'asistencia' => $asistencia ? [
                         'confirmada' => (bool) $asistencia->confirmada,
@@ -182,6 +203,7 @@ class VoluntariadoController extends Controller
                 ],
                 'estadisticas' => [
                     'inscritos' => $inscritos,
+                    'totalInscripciones' => $inscripciones->count(),
                     'cupo' => $cupo,
                     'disponibles' => max(0, $cupo - $inscritos),
                     'ocupacion' => $cupo > 0 ? round(min(100, ($inscritos / $cupo) * 100), 1) : 0,

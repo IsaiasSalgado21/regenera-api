@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Articulo;
+use App\Models\Asistencia;
 use App\Models\Inscripcion;
 use App\Models\Notificacion;
 use App\Models\User;
@@ -39,6 +40,14 @@ class NotificationService
 
     public function voluntariadoEnviado(Voluntariado $voluntariado): void
     {
+        $this->crearParaVoluntariado(
+            $voluntariado,
+            'voluntariado_enviado_revision',
+            'Tu propuesta fue enviada a revisión',
+            '«'.$voluntariado->titulo.'» fue enviada al equipo para su revisión.',
+            ['estado' => 'pendiente', 'url' => url('/voluntariados')],
+        );
+
         foreach (User::query()->where('rol', 'admin')->get() as $admin) {
             $this->crear(
                 (string) $admin->getAuthIdentifier(),
@@ -47,7 +56,7 @@ class NotificationService
                 'El voluntariado «'.$voluntariado->titulo.'» espera tu revisión en el panel de control.',
                 'voluntariado',
                 (string) $voluntariado->_id,
-                ['estado' => 'pendiente', 'url' => url('/admin/dashboard')],
+                ['estado' => 'pendiente', 'url' => url('/admin/dashboard?voluntariado='.(string) $voluntariado->_id)],
             );
         }
     }
@@ -74,7 +83,7 @@ class NotificationService
             'sistema',
             '¡Tu voluntariado fue aprobado!',
             '«'.$voluntariado->titulo.'» ya está publicado y listo para recibir participantes.',
-            ['estado' => 'publicado'],
+            ['estado' => 'publicado', 'url' => url('/voluntariados/'.(string) $voluntariado->_id)],
         );
     }
 
@@ -85,7 +94,7 @@ class NotificationService
             'sistema',
             'Tu voluntariado necesita cambios',
             'Revisamos «'.$voluntariado->titulo.'» y necesitamos algunos cambios. Motivo: '.$motivo,
-            ['estado' => 'rechazado', 'motivo' => $motivo],
+            ['estado' => 'rechazado', 'motivo' => $motivo, 'url' => url('/voluntariados')],
         );
     }
 
@@ -196,6 +205,111 @@ class NotificationService
             'voluntariado',
             (string) $voluntariado->_id,
             ['estado' => 'completada'],
+        );
+    }
+
+    public function asistenciaRegistradaParaPropietario(Asistencia $asistencia, Voluntariado $voluntariado): ?Notificacion
+    {
+        $organizadorId = (string) $voluntariado->organizadorId;
+        if ($organizadorId === '' || $organizadorId === (string) $asistencia->usuarioId) {
+            return null;
+        }
+
+        return $this->crear(
+            $organizadorId,
+            'asistencia_voluntariado',
+            'Se registró una asistencia',
+            'Una persona registró asistencia a «'.$voluntariado->titulo.'».',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            ['asistenciaId' => (string) $asistencia->getKey(), 'usuarioId' => (string) $asistencia->usuarioId],
+        );
+    }
+
+    public function faltaRegistrada(Inscripcion $inscripcion, Voluntariado $voluntariado): ?Notificacion
+    {
+        $organizadorId = (string) $voluntariado->organizadorId;
+        if ($organizadorId === '' || $organizadorId === (string) $inscripcion->usuarioId) {
+            return null;
+        }
+
+        $storedId = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
+            ? new ObjectId($organizadorId)
+            : $organizadorId;
+        $inscripcionId = (string) $inscripcion->getKey();
+        $existing = Notificacion::query()
+            ->where('usuarioId', $storedId)
+            ->where('tipo', 'falta_registrada')
+            ->where('datos.inscripcionId', $inscripcionId)
+            ->exists();
+        if ($existing) {
+            return null;
+        }
+
+        return $this->crear(
+            $organizadorId,
+            'falta_registrada',
+            'Se registró una falta',
+            'Una persona inscrita no registró asistencia a «'.$voluntariado->titulo.'».',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            ['estado' => 'falta', 'inscripcionId' => $inscripcionId],
+        );
+    }
+
+    public function solicitudCorreccionAsistencia(User $participante, Inscripcion $inscripcion, Voluntariado $voluntariado): Notificacion
+    {
+        $organizadorId = (string) $voluntariado->organizadorId;
+        $storedOwnerId = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
+            ? new ObjectId($organizadorId)
+            : $organizadorId;
+        $inscripcionId = (string) $inscripcion->getKey();
+        $solicitudExistente = Notificacion::query()
+            ->where('usuarioId', $storedOwnerId)
+            ->where('tipo', 'solicitud_asistencia')
+            ->where('entidad.id', (string) $voluntariado->_id)
+            ->where('datos.inscripcionId', $inscripcionId)
+            ->whereIn('datos.estadoSolicitud', ['pendiente', 'aceptando'])
+            ->first();
+
+        if ($solicitudExistente) {
+            return $solicitudExistente;
+        }
+
+        return $this->crear(
+            $organizadorId,
+            'solicitud_asistencia',
+            'Solicitud para corregir asistencia',
+            $participante->nombre.' solicita que revises su asistencia a «'.$voluntariado->titulo.'».',
+            'voluntariado',
+            (string) $voluntariado->_id,
+            [
+                'estadoSolicitud' => 'pendiente',
+                'inscripcionId' => $inscripcionId,
+                'solicitanteId' => (string) $participante->getAuthIdentifier(),
+                'url' => url('/voluntariados/'.(string) $voluntariado->_id),
+            ],
+        );
+    }
+
+    public function respuestaSolicitudAsistencia(
+        User $participante,
+        Voluntariado $voluntariado,
+        bool $aceptada,
+        ?string $motivo = null,
+    ): Notificacion {
+        $mensaje = $aceptada
+            ? 'El dueño confirmó tu participación en «'.$voluntariado->titulo.'». ¡Gracias por asistir!'
+            : 'El dueño no pudo confirmar tu participación en «'.$voluntariado->titulo.'».'.($motivo ? ' Motivo: '.$motivo : '');
+
+        return $this->crear(
+            (string) $participante->getAuthIdentifier(),
+            $aceptada ? 'asistencia_solicitud_aceptada' : 'asistencia_solicitud_rechazada',
+            $aceptada ? 'Tu asistencia fue confirmada' : 'Solicitud de asistencia rechazada',
+            $mensaje,
+            'voluntariado',
+            (string) $voluntariado->_id,
+            ['estado' => $aceptada ? 'asistio' : 'rechazada', 'motivo' => $motivo],
         );
     }
 

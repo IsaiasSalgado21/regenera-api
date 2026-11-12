@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Asistencia;
 use App\Models\Inscripcion;
+use App\Models\Notificacion;
 use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\NotificationService;
 use App\Services\VoluntariadoHorario;
+use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use MongoDB\BSON\ObjectId;
 use MongoDB\Driver\Exception\BulkWriteException;
 
 class AsistenciaController extends Controller
@@ -17,6 +21,7 @@ class AsistenciaController extends Controller
     public function __construct(
         private readonly NotificationService $notificaciones,
         private readonly VoluntariadoHorario $horario,
+        private readonly VoluntariadoWorkflow $workflow,
     ) {}
 
     public function index(Request $request)
@@ -104,13 +109,6 @@ class AsistenciaController extends Controller
                 ], 409);
             }
         } else {
-            if (! in_array($request->user()->rol, ['admin', 'organizador'], true)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Solo un administrador u organizador puede registrar asistencia manual.',
-                ], 403);
-            }
-
             $voluntariado = Voluntariado::find($validated['voluntariadoId']);
             if (! $voluntariado) {
                 return response()->json([
@@ -119,13 +117,15 @@ class AsistenciaController extends Controller
                 ], 404);
             }
 
-            if (
-                $request->user()->rol === 'organizador'
-                && (string) $voluntariado->organizadorId !== (string) $request->user()->getAuthIdentifier()
-            ) {
+            $requestUser = $request->user();
+            $isOwner = (string) $voluntariado->organizadorId === (string) $requestUser->getAuthIdentifier();
+            $canManageAttendance = $requestUser->rol === 'admin'
+                || ($requestUser->rol === 'organizador' && $isOwner)
+                || $isOwner;
+            if (! $canManageAttendance) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tienes permiso para registrar asistencia en este voluntariado.',
+                    'message' => 'Solo el administrador, organizador o propietario puede registrar asistencia manual.',
                 ], 403);
             }
         }
@@ -158,7 +158,7 @@ class AsistenciaController extends Controller
 
         $inscripcion = Inscripcion::where('usuarioId', $usuarioId)
             ->where('voluntariadoId', $voluntariadoId)
-            ->whereIn('estado', ['inscrita', 'activa'])
+            ->whereIn('estado', ['inscrita', 'activa', 'completada'])
             ->first();
 
         if (! $inscripcion) {
@@ -186,8 +186,8 @@ class AsistenciaController extends Controller
             return $this->asistenciaDuplicada();
         }
 
-        $inscripcion->update(['estado' => 'completada']);
         $this->notificaciones->asistenciaRegistrada($usuarioId, $voluntariado);
+        $this->notificaciones->asistenciaRegistradaParaPropietario($asistencia, $voluntariado);
 
         return response()->json([
             'success' => true,
@@ -216,6 +216,181 @@ class AsistenciaController extends Controller
             'success' => true,
             'asistencia' => $asistencia,
         ]);
+    }
+
+    public function solicitarCorreccion(Request $request)
+    {
+        $validated = $request->validate([
+            'voluntariadoId' => ['required', 'string', 'max:100'],
+        ]);
+        $participante = $request->user();
+        abort_unless(in_array($participante->rol, ['usuario', 'organizador'], true), 403);
+
+        $voluntariado = Voluntariado::find($validated['voluntariadoId']);
+        abort_unless($voluntariado && in_array($voluntariado->estado, ['publicado', 'finalizado'], true), 404);
+        abort_if(
+            (string) $voluntariado->organizadorId === (string) $participante->getAuthIdentifier(),
+            422,
+            'El propietario no puede solicitar una revisión de su propia actividad.',
+        );
+
+        $fin = $this->horario->fin($voluntariado);
+        abort_unless($fin && $fin->isPast(), 409, 'La solicitud estará disponible cuando termine la actividad.');
+
+        $inscripcion = Inscripcion::where('usuarioId', (string) $participante->getAuthIdentifier())
+            ->where('voluntariadoId', (string) $voluntariado->_id)
+            ->first();
+        abort_unless($inscripcion !== null, 422, 'No tienes una inscripción vigente para esta actividad.');
+
+        $asistencia = Asistencia::where('usuarioId', (string) $participante->getAuthIdentifier())
+            ->where('voluntariadoId', (string) $voluntariado->_id)
+            ->where('confirmada', true)
+            ->exists();
+        abort_if($asistencia, 409, 'Tu asistencia ya está registrada.');
+
+        abort_unless(
+            $this->workflow->esFalta($voluntariado, $inscripcion, null, $this->horario),
+            409,
+            'Aún no se puede solicitar la revisión de una falta.',
+        );
+
+        $solicitud = $this->notificaciones->solicitudCorreccionAsistencia($participante, $inscripcion, $voluntariado);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enviamos tu solicitud al propietario del voluntariado.',
+            'solicitud' => ['id' => (string) $solicitud->_id, 'estado' => data_get($solicitud->datos, 'estadoSolicitud')],
+        ], 201);
+    }
+
+    public function responderSolicitud(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'decision' => ['required', Rule::in(['aceptar', 'rechazar'])],
+            'motivo' => ['nullable', 'string', 'max:1000'],
+        ]);
+        $solicitud = Notificacion::findOrFail($id);
+        abort_unless($solicitud->tipo === 'solicitud_asistencia', 404);
+        $voluntariadoId = (string) data_get($solicitud->entidad, 'id');
+        $voluntariado = Voluntariado::findOrFail($voluntariadoId);
+        $responder = $request->user();
+        abort_unless(
+            $responder->rol === 'admin'
+                || (string) $voluntariado->organizadorId === (string) $responder->getAuthIdentifier(),
+            403,
+        );
+
+        $estadoSolicitud = data_get($solicitud->datos, 'estadoSolicitud');
+        $solicitanteId = (string) data_get($solicitud->datos, 'solicitanteId', '');
+        $inscripcionId = (string) data_get($solicitud->datos, 'inscripcionId', '');
+        $aceptar = $validated['decision'] === 'aceptar';
+
+        if ($estadoSolicitud === 'aceptada' && $aceptar) {
+            return response()->json(['success' => true, 'message' => 'La asistencia ya fue confirmada.']);
+        }
+        if ($estadoSolicitud === 'rechazada' && ! $aceptar) {
+            return response()->json(['success' => true, 'message' => 'La solicitud ya fue rechazada.']);
+        }
+
+        $collection = DB::connection('mongodb')->getMongoDB()->selectCollection('notificaciones');
+        $notificationId = $solicitud->getKey();
+        if (is_string($notificationId) && preg_match('/^[a-f0-9]{24}$/i', $notificationId)) {
+            $notificationId = new ObjectId($notificationId);
+        }
+
+        if ($aceptar) {
+            if ($estadoSolicitud === 'pendiente') {
+                $claim = $collection->updateOne(
+                    ['_id' => $notificationId, 'datos.estadoSolicitud' => 'pendiente'],
+                    ['$set' => [
+                        'datos.estadoSolicitud' => 'aceptando',
+                        'datos.decision' => 'aceptar',
+                        'datos.respondidaPor' => (string) $responder->getAuthIdentifier(),
+                    ]],
+                );
+                abort_unless($claim->getModifiedCount() === 1, 409, 'La solicitud ya fue respondida.');
+            } else {
+                abort_unless(
+                    $estadoSolicitud === 'aceptando'
+                        && data_get($solicitud->datos, 'decision') === 'aceptar',
+                    409,
+                    'La solicitud ya fue respondida.',
+                );
+            }
+
+            $participante = User::find($solicitanteId);
+            $inscripcion = Inscripcion::where('_id', $inscripcionId)
+                ->where('usuarioId', $solicitanteId)
+                ->where('voluntariadoId', $voluntariadoId)
+                ->whereIn('estado', ['inscrita', 'activa', 'completada'])
+                ->first();
+            abort_unless($participante && $inscripcion, 409, 'La inscripción ya no está vigente.');
+
+            $asistenciaQuery = Asistencia::where('usuarioId', $solicitanteId)
+                ->where('voluntariadoId', $voluntariadoId);
+            $asistencia = $asistenciaQuery->first();
+            if (! $asistencia) {
+                $fechaEvento = $this->horario->inicio($voluntariado) ?? $this->horario->ahora();
+                try {
+                    $asistencia = Asistencia::create([
+                        'usuarioId' => $solicitanteId,
+                        'voluntariadoId' => $voluntariadoId,
+                        'fecha' => $fechaEvento,
+                        'hora' => $voluntariado->horaInicio ?: $fechaEvento->format('H:i:s'),
+                        'metodo' => 'manual',
+                        'confirmada' => true,
+                    ]);
+                } catch (BulkWriteException $exception) {
+                    $asistencia = $asistenciaQuery->first();
+                    if (! $asistencia) {
+                        throw $exception;
+                    }
+                }
+            }
+
+            $finalizada = $collection->updateOne(
+                ['_id' => $notificationId, 'datos.estadoSolicitud' => 'aceptando', 'datos.decision' => 'aceptar'],
+                ['$set' => [
+                    'datos.estadoSolicitud' => 'aceptada',
+                    'datos.fechaRespuesta' => now(),
+                ]],
+            );
+            abort_unless($finalizada->getMatchedCount() === 1, 409, 'No se pudo completar la respuesta. Vuelve a intentarlo.');
+
+            $this->notificaciones->respuestaSolicitudAsistencia(
+                $participante,
+                $voluntariado,
+                true,
+            );
+
+            return response()->json(['success' => true, 'message' => 'Asistencia confirmada.']);
+        }
+
+        $resultado = $collection->updateOne(
+            ['_id' => $notificationId, 'datos.estadoSolicitud' => 'pendiente'],
+            ['$set' => [
+                'datos.estadoSolicitud' => 'rechazada',
+                'datos.decision' => 'rechazar',
+                'datos.motivoRespuesta' => $validated['motivo'] ?? null,
+                'datos.respondidaPor' => (string) $responder->getAuthIdentifier(),
+                'datos.fechaRespuesta' => now(),
+                'leida' => true,
+                'fechaLectura' => now(),
+            ]],
+        );
+        abort_unless($resultado->getModifiedCount() === 1, 409, 'La solicitud ya fue respondida.');
+
+        $participante = User::find($solicitanteId);
+        if ($participante) {
+            $this->notificaciones->respuestaSolicitudAsistencia(
+                $participante,
+                $voluntariado,
+                false,
+                $validated['motivo'] ?? null,
+            );
+        }
+
+        return response()->json(['success' => true, 'message' => 'Solicitud rechazada.']);
     }
 
     public function destroy(Request $request, string $id)

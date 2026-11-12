@@ -4,9 +4,12 @@ namespace App\Console\Commands;
 
 use App\Models\Inscripcion;
 use App\Models\Notificacion;
+use App\Models\Asistencia;
 use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\NotificationService;
+use App\Services\VoluntariadoHorario;
+use App\Services\VoluntariadoWorkflow;
 use Illuminate\Console\Command;
 use MongoDB\BSON\ObjectId;
 
@@ -16,7 +19,11 @@ class SendVolunteerReminders extends Command
 
     protected $description = 'Send scheduled reminders for upcoming volunteer activities';
 
-    public function handle(NotificationService $notifications): int
+    public function handle(
+        NotificationService $notifications,
+        VoluntariadoWorkflow $workflow,
+        VoluntariadoHorario $horario,
+    ): int
     {
         $now = now();
         $voluntariados = Voluntariado::query()
@@ -76,6 +83,33 @@ class SendVolunteerReminders extends Command
                     $voluntariado,
                     $key,
                 );
+            }
+        }
+
+        $finalizados = Voluntariado::query()
+            ->where(function ($query) use ($now): void {
+                $query->where('estado', 'finalizado')
+                    ->orWhere(function ($query) use ($now): void {
+                        $query->where('estado', 'publicado')->where('fechaFin', '<=', $now);
+                    });
+            })
+            ->get();
+
+        foreach ($finalizados as $voluntariado) {
+            $inscripciones = Inscripcion::query()
+                ->where('voluntariadoId', (string) $voluntariado->_id)
+                ->whereIn('estado', ['inscrita', 'activa'])
+                ->get();
+
+            foreach ($inscripciones as $inscripcion) {
+                $asistencia = Asistencia::query()
+                    ->where('usuarioId', (string) $inscripcion->usuarioId)
+                    ->where('voluntariadoId', (string) $voluntariado->_id)
+                    ->first();
+
+                if ($workflow->esFalta($voluntariado, $inscripcion, $asistencia, $horario)) {
+                    $notifications->faltaRegistrada($inscripcion, $voluntariado);
+                }
             }
         }
 

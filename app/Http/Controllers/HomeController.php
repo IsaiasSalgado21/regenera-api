@@ -6,12 +6,16 @@ use App\Models\Articulo;
 use App\Models\FloraFauna;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
+use App\Services\VoluntariadoHorario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
-    public function __construct(private readonly GridFsImageService $gridFsImages) {}
+    public function __construct(
+        private readonly GridFsImageService $gridFsImages,
+        private readonly VoluntariadoHorario $horario,
+    ) {}
 
     /**
      * Página principal de Regenera BCS.
@@ -43,6 +47,8 @@ class HomeController extends Controller
                     'categoria'  => $voluntariado->estado,
                     'lugar'      => $lugar?->nombre,
                     'fecha'      => $voluntariado->fechaInicio?->format('d/m/Y'),
+                    'inicioIso'  => $this->horario->inicio($voluntariado)?->toIso8601String(),
+                    'finIso'     => $this->horario->fin($voluntariado)?->toIso8601String(),
                     'cupo'       => $voluntariado->cupo,
                 ];
             });

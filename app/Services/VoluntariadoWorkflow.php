@@ -50,7 +50,7 @@ class VoluntariadoWorkflow
         ?Asistencia $asistencia,
         VoluntariadoHorario $horario,
     ): bool {
-        if (! in_array($inscripcion->estado, ['inscrita', 'activa'], true)) {
+        if (! in_array($inscripcion->estado, ['inscrita', 'activa', 'completada'], true)) {
             return false;
         }
 

@@ -122,13 +122,15 @@ Route::prefix('admin')
     ->group(function () {
         Route::get('/voluntariados', [AdminVoluntariadoController::class, 'index']);
         Route::post('/voluntariados', [AdminVoluntariadoController::class, 'store']);
-        Route::get('/voluntariados/{id}/dashboard', [AdminVoluntariadoController::class, 'dashboard']);
         Route::post('/voluntariados/{id}/impactos', [ImpactoVoluntariadoController::class, 'store']);
         Route::patch('/voluntariados/{id}/codigo-asistencia', [AdminVoluntariadoController::class, 'actualizarCodigoAsistencia']);
         Route::put('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::patch('/voluntariados/{id}', [AdminVoluntariadoController::class, 'update']);
         Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);
     });
+
+Route::get('/admin/voluntariados/{id}/dashboard', [AdminVoluntariadoController::class, 'dashboard'])
+    ->middleware('auth:sanctum');
 
 Route::get('/articulos', [ArticuloController::class, 'index'])->middleware('auth.optional');
 Route::post('/articulos', [ArticuloController::class, 'store'])->middleware('auth:sanctum');
@@ -138,7 +140,9 @@ Route::patch('/articulos/{id}/enviar-revision', [ArticuloController::class, 'env
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/asistencias', [AsistenciaController::class, 'index']);
-    Route::post('/asistencias', [AsistenciaController::class, 'store'])->middleware('throttle:30,1');
+    Route::post('/asistencias', [AsistenciaController::class, 'store'])->middleware(\App\Http\Middleware\ThrottleAttendance::class);
+    Route::post('/asistencias/solicitudes', [AsistenciaController::class, 'solicitarCorreccion']);
+    Route::patch('/asistencias/solicitudes/{id}/responder', [AsistenciaController::class, 'responderSolicitud']);
     Route::get('/asistencias/{id}', [AsistenciaController::class, 'show']);
     Route::delete('/asistencias/{id}', [AsistenciaController::class, 'destroy']);
 });

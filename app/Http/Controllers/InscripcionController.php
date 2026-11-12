@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Asistencia;
 use App\Models\Inscripcion;
+use App\Models\Notificacion;
 use App\Models\Voluntariado;
 use App\Services\NotificationService;
 use App\Services\VoluntariadoCupoService;
 use App\Services\VoluntariadoHorario;
+use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use MongoDB\BSON\ObjectId;
 use Throwable;
 
 class InscripcionController extends Controller
@@ -17,6 +21,7 @@ class InscripcionController extends Controller
         private readonly NotificationService $notificaciones,
         private readonly VoluntariadoHorario $horario,
         private readonly VoluntariadoCupoService $cupos,
+        private readonly VoluntariadoWorkflow $workflow,
     ) {}
 
     public function index(Request $request)
@@ -82,7 +87,7 @@ class InscripcionController extends Controller
         if ($startsAt?->isPast()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Las inscripciones cerraron porque la actividad ya comenzó.',
+                'message' => 'La actividad ya inició; ya no es posible inscribirse a esta participación',
             ], 409);
         }
 
@@ -218,13 +223,40 @@ class InscripcionController extends Controller
         $inscripcion = Inscripcion::query()
             ->where('usuarioId', (string) $request->user()->getAuthIdentifier())
             ->where('voluntariadoId', $voluntariadoId)
-            ->whereIn('estado', ['inscrita', 'activa'])
+            ->whereIn('estado', ['inscrita', 'activa', 'completada'])
             ->first();
+        $usuarioId = (string) $request->user()->getAuthIdentifier();
+        $voluntariado = $inscripcion ? Voluntariado::find($voluntariadoId) : null;
+        $asistencia = $inscripcion
+            ? Asistencia::where('usuarioId', $usuarioId)
+                ->where('voluntariadoId', $voluntariadoId)
+                ->where('confirmada', true)
+                ->first()
+            : null;
+        $solicitud = null;
+        if ($inscripcion && $voluntariado) {
+            $organizadorId = (string) $voluntariado->organizadorId;
+            $storedOwnerId = preg_match('/^[a-f0-9]{24}$/i', $organizadorId)
+                ? new ObjectId($organizadorId)
+                : $organizadorId;
+            $solicitud = Notificacion::query()
+                ->where('usuarioId', $storedOwnerId)
+                ->where('tipo', 'solicitud_asistencia')
+                ->where('entidad.id', $voluntariadoId)
+                ->where('datos.inscripcionId', (string) $inscripcion->getKey())
+                ->orderBy('fechaCreacion', 'desc')
+                ->first();
+        }
 
         return response()->json([
             'success' => true,
             'inscrito' => $inscripcion !== null,
             'inscripcionId' => $inscripcion ? (string) $inscripcion->_id : null,
+            'asistio' => (bool) $asistencia?->confirmada,
+            'falto' => $inscripcion && $voluntariado
+                ? $this->workflow->esFalta($voluntariado, $inscripcion, $asistencia, $this->horario)
+                : false,
+            'solicitudAsistenciaEstado' => data_get($solicitud?->datos, 'estadoSolicitud'),
         ]);
     }
 
@@ -296,8 +328,8 @@ class InscripcionController extends Controller
                 : (string) $inscripcion->usuarioId.'|'.(string) $inscripcion->voluntariadoId;
         }
         $estadoNuevo = $validated['estado'] ?? $estadoAnterior;
-        $antesActivo = in_array($estadoAnterior, ['inscrita', 'activa'], true);
-        $despuesActivo = in_array($estadoNuevo, ['inscrita', 'activa'], true);
+        $antesActivo = in_array($estadoAnterior, ['inscrita', 'activa', 'completada'], true);
+        $despuesActivo = in_array($estadoNuevo, ['inscrita', 'activa', 'completada'], true);
         $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
         $inscripcionId = (string) $inscripcion->getKey();
 
@@ -313,7 +345,7 @@ class InscripcionController extends Controller
 
             if ($actualizadas !== 1) {
                 $actual = Inscripcion::find($inscripcion->getKey());
-                if ($voluntariado && ! in_array($actual?->estado, ['inscrita', 'activa'], true)) {
+                if ($voluntariado && ! in_array($actual?->estado, ['inscrita', 'activa', 'completada'], true)) {
                     $this->cupos->liberar($voluntariado, $inscripcionId);
                 }
 
@@ -355,7 +387,7 @@ class InscripcionController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Tu participación ya estaba cancelada.']);
         }
-        abort_unless(in_array($inscripcion->estado, ['inscrita', 'activa'], true), 409, 'Esta inscripción ya no está activa.');
+        abort_unless(in_array($inscripcion->estado, ['inscrita', 'activa', 'completada'], true), 409, 'Esta inscripción ya no está activa.');
 
         $startsAt = $voluntariado ? $this->horario->inicio($voluntariado) : null;
         if ($startsAt?->isPast()) {
@@ -363,7 +395,7 @@ class InscripcionController extends Controller
         }
 
         $cancelacionAplicada = Inscripcion::where('_id', $inscripcion->getKey())
-            ->whereIn('estado', ['inscrita', 'activa'])
+            ->whereIn('estado', ['inscrita', 'activa', 'completada'])
             ->update([
                 'estado' => 'cancelada',
                 'claveRegistroActiva' => null,
@@ -412,9 +444,9 @@ class InscripcionController extends Controller
         $voluntariado = Voluntariado::find((string) $inscripcion->voluntariadoId);
         $inscripcionId = (string) $inscripcion->getKey();
         $estadoParaEliminar = $inscripcion->estado;
-        if (in_array($estadoParaEliminar, ['inscrita', 'activa'], true)) {
+        if (in_array($estadoParaEliminar, ['inscrita', 'activa', 'completada'], true)) {
             $actualizadas = Inscripcion::where('_id', $inscripcion->getKey())
-                ->whereIn('estado', ['inscrita', 'activa'])
+                ->whereIn('estado', ['inscrita', 'activa', 'completada'])
                 ->update(['estado' => 'cancelada', 'claveRegistroActiva' => null]);
             if ($actualizadas !== 1) {
                 abort(409, 'La inscripción cambió mientras se intentaba eliminar.');

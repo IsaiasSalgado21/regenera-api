@@ -67,6 +67,8 @@ class VoluntariadoPageController extends Controller
                 'fecha_fin' => $v->fechaFin?->format('d/m/Y'),
                 'hora_inicio' => $v->horaInicio,
                 'hora_fin' => $v->horaFin,
+                'inicio_iso' => $this->horario->inicio($v)?->toIso8601String(),
+                'fin_iso' => $this->horario->fin($v)?->toIso8601String(),
                 'cupo' => $v->cupo,
                 'requisitos' => $v->requisitos,
                 'materiales' => $v->materiales,

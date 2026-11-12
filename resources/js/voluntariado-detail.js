@@ -1,6 +1,7 @@
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { BrowserQRCodeReader } from '@zxing/browser';
 import { bajaCaliforniaSurBounds } from './geo/baja-california-sur';
 
 const gallery = document.querySelector('[data-volunteer-gallery]');
@@ -125,8 +126,19 @@ if (detailCard) {
     const cancelButton = detailCard.querySelector('[data-enrollment-cancel]');
     const enrollmentNote = detailCard.querySelector('[data-enrollment-note]');
     const message = detailCard.querySelector('#enrollmentMessage');
+    const attendanceTools = detailCard.querySelector('[data-participant-attendance]');
+    const attendanceStatus = detailCard.querySelector('[data-participant-attendance-status]');
+    const codeForm = detailCard.querySelector('[data-attendance-code-form]');
+    const cameraContainer = detailCard.querySelector('[data-attendance-camera-container]');
+    const cameraVideo = detailCard.querySelector('[data-attendance-camera]');
+    const attendanceResult = detailCard.querySelector('[data-participant-attendance-result]');
+    const attendanceResultTitle = detailCard.querySelector('[data-participant-attendance-result-title]');
+    const attendanceResultMessage = detailCard.querySelector('[data-participant-attendance-result-message]');
+    const requestAttendanceButton = detailCard.querySelector('[data-request-attendance-review]');
     const token = sessionStorage.getItem('regenera_access_token');
     let isEnrolled = false;
+    let cameraControls = null;
+    const qrReader = new BrowserQRCodeReader();
     const getJoinControl = () => detailCard.querySelector('[data-voluntariado-id]');
 
     function formatRemaining(milliseconds) {
@@ -172,18 +184,223 @@ if (detailCard) {
         if (endedNotice) endedNotice.hidden = !hasEnded;
         if (now >= startAt && joinControl && !isEnrolled) {
             joinControl.hidden = true;
-            if (enrollmentNote) enrollmentNote.textContent = 'La actividad ya inició y las inscripciones están cerradas.';
+            if (enrollmentNote) enrollmentNote.textContent = 'La actividad ya inició; ya no es posible inscribirse a esta participación';
         }
-        if (cancelButton && now >= startAt) {
+        if (cancelButton && isEnrolled && now >= startAt) {
             cancelButton.hidden = true;
             if (enrollmentNote) enrollmentNote.textContent = 'La actividad ya inició; ya no es posible cancelar la participación.';
+        }
+        if (attendanceTools) {
+            attendanceTools.hidden = !(isEnrolled && now >= startAt && now <= endAt);
+            if (attendanceStatus && now > endAt) attendanceStatus.textContent = 'El horario de registro de asistencia terminó.';
+        }
+    }
+
+    function attendanceHeaders() {
+        return {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        };
+    }
+
+    function extractCode(value) {
+        try {
+            const parsed = new URL(value);
+            if (parsed.hash) return decodeURIComponent(parsed.hash.slice(1));
+        } catch {
+            return value.trim();
+        }
+        return value.trim();
+    }
+
+    async function registerAttendance(code) {
+        if (!token) {
+            attendanceStatus.textContent = 'Inicia sesión con la cuenta inscrita para registrar asistencia.';
+            return;
+        }
+        attendanceStatus.textContent = 'Verificando inscripción y horario…';
+        try {
+            const response = await fetch('/api/asistencias', {
+                method: 'POST',
+                headers: attendanceHeaders(),
+                body: JSON.stringify({ metodo: 'QR', tokenAsistencia: extractCode(code) }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                attendanceStatus.textContent = result.message || 'No se pudo registrar la asistencia.';
+                return;
+            }
+            attendanceStatus.textContent = result.message || 'Asistencia registrada.';
+            codeForm?.reset();
+        } catch (error) {
+            console.error('No se pudo registrar la asistencia.', error);
+            attendanceStatus.textContent = 'No se pudo conectar con el servidor.';
+        }
+    }
+
+    function stopCamera() {
+        cameraControls?.stop();
+        cameraControls = null;
+        if (cameraVideo) cameraVideo.srcObject = null;
+        if (cameraContainer) cameraContainer.hidden = true;
+    }
+
+    async function startCamera() {
+        if (!navigator.mediaDevices?.getUserMedia) {
+            attendanceStatus.textContent = 'El navegador requiere una conexión segura y permiso de cámara. Escribe el código corto como alternativa.';
+            return;
+        }
+        try {
+            cameraContainer.hidden = false;
+            cameraControls = await qrReader.decodeFromVideoDevice(undefined, cameraVideo, async result => {
+                if (!result) return;
+                const code = result.getText();
+                stopCamera();
+                await registerAttendance(code);
+            });
+        } catch (error) {
+            stopCamera();
+            console.error('No se pudo iniciar la cámara.', error);
+            attendanceStatus.textContent = 'No se pudo abrir la cámara. Revisa los permisos o usa el código corto.';
+        }
+    }
+
+    codeForm?.addEventListener('submit', event => {
+        event.preventDefault();
+        const code = new FormData(codeForm).get('codigo')?.toString().trim();
+        if (code) registerAttendance(code);
+    });
+    detailCard.querySelector('[data-start-attendance-camera]')?.addEventListener('click', startCamera);
+    detailCard.querySelector('[data-stop-attendance-camera]')?.addEventListener('click', stopCamera);
+    detailCard.querySelector('[data-attendance-qr-photo]')?.addEventListener('change', async event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        let imageUrl = null;
+        try {
+            imageUrl = URL.createObjectURL(file);
+            const result = await qrReader.decodeFromImageUrl(imageUrl);
+            await registerAttendance(result.getText());
+        } catch (error) {
+            console.error('No se pudo leer la foto del QR.', error);
+            attendanceStatus.textContent = 'No se encontró un QR legible en la foto. Prueba otra imagen o escribe el código corto.';
+        } finally {
+            if (imageUrl) URL.revokeObjectURL(imageUrl);
+            event.target.value = '';
+        }
+    });
+
+    async function loadOwnerActivity() {
+        if (!token) return;
+        const section = detailCard.querySelector('[data-owner-volunteer-activity]');
+        const status = detailCard.querySelector('[data-owner-activity-status]');
+        const list = detailCard.querySelector('[data-owner-activity-participants]');
+        try {
+            const response = await fetch(`/api/admin/voluntariados/${encodeURIComponent(detailCard.dataset.volunteerId)}/dashboard`, {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            if (!response.ok) return;
+            const result = await response.json();
+            const participants = result.data?.participantes || [];
+            section.hidden = false;
+            status.textContent = participants.length
+                ? `${participants.length} personas inscritas`
+                : 'Aún no hay personas inscritas.';
+            list.replaceChildren();
+            participants.forEach(participant => {
+                const row = document.createElement('div');
+                row.className = 'volunteer-owner-participant';
+                const identity = document.createElement('span');
+                identity.textContent = `${participant.nombre || 'Participante'} · ${participant.correo || 'Sin correo'}`;
+                const attendance = document.createElement('span');
+                attendance.textContent = participant.asistencia?.confirmada
+                    ? `Asistencia registrada (${participant.asistencia.metodo || 'manual'})`
+                    : participant.falto ? 'Falta' : 'Pendiente';
+                row.append(identity, attendance);
+
+                if (!participant.asistencia?.confirmada && !participant.falto
+                    && ['inscrita', 'activa'].includes(participant.estadoInscripcion)) {
+                    const button = document.createElement('button');
+                    button.className = 'button button-secondary';
+                    button.type = 'button';
+                    button.textContent = 'Marcar asistencia';
+                    button.addEventListener('click', async () => {
+                        button.disabled = true;
+                        try {
+                            const response = await fetch('/api/asistencias', {
+                                method: 'POST',
+                                headers: attendanceHeaders(),
+                                body: JSON.stringify({
+                                    metodo: 'manual',
+                                    usuarioId: participant.usuarioId,
+                                    voluntariadoId: detailCard.dataset.volunteerId,
+                                }),
+                            });
+                            const data = await response.json().catch(() => ({}));
+                            if (!response.ok) throw new Error(data.message || 'No se pudo marcar la asistencia.');
+                            await loadOwnerActivity();
+                        } catch (error) {
+                            status.textContent = error.message;
+                            button.disabled = false;
+                        }
+                    });
+                    row.append(button);
+                }
+
+                const request = participant.solicitudAsistencia;
+                if (request?.estado === 'pendiente') {
+                    const acceptButton = document.createElement('button');
+                    acceptButton.className = 'button button-primary';
+                    acceptButton.type = 'button';
+                    acceptButton.textContent = 'Aceptar solicitud';
+                    const rejectButton = document.createElement('button');
+                    rejectButton.className = 'button button-secondary';
+                    rejectButton.type = 'button';
+                    rejectButton.textContent = 'Rechazar';
+                    acceptButton.addEventListener('click', () => respondToAttendanceRequest(request.id, 'aceptar', acceptButton, status));
+                    rejectButton.addEventListener('click', () => {
+                        const motivo = window.prompt('Motivo del rechazo (opcional):') || '';
+                        respondToAttendanceRequest(request.id, 'rechazar', rejectButton, status, motivo);
+                    });
+                    row.append(acceptButton, rejectButton);
+                } else if (request?.estado === 'aceptando') {
+                    const pending = document.createElement('span');
+                    pending.textContent = 'Confirmando asistencia…';
+                    row.append(pending);
+                }
+                list.append(row);
+            });
+        } catch (error) {
+            console.error('No se pudo cargar la actividad del voluntariado.', error);
+        }
+    }
+
+    detailCard.addEventListener('regenera:attendance-recorded', loadOwnerActivity);
+    loadOwnerActivity();
+    window.setInterval(loadOwnerActivity, 15_000);
+
+    async function respondToAttendanceRequest(requestId, decision, button, status, motivo = '') {
+        button.disabled = true;
+        try {
+            const response = await fetch(`/api/asistencias/solicitudes/${encodeURIComponent(requestId)}/responder`, {
+                method: 'PATCH',
+                headers: { ...attendanceHeaders(), Accept: 'application/json' },
+                body: JSON.stringify({ decision, motivo }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.message || 'No se pudo responder la solicitud.');
+            status.textContent = result.message || 'Solicitud respondida.';
+            await loadOwnerActivity();
+        } catch (error) {
+            status.textContent = error.message;
+            button.disabled = false;
         }
     }
 
     updateCountdown();
     window.setInterval(updateCountdown, 1000);
 
-    if (token && getJoinControl()) {
+    if (token) {
         const headers = {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,
@@ -191,15 +408,38 @@ if (detailCard) {
         const volunteerId = detailCard.dataset.volunteerId;
 
         axios.get(`/api/inscripciones/voluntariado/${encodeURIComponent(volunteerId)}/mia`, { headers })
-            .then(({ data }) => {
+            .then(async ({ data }) => {
                 if (!data.inscrito) return;
                 isEnrolled = true;
                 const joinControl = getJoinControl();
                 if (joinControl) joinControl.hidden = true;
-                cancelButton.dataset.inscriptionId = data.inscripcionId;
-                cancelButton.hidden = new Date() >= startAt;
-                if (enrollmentNote && !cancelButton.hidden) {
+                if (cancelButton) {
+                    cancelButton.dataset.inscriptionId = data.inscripcionId;
+                    cancelButton.hidden = new Date() >= startAt;
+                }
+                if (enrollmentNote && cancelButton && !cancelButton.hidden) {
                     enrollmentNote.textContent = 'Ya tienes tu lugar. Puedes cancelar tu participación antes de que inicie la actividad.';
+                }
+                attendanceResult.hidden = false;
+                if (data.asistio) {
+                    attendanceResultTitle.textContent = '¡Gracias por participar!';
+                    attendanceResultMessage.textContent = 'Tu asistencia quedó registrada en esta actividad.';
+                    requestAttendanceButton.hidden = true;
+                } else if (data.falto) {
+                    attendanceResultTitle.textContent = 'No se registró tu asistencia';
+                    attendanceResultMessage.textContent = 'Lo sentimos, no se registró tu asistencia en este voluntariado al que te inscribiste.';
+                    const solicitudPendiente = ['pendiente', 'aceptando'].includes(data.solicitudAsistenciaEstado);
+                    requestAttendanceButton.hidden = false;
+                    requestAttendanceButton.disabled = solicitudPendiente;
+                    requestAttendanceButton.textContent = solicitudPendiente
+                        ? 'Solicitud enviada al propietario'
+                        : 'Solicitar revisión al propietario';
+                } else {
+                    attendanceResultTitle.textContent = 'Inscripción confirmada';
+                    attendanceResultMessage.textContent = nowWithinEvent()
+                        ? 'Estás inscrito. Registra tu asistencia antes de que termine la actividad.'
+                        : 'Tu inscripción está guardada. La asistencia se podrá registrar durante el horario del evento.';
+                    requestAttendanceButton.hidden = true;
                 }
             })
             .catch(error => {
@@ -209,7 +449,7 @@ if (detailCard) {
                 }
             });
 
-        cancelButton.addEventListener('click', async () => {
+        cancelButton?.addEventListener('click', async () => {
             if (!window.confirm('¿Quieres cancelar tu participación en este voluntariado?')) return;
             cancelButton.disabled = true;
             message.textContent = '';
@@ -240,9 +480,28 @@ if (detailCard) {
             isEnrolled = true;
             const joinControl = getJoinControl();
             if (joinControl) joinControl.hidden = true;
-            cancelButton.dataset.inscriptionId = event.detail.inscripcionId || '';
-            cancelButton.hidden = !event.detail.inscripcionId || new Date() >= startAt;
+            if (cancelButton) {
+                cancelButton.dataset.inscriptionId = event.detail.inscripcionId || '';
+                cancelButton.hidden = !event.detail.inscripcionId || new Date() >= startAt;
+            }
             if (enrollmentNote) enrollmentNote.textContent = 'Ya tienes tu lugar. Puedes cancelar tu participación antes de que inicie la actividad.';
         });
+
+        requestAttendanceButton?.addEventListener('click', async () => {
+            requestAttendanceButton.disabled = true;
+            try {
+                const { data } = await axios.post('/api/asistencias/solicitudes', { voluntariadoId: volunteerId }, { headers });
+                attendanceResultMessage.textContent = data.message || 'Enviamos tu solicitud al propietario.';
+                requestAttendanceButton.textContent = 'Solicitud enviada al propietario';
+            } catch (error) {
+                attendanceResultMessage.textContent = error.response?.data?.message || 'No se pudo enviar la solicitud.';
+                requestAttendanceButton.disabled = false;
+            }
+        });
+    }
+
+    function nowWithinEvent() {
+        const now = new Date();
+        return Number.isFinite(startAt.getTime()) && Number.isFinite(endAt.getTime()) && now >= startAt && now <= endAt;
     }
 }

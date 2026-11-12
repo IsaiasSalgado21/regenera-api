@@ -29,9 +29,9 @@
             </div>
         </div>
 
-        <div class="volunteer-grid">
+        <div class="volunteer-grid" data-public-volunteer-list>
             @forelse ($voluntariados as $voluntariado)
-                <article class="volunteer-card">
+            <article class="volunteer-card" data-public-volunteer="{{ $voluntariado['id'] }}" data-start-at="{{ $voluntariado['inicioIso'] }}" data-end-at="{{ $voluntariado['finIso'] }}">
                     <a
                         class="volunteer-card-link"
                         href="{{ url('/voluntariados/' . $voluntariado['id']) }}"
@@ -72,6 +72,7 @@
                             <p>
                                 {{ \Illuminate\Support\Str::limit($voluntariado['descripcion'], 110) }}
                             </p>
+                            <span class="personal-volunteer-timer" data-volunteer-timer></span>
 
                             <div class="volunteer-card-hover" aria-hidden="true">
                                 <span>Explorar voluntariado</span>
@@ -86,6 +87,17 @@
                     nuevas iniciativas para participar.
                 </p>
             @endforelse
+        </div>
+
+        <div class="personal-volunteer-sections" data-personal-volunteer-sections>
+            <section class="personal-volunteer-group" data-owned-volunteers hidden>
+                <div class="section-heading"><div><span>MI ACTIVIDAD</span><h2>Mis voluntariados</h2></div></div>
+                <div class="volunteer-grid" data-owned-volunteer-list></div>
+            </section>
+            <section class="personal-volunteer-group" data-enrolled-volunteers hidden>
+                <div class="section-heading"><div><span>MI PARTICIPACIÓN</span><h2>Voluntariados inscritos</h2></div></div>
+                <div class="volunteer-grid" data-enrolled-volunteer-list></div>
+            </section>
         </div>
     </section>
     
@@ -270,4 +282,5 @@
 @push('scripts')
     <script type="application/json" id="floraData">@json($especies)</script>
     <script src="{{ asset('js/home.js') }}"></script>
+    @vite('resources/js/personal-volunteers.js')
 @endpush

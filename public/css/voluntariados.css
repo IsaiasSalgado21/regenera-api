@@ -113,6 +113,111 @@
     letter-spacing: 1.4px;
 }
 
+.volunteer-owned-section {
+    margin: 36px 0;
+    padding: 24px 0;
+    border-top: 1px solid rgba(20, 32, 27, .12);
+    border-bottom: 1px solid rgba(20, 32, 27, .12);
+}
+
+.personal-volunteer-sections {
+    display: grid;
+    gap: 20px;
+}
+
+.personal-volunteer-group {
+    margin: 28px 0;
+}
+
+.personal-volunteer-timer {
+    margin: 14px 0 0;
+    border-top: 1px solid rgba(20, 32, 27, .1);
+    padding-top: 12px;
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.personal-volunteer-timer.is-ongoing {
+    color: #17613e;
+}
+
+.personal-volunteer-timer.is-upcoming {
+    color: #8a5a08;
+}
+
+.personal-volunteer-timer.is-past {
+    color: #777e79;
+}
+
+.is-past-volunteer {
+    filter: grayscale(.85);
+    opacity: .68;
+}
+
+.volunteer-owned-status {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.volunteer-owned-status.is-pendiente {
+    background: #fff3d4;
+    color: #7a5410;
+}
+
+.volunteer-owned-status.is-publicado {
+    background: #dff2e7;
+    color: #20583a;
+}
+
+.volunteer-owned-status.is-rechazado {
+    background: #f9e3e1;
+    color: #8a3029;
+}
+
+.volunteer-attendance-tools,
+.volunteer-owner-activity {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+    border-top: 1px solid rgba(20, 32, 27, .12);
+    padding-top: 18px;
+}
+
+.volunteer-attendance-tools h3,
+.volunteer-owner-activity h3 {
+    margin: 0;
+}
+
+.volunteer-attendance-tools video {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    border-radius: 12px;
+    background: #101915;
+    object-fit: cover;
+}
+
+.volunteer-owner-participants {
+    display: grid;
+    gap: 10px;
+}
+
+.volunteer-owner-participant {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid rgba(20, 32, 27, .1);
+    padding: 10px 0;
+}
+
 .volunteer-status {
     color: #39795e;
 }

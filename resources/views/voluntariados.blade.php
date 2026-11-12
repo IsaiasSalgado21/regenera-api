@@ -41,6 +41,26 @@
             </p>
         </div>
 
+        @if (request()->query('propuesta') === 'enviada')
+            <p class="form-message is-success" role="status">Tu propuesta fue enviada a revisión. Podrás consultar aquí su estado.</p>
+        @endif
+
+        <div class="personal-volunteer-sections" data-personal-volunteer-sections>
+            <section class="volunteer-owned-section" data-owned-volunteers hidden aria-labelledby="ownedVolunteersHeading">
+                <div class="page-intro">
+                    <h2 id="ownedVolunteersHeading">Mis voluntariados</h2>
+                    <p>Consulta el estado de tus propuestas y actividades.</p>
+                </div>
+                <div class="volunteer-grid" data-owned-volunteer-list></div>
+            </section>
+            <section class="volunteer-owned-section" data-enrolled-volunteers hidden aria-labelledby="enrolledVolunteersHeading">
+                <div class="page-intro">
+                    <h2 id="enrolledVolunteersHeading">Voluntariados en los que participo</h2>
+                </div>
+                <div class="volunteer-grid" data-enrolled-volunteer-list></div>
+            </section>
+        </div>
+
         <div class="create-cta">
             <a href="{{ route('voluntariados.create') }}" class="button button-primary">
                 Quiero crear un voluntariado
@@ -103,7 +123,7 @@
         </form>
 
         {{-- RESULTADOS --}}
-        <div class="volunteer-grid">
+        <div class="volunteer-grid" data-public-volunteer-list>
             <article class="volunteer-card volunteer-create-card">
                 <div class="volunteer-card-content">
                     <span class="volunteer-category">PROPÓN UNA ACTIVIDAD</span>
@@ -116,7 +136,7 @@
             </article>
 
             @forelse ($voluntariados as $voluntariado)
-                <article class="volunteer-card">
+                <article class="volunteer-card" data-public-volunteer="{{ $voluntariado['id'] }}" data-start-at="{{ $voluntariado['inicio_iso'] }}" data-end-at="{{ $voluntariado['fin_iso'] }}">
                     <a class="volunteer-card-link" href="{{ url('/voluntariados/' . $voluntariado['id']) }}" aria-label="Ver voluntariado: {{ $voluntariado['titulo'] }}">
                         <div class="volunteer-image" style="background-image:url('{{ $voluntariado['imagen'] }}')">
                             @if ($voluntariado['fecha'])
@@ -149,6 +169,7 @@
                             </div>
 
                             <p>{{ $voluntariado['descripcion'] }}</p>
+                            <span class="personal-volunteer-timer" data-volunteer-timer></span>
 
                             <span class="volunteer-link">
                                 Ver voluntariado <span aria-hidden="true">→</span>
@@ -171,5 +192,9 @@
     <div class="footer-logo">Regenera<span>BCS</span></div>
     <p>Participación ambiental · Baja California Sur</p>
 </footer>
+
+@push('scripts')
+    @vite('resources/js/personal-volunteers.js')
+@endpush
 
 @endsection

@@ -598,6 +598,8 @@
                         setTimeout(() => {
                             window.location.href = '/voluntariados/' + voluntariadoId;
                         }, 1500);
+                    } else if (voluntariado?.estado === 'pendiente') {
+                        window.location.href = '/voluntariados?propuesta=enviada';
                     } else {
                         form.reset();
                     }

@@ -140,6 +140,29 @@
     margin-right: .3rem;
 }
 
+.profile-activity-status {
+    display: grid;
+    justify-items: end;
+    gap: .45rem;
+}
+
+.profile-request-attendance-button {
+    border: 0;
+    background: transparent;
+    color: #17613e;
+    cursor: pointer;
+    font: inherit;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: .2rem 0;
+    text-align: right;
+}
+
+.profile-request-attendance-button:disabled {
+    color: #62756b;
+    cursor: default;
+}
+
 .profile-joined {
     border-left: 1px solid #e5e9e2;
     display: grid;

@@ -411,7 +411,24 @@ function initializeDashboard() {
         const lugar = voluntariado.lugar
             ? [voluntariado.lugar.nombre, voluntariado.lugar.municipio, voluntariado.lugar.direccion].filter(Boolean).join(' · ')
             : 'Lugar no disponible';
-        const actionButtons = `${canEdit ? action('Editar voluntariado', 'edit-voluntariado', voluntariado.id) : ''}`;
+        const actionButtons = `${canEdit ? action('Editar voluntariado', 'edit-voluntariado', voluntariado.id) : ''}${user.rol === 'admin' && voluntariado.estado === 'pendiente' ? `${action('Aprobar', 'approve-voluntariado', voluntariado.id, 'primary')}${action('Rechazar', 'reject-voluntariado', voluntariado.id, 'danger')}` : ''}`;
+        const totalRegistros = Math.max(0, Number(estadisticas.totalInscripciones ?? participantes.length) || 0);
+        const outcomes = [
+            { key: 'attended', label: 'Asistieron', value: Number(estadisticas.asistencias) || 0 },
+            { key: 'absent', label: 'Faltaron', value: Number(estadisticas.faltas) || 0 },
+            { key: 'cancelled', label: 'Cancelaron', value: Number(estadisticas.canceladas) || 0 },
+            { key: 'pending', label: 'Pendientes', value: Number(estadisticas.pendientes) || 0 },
+        ];
+        const outcomeChart = `<section class="volunteer-outcomes" aria-label="Resultado de ${escapeHtml(voluntariado.titulo)}">
+            <div class="volunteer-outcomes-heading"><h3>Participación</h3><strong>${totalRegistros} inscripciones totales</strong></div>
+            <div class="volunteer-outcomes-bar" role="img" aria-label="${outcomes.map(item => `${item.label}: ${item.value}`).join(', ')}">
+                ${outcomes.map(item => {
+                    const width = totalRegistros ? (item.value / totalRegistros) * 100 : 0;
+                    return width > 0 ? `<span class="outcome-${item.key}" style="width:${width}%"></span>` : '';
+                }).join('')}
+            </div>
+            <ul class="volunteer-outcomes-legend">${outcomes.map(item => `<li><span class="outcome-dot outcome-${item.key}" aria-hidden="true"></span><span>${item.label}</span><strong>${item.value}</strong></li>`).join('')}</ul>
+        </section>`;
         const people = participantes.map(participante => {
             const estadoInscripcion = participante.estadoInscripcion || 'desconocido';
             const cancelado = estadoInscripcion === 'cancelada';
@@ -441,6 +458,14 @@ function initializeDashboard() {
                     ? formatDateTime(participante.asistencia.fecha)
                     : participante.asistencia.hora || 'Sin fecha')
                 : 'Pendiente';
+            const solicitud = participante.solicitudAsistencia;
+            const accionesSolicitud = solicitud?.estado === 'pendiente'
+                ? `<div class="volunteer-attendance-request-actions"><button class="button button-primary" type="button" data-attendance-request-action="aceptar" data-request-id="${escapeHtml(solicitud.id)}">Aceptar solicitud</button><button class="button button-secondary" type="button" data-attendance-request-action="rechazar" data-request-id="${escapeHtml(solicitud.id)}">Rechazar</button></div>`
+                : solicitud?.estado === 'aceptando'
+                    ? '<span>Confirmando solicitud…</span>'
+                    : solicitud?.estado === 'rechazada'
+                        ? `<span>Solicitud rechazada${solicitud.motivoRespuesta ? `: ${escapeHtml(solicitud.motivoRespuesta)}` : ''}</span>`
+                        : '';
             return `<tr data-participant-row data-name="${escapeHtml(nombre.toLocaleLowerCase())}" data-email="${escapeHtml(participante.correo || '').toLocaleLowerCase()}" data-inscription="${escapeHtml(estadoInscripcion)}" data-attendance="${estadoAsistencia}">
                 <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${escapeHtml(nombre)}</strong><small>${escapeHtml(participante.correo || 'Sin correo')}</small></span></div></td>
                 <td>${formatDateTime(participante.fechaInscripcion)}</td>
@@ -448,7 +473,7 @@ function initializeDashboard() {
                 <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${etiquetaAsistencia}</span></td>
                 <td>${escapeHtml(fechaAsistencia)}</td>
                 <td>${escapeHtml(participante.asistencia?.metodo || '—')}</td>
-                <td><details class="volunteer-person-details"><summary>Ficha</summary><div><span>Identificador</span><code>${escapeHtml(participante.usuarioId || '—')}</code>${participante.observaciones ? `<span>Observaciones</span><p>${escapeHtml(participante.observaciones)}</p>` : ''}</div></details></td>
+                <td><details class="volunteer-person-details"><summary>Ficha</summary><div><span>Identificador</span><code>${escapeHtml(participante.usuarioId || '—')}</code>${participante.observaciones ? `<span>Observaciones</span><p>${escapeHtml(participante.observaciones)}</p>` : ''}${accionesSolicitud}</div></details></td>
             </tr>`;
         }).join('');
         const qrToken = voluntariado.tokenAsistencia || '';
@@ -481,6 +506,7 @@ function initializeDashboard() {
                     <div class="volunteer-hero-meta"><span>◷ ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>⌖ ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
                 </div>
             </header>
+            ${outcomeChart}
             <div class="volunteer-stat-grid">
                 <article class="volunteer-stat-card"><span>Inscritos</span><strong>${Number(estadisticas.inscritos) || 0}<small> / ${Number(estadisticas.cupo) || 0}</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.ocupacion) || 0))}%"></i></div><small>${Number(estadisticas.disponibles) || 0} lugares disponibles</small></article>
                 <article class="volunteer-stat-card"><span>Ocupación</span><strong>${Number(estadisticas.ocupacion) || 0}<small>%</small></strong><div class="volunteer-stat-track"><i style="width:${Math.min(100, Math.max(0, Number(estadisticas.ocupacion) || 0))}%"></i></div><small>Del cupo total</small></article>
@@ -509,6 +535,29 @@ function initializeDashboard() {
             </details>`;
 
         applyParticipantFilters();
+        byId('voluntariadoDetailContent').querySelectorAll('[data-attendance-request-action]').forEach(button => {
+            button.addEventListener('click', async () => {
+                let motivo = '';
+                if (button.dataset.attendanceRequestAction === 'rechazar') {
+                    motivo = window.prompt('Motivo del rechazo (opcional):') || '';
+                }
+                button.disabled = true;
+                try {
+                    await dashboardApi.respondAttendanceRequest(
+                        button.dataset.requestId,
+                        button.dataset.attendanceRequestAction,
+                        motivo,
+                    );
+                    showNotice(button.dataset.attendanceRequestAction === 'aceptar'
+                        ? 'La asistencia fue confirmada.'
+                        : 'La solicitud fue rechazada.');
+                    await showVolunteerDetail(voluntariado.id, false);
+                } catch (error) {
+                    showNotice(error.message, 'error');
+                    button.disabled = false;
+                }
+            });
+        });
         if (qrToken) {
             const canvas = byId('volunteerDetailQr');
             const scanUrl = `${root.dataset.attendanceUrl}#${encodeURIComponent(qrToken)}`;

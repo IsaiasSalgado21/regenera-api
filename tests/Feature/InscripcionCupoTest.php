@@ -32,6 +32,7 @@ class InscripcionCupoTest extends TestCase
 
     protected function tearDown(): void
     {
+        \Carbon\Carbon::setTestNow();
         if ($this->testDatabase !== null) {
             DB::connection('mongodb')->getMongoDB()->drop();
             DB::purge('mongodb');
@@ -87,6 +88,30 @@ class InscripcionCupoTest extends TestCase
 
         Sanctum::actingAs($usuario);
         $this->postJson('/api/inscripciones/'.$inscripcion->getKey().'/cancelar')->assertOk();
+        $this->assertSame(1, (int) $voluntariado->fresh()->inscritosActivos);
+    }
+
+    public function test_confirming_attendance_does_not_change_registration_state_or_capacity(): void
+    {
+        $now = now('America/Mazatlan')->setDate(2026, 11, 11)->setTime(12, 0);
+        \Carbon\Carbon::setTestNow($now);
+        $voluntariado = $this->voluntariado(1, 1);
+        $voluntariado->forceFill([
+            'fechaInicio' => $now->copy()->startOfDay(),
+            'fechaFin' => $now->copy()->startOfDay(),
+            'horaInicio' => '11:00',
+            'horaFin' => '13:00',
+        ])->save();
+        $usuarioId = $this->usuarioId();
+        $inscripcion = $this->inscripcionActiva($voluntariado, $usuarioId);
+        Sanctum::actingAs($this->usuario($usuarioId));
+
+        $this->postJson('/api/asistencias', [
+            'metodo' => 'QR',
+            'tokenAsistencia' => $voluntariado->codigoCorto,
+        ])->assertCreated();
+
+        $this->assertSame('inscrita', $inscripcion->fresh()->estado);
         $this->assertSame(1, (int) $voluntariado->fresh()->inscritosActivos);
     }
 
