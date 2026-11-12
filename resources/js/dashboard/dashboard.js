@@ -25,6 +25,9 @@ import { initializeLocationSelector } from '../map-selector';
 const root = document.getElementById('dashboardRoot');
 if (root) initializeDashboard();
 
+const apiBaseUrl = document.querySelector('meta[name="api-base-url"]')?.content || '/api';
+const appBasePath = new URL(apiBaseUrl, window.location.origin).pathname.replace(/\/api\/?$/, '');
+
 Chart.register(
     ArcElement,
     CategoryScale,
@@ -821,9 +824,71 @@ function initializeDashboard() {
         }
     }
 
+    function renderGamificationAdmin(data) {
+        const courses = data.cuestionarios || [];
+        const attempts = data.intentosRecientes || [];
+        const totalAttempts = courses.reduce((sum, course) => sum + Number(course.intentos || 0), 0);
+        const totalApproved = courses.reduce((sum, course) => sum + Number(course.aprobados || 0), 0);
+        const values = {
+            intentos: totalAttempts,
+            aprobados: totalApproved,
+            puntos: data.puntosOtorgados || 0,
+            certificaciones: data.organizadoresCertificados || 0,
+        };
+        root.querySelectorAll('[data-gamification-admin-kpi]').forEach(element => {
+            element.textContent = new Intl.NumberFormat('es-MX').format(values[element.dataset.gamificationAdminKpi] || 0);
+        });
+
+        const summary = root.querySelector('[data-gamification-admin-summary]');
+        summary.innerHTML = courses.length
+            ? courses.map(course => `<tr><td><strong>${escapeHtml(course.titulo)}</strong></td><td>${Number(course.intentos) || 0}</td><td>${Number(course.aprobados) || 0}</td></tr>`).join('')
+            : '<tr><td class="impact-history-empty" colspan="3">No hay cuestionarios activos.</td></tr>';
+
+        const names = {
+            'seguridad-limpieza': 'Seguridad y precauciones en limpieza',
+            'restauracion-entorno': 'Restauración y conocimiento del entorno',
+            'economia-circular': 'Economía circular y conducta regenerativa',
+            'organizacion-responsable': 'Verificación para organizadores',
+        };
+        const formatDate = value => {
+            if (!value) return 'Sin fecha';
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? 'Sin fecha' : new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' }).format(date);
+        };
+        const recent = root.querySelector('[data-gamification-admin-attempts]');
+        recent.innerHTML = attempts.length
+            ? attempts.map(attempt => `<tr>
+                <td><strong>${escapeHtml(attempt.usuarioNombre)}</strong><small>${escapeHtml(attempt.usuarioCorreo || '')}</small></td>
+                <td>${escapeHtml(names[attempt.cuestionarioSlug] || attempt.cuestionarioSlug)}</td>
+                <td>${escapeHtml(attempt.estado)}</td>
+                <td>${attempt.puntuacion === null ? '—' : `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(attempt.puntuacion) || 0)}%`}</td>
+                <td>${escapeHtml(formatDate(attempt.fechaUltimoIntento || attempt.fechaAprobacion))}</td>
+            </tr>`).join('')
+            : '<tr><td class="impact-history-empty" colspan="5">No hay intentos registrados.</td></tr>';
+    }
+
+    async function loadGamificationAdmin() {
+        const content = root.querySelector('[data-gamification-admin-content]');
+        content.hidden = true;
+        showResourceState('gamification', 'loading');
+        try {
+            const response = await dashboardApi.gamificationStats();
+            renderGamificationAdmin(response.data);
+            content.hidden = false;
+            showResourceState('gamification', response.data.intentosRecientes?.length ? 'ready' : 'empty');
+        } catch (error) {
+            showResourceState('gamification', 'error');
+            console.error('No se pudieron cargar las estadísticas de gamificación.', error);
+        }
+    }
+
     async function loadResource(resource) {
         if (resource === 'impact-log') {
             await loadImpactLog();
+            return;
+        }
+        if (resource === 'gamification') {
+            await loadGamificationAdmin();
             return;
         }
         showResourceState(resource, 'loading');
@@ -2190,6 +2255,12 @@ function initializeDashboard() {
                                     : 'users',
                 );
             } catch (error) {
+                if (error.data?.code === 'certificacion_organizador_requerida' && user.rol === 'organizador') {
+                    const destination = new URL(`${appBasePath}/aprendizaje`, window.location.origin);
+                    destination.searchParams.set('cuestionario', error.data.cuestionario || 'organizacion-responsable');
+                    window.location.assign(`${destination.pathname}${destination.search}`);
+                    return;
+                }
                 showNotice(error.message, 'error');
             } finally {
                 submit.disabled = false;

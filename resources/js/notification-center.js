@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiUrl } from './api-url';
 
 const page = document.querySelector('[data-notification-center]');
 if (page) {
@@ -78,13 +79,13 @@ if (page) {
             return;
         }
         try {
-            const response = await axios.get('/api/notificaciones', { headers });
+            const response = await axios.get(apiUrl('/api/notificaciones'), { headers });
             notifications = response.data.data ?? [];
             isAdmin = response.data.esAdmin === true;
             const openedNotificationId = new URLSearchParams(window.location.search).get('pushNotification');
             const openedNotification = notifications.find(item => item.id === openedNotificationId);
             if (openedNotification?.esPropia && !openedNotification.leida) {
-                await axios.patch(`/api/notificaciones/${encodeURIComponent(openedNotification.id)}/leida`, {}, { headers });
+                await axios.patch(apiUrl(`/api/notificaciones/${encodeURIComponent(openedNotification.id)}/leida`), {}, { headers });
                 openedNotification.leida = true;
                 openedNotification.fechaLectura = new Date().toISOString();
             }
@@ -110,7 +111,7 @@ if (page) {
         if (!button) return;
         button.disabled = true;
         try {
-            await axios.patch(`/api/notificaciones/${encodeURIComponent(button.dataset.centerRead)}/leida`, {}, { headers });
+            await axios.patch(apiUrl(`/api/notificaciones/${encodeURIComponent(button.dataset.centerRead)}/leida`), {}, { headers });
             const notification = notifications.find(item => item.id === button.dataset.centerRead);
             if (notification) {
                 notification.leida = true;
@@ -126,7 +127,7 @@ if (page) {
     markAll.addEventListener('click', async () => {
         markAll.disabled = true;
         try {
-            await axios.patch('/api/notificaciones/marcar-todas-leidas', {}, { headers });
+            await axios.patch(apiUrl('/api/notificaciones/marcar-todas-leidas'), {}, { headers });
             const readAt = new Date().toISOString();
             notifications = notifications.map(item => item.esPropia ? { ...item, leida: true, fechaLectura: readAt } : item);
             render();

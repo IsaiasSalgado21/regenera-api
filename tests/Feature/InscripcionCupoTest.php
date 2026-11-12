@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Inscripcion;
+use App\Models\IntentoCuestionario;
 use App\Models\User;
 use App\Models\Voluntariado;
 use Illuminate\Support\Facades\DB;
@@ -180,7 +181,10 @@ class InscripcionCupoTest extends TestCase
         $admin = $this->usuario(rol: 'admin');
         Sanctum::actingAs($admin);
 
-        $this->patchJson('/api/admin/voluntariados/'.$voluntariado->getKey(), ['cupo' => 1])
+        $this->patchJson('/api/admin/voluntariados/'.$voluntariado->getKey(), [
+            'cupo' => 1,
+            'organizadorId' => (string) $voluntariado->organizadorId,
+        ])
             ->assertStatus(409);
 
         $this->assertSame(3, (int) $voluntariado->fresh()->cupo);
@@ -250,10 +254,9 @@ class InscripcionCupoTest extends TestCase
             'fechaInscripcion' => now(),
             'estado' => 'inscrita',
         ]);
-        DB::connection('mongodb')->getMongoDB()->selectCollection('voluntariados')->updateOne(
-            ['_id' => $voluntariado->getKey()],
-            ['$addToSet' => ['reservasCupo' => (string) $inscripcion->getKey()]],
-        );
+        $reservas = (array) ($voluntariado->reservasCupo ?? []);
+        $reservas[] = (string) $inscripcion->getKey();
+        $voluntariado->forceFill(['reservasCupo' => array_values(array_unique($reservas))])->save();
 
         return $inscripcion;
     }
@@ -271,6 +274,28 @@ class InscripcionCupoTest extends TestCase
     {
         $usuario = new User(['rol' => $rol, 'estado' => 'activo']);
         $usuario->setAttribute('_id', $id ?? $this->usuarioId());
+        $usuario->nombre = 'Participante de prueba';
+        $usuario->correo = bin2hex(random_bytes(6)).'@test.local';
+        $usuario->password = 'Test12345!';
+        $usuario->organizadorVerificado = $rol === 'organizador';
+        $usuario->fechaRegistro = now();
+        $usuario->save();
+
+        if ($rol === 'usuario') {
+            IntentoCuestionario::create([
+                'usuarioId' => (string) $usuario->getAuthIdentifier(),
+                'cuestionarioSlug' => 'seguridad-limpieza',
+                'cuestionarioVersion' => 1,
+                'estado' => 'aprobado',
+                'respuestas' => [],
+                'preguntasCorrectas' => 4,
+                'totalPreguntas' => 4,
+                'puntuacion' => 100,
+                'fechaInicio' => now(),
+                'fechaUltimoIntento' => now(),
+                'fechaAprobacion' => now(),
+            ]);
+        }
 
         return $usuario;
     }

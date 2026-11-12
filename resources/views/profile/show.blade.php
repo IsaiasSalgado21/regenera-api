@@ -38,6 +38,40 @@
             <p class="profile-joined"><span>Miembro desde</span><strong data-profile-joined>—</strong></p>
         </section>
 
+        <section class="profile-gamification" data-gamification-profile hidden aria-labelledby="gamificationHeading">
+            <div class="profile-section-heading">
+                <div><span class="profile-eyebrow">APRENDIZAJE Y PARTICIPACIÓN</span><h2 id="gamificationHeading">Mi progreso</h2></div>
+                <a href="{{ route('learning.index') }}">Ir a Aprendizaje <span aria-hidden="true">→</span></a>
+            </div>
+            <p class="profile-inline-error" data-gamification-error hidden></p>
+            <div class="profile-stat-grid profile-stat-grid-four">
+                <article class="profile-stat-card"><span>Puntos acumulados</span><strong data-gamification-points>—</strong></article>
+                <article class="profile-stat-card"><span>Cuestionarios aprobados</span><strong data-gamification-quizzes>—</strong></article>
+                <article class="profile-stat-card"><span>Seguridad validada</span><strong data-gamification-security>—</strong></article>
+                <article class="profile-stat-card"><span>Actividades realizadas</span><strong data-gamification-activities>—</strong></article>
+                <article class="profile-stat-card"><span>Horas programadas de actividades asistidas</span><strong data-gamification-hours>—</strong></article>
+                <article class="profile-stat-card"><span>Ecosistemas BCS aprendidos</span><strong data-gamification-ecosystems>—</strong></article>
+                <article class="profile-stat-card"><span>Conocimiento en economía circular</span><strong data-gamification-circular-knowledge>—</strong></article>
+            </div>
+            <p class="profile-inline-note" data-gamification-hours-note>Estimación con el horario programado de actividades finalizadas, asistencia confirmada e inscripción no cancelada; el sistema no registra la hora de salida individual.</p>
+            <p class="profile-inline-note">El porcentaje de economía circular mide el resultado del cuestionario; no representa la conducta ambiental.</p>
+            <p class="profile-organizer-certification" data-organizer-certification hidden></p>
+            <div class="profile-gamification-grid">
+                <section class="profile-panel">
+                    <div class="profile-panel-heading"><h3>Medallas</h3><span data-gamification-medal-count>—</span></div>
+                    <div class="profile-medal-grid" data-gamification-medals></div>
+                </section>
+                <section class="profile-panel">
+                    <div class="profile-panel-heading"><h3>Progreso educativo</h3><span data-gamification-level>—</span></div>
+                    <div class="profile-learning-list" data-gamification-courses></div>
+                </section>
+            </div>
+            <section class="profile-panel profile-gamification-timeline-panel">
+                <div class="profile-panel-heading"><h3>Historial de logros y actividades</h3></div>
+                <div class="profile-timeline" data-gamification-timeline><p class="profile-muted">Cargando tu historial…</p></div>
+            </section>
+        </section>
+
         <section class="profile-role-section" data-profile-section="usuario" hidden>
             <div class="profile-section-heading">
                 <div><span class="profile-eyebrow">MI PARTICIPACIÓN</span><h2>Actividad voluntaria</h2></div>

@@ -7,6 +7,7 @@ use App\Models\Inscripcion;
 use App\Models\Notificacion;
 use App\Models\Voluntariado;
 use App\Services\NotificationService;
+use App\Services\GamificacionService;
 use App\Services\VoluntariadoCupoService;
 use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
@@ -22,6 +23,7 @@ class InscripcionController extends Controller
         private readonly VoluntariadoHorario $horario,
         private readonly VoluntariadoCupoService $cupos,
         private readonly VoluntariadoWorkflow $workflow,
+        private readonly GamificacionService $gamificacion,
     ) {}
 
     public function index(Request $request)
@@ -115,6 +117,15 @@ class InscripcionController extends Controller
                 'success' => false,
                 'message' => 'El usuario ya tiene una inscripción activa para este voluntariado.',
             ], 409);
+        }
+
+        if ($this->gamificacion->requiereCuestionarioSeguridad($usuario)) {
+            return response()->json([
+                'success' => false,
+                'code' => 'cuestionario_seguridad_requerido',
+                'cuestionario' => 'seguridad-limpieza',
+                'message' => 'Aprueba el cuestionario de seguridad antes de realizar tu primera inscripción.',
+            ], 428);
         }
 
         $usuarioId = (string) $usuario->getAuthIdentifier();

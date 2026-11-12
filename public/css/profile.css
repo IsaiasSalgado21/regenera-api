@@ -428,13 +428,194 @@
     margin: .65rem 0;
 }
 
+.profile-gamification {
+    margin: 2rem 0 2.5rem;
+}
+
+.profile-inline-note {
+    margin: -.25rem 0 1.25rem;
+    color: #64746a;
+    font-size: .75rem;
+    line-height: 1.45;
+}
+
+.profile-organizer-certification {
+    width: fit-content;
+    margin: 0 0 1rem;
+    border-left: 3px solid #b87932;
+    padding: .65rem .85rem;
+    background: #f7f1e7;
+    color: #70491e;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.profile-organizer-certification.is-certified {
+    border-color: #28775a;
+    background: #edf5ef;
+    color: #205b42;
+}
+
+.profile-gamification-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr);
+    gap: 1rem;
+}
+
+.profile-medal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.profile-medal {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: .5rem;
+    min-width: 0;
+    border: 1px solid #e6e9df;
+    border-radius: 8px;
+    padding: .9rem;
+    background: #fffefa;
+}
+
+.profile-medal.is-locked {
+    background: #f3f4ef;
+    color: #79827b;
+}
+
+.profile-medal-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e7f1e9;
+    color: #28775a;
+}
+
+.profile-medal.is-locked .profile-medal-icon {
+    background: #e6e8e3;
+    color: #828a83;
+}
+
+.profile-medal-icon svg {
+    width: 23px;
+    height: 23px;
+}
+
+.profile-medal-state {
+    color: #62756b;
+    font-size: .66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.profile-medal h4 {
+    margin: 0;
+    color: #164f3d;
+    font-size: .86rem;
+}
+
+.profile-medal.is-locked h4 {
+    color: #58625b;
+}
+
+.profile-medal p,
+.profile-medal small,
+.profile-medal time {
+    margin: 0;
+    color: #66716c;
+    font-size: .72rem;
+    line-height: 1.4;
+}
+
+.profile-learning-list {
+    display: grid;
+}
+
+.profile-learning-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    border-top: 1px solid #edf0ea;
+    padding: .8rem 0;
+    color: #164f3d;
+    text-decoration: none;
+}
+
+.profile-learning-item:first-child {
+    border-top: 0;
+}
+
+.profile-learning-item > span:first-child {
+    display: grid;
+    gap: .3rem;
+}
+
+.profile-learning-item strong {
+    font-size: .82rem;
+}
+
+.profile-learning-item small {
+    color: #68756e;
+    font-size: .72rem;
+}
+
+.profile-gamification-timeline-panel {
+    margin-top: 1rem;
+}
+
+.profile-timeline {
+    display: grid;
+}
+
+.profile-timeline-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: .75rem;
+    padding: .75rem 0;
+}
+
+.profile-timeline-item + .profile-timeline-item {
+    border-top: 1px solid #edf0ea;
+}
+
+.profile-timeline-mark {
+    width: 9px;
+    height: 9px;
+    margin-top: .35rem;
+    border-radius: 50%;
+    background: #28775a;
+}
+
+.profile-timeline-item.is-puntos .profile-timeline-mark { background: #d07a43; }
+.profile-timeline-item.is-medalla .profile-timeline-mark { background: #d1a739; }
+.profile-timeline-item.is-certificacion .profile-timeline-mark { background: #4b83a3; }
+
+.profile-timeline-item h4 {
+    margin: 0;
+    color: #24372d;
+    font-size: .82rem;
+}
+
+.profile-timeline-item p {
+    margin: .3rem 0 0;
+    color: #68756e;
+    font-size: .74rem;
+}
+
 @media (max-width: 800px) {
     .profile-stat-grid-four {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .profile-content-grid,
-    .profile-notification-grid {
+    .profile-notification-grid,
+    .profile-gamification-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -502,5 +683,9 @@
     .profile-article-item {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .profile-medal-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

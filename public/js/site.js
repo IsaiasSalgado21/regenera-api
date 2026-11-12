@@ -4,7 +4,17 @@
 (function () {
     const token = () => sessionStorage.getItem("regenera_access_token");
     const themeToggle = document.querySelector("[data-theme-toggle]");
-    const apiUrl = path => `${document.querySelector('meta[name="api-base-url"]')?.content || ''}${path}`;
+    const apiBase = document.querySelector('meta[name="api-base-url"]')?.content || '';
+    const appBase = apiBase.replace(/\/api\/?$/, '');
+    const apiUrl = path => `${apiBase}${path}`;
+
+    function learningUrl(quiz, returnPath) {
+        const basePath = new URL(apiBase, window.location.origin).pathname.replace(/\/api\/?$/, '');
+        const destination = new URL(`${basePath}/aprendizaje`, window.location.origin);
+        destination.searchParams.set('cuestionario', quiz);
+        if (returnPath) destination.searchParams.set('return', returnPath);
+        return `${destination.pathname}${destination.search}`;
+    }
 
     function setTheme(theme, save = false) {
         document.documentElement.dataset.theme = theme;
@@ -71,7 +81,7 @@
 
             if (user.rol === "admin" || user.rol === "organizador") {
                 const dashboardLink = document.createElement("a");
-                dashboardLink.href = user.rol === "admin" ? "/admin/dashboard" : "/organizador/dashboard";
+                dashboardLink.href = `${appBase}${user.rol === "admin" ? "/admin/dashboard" : "/organizador/dashboard"}`;
                 dashboardLink.className = "user-nav";
                 dashboardLink.dataset.authDashboard = "";
                 dashboardLink.textContent = "Panel";
@@ -170,6 +180,7 @@
             if (!response.ok) {
                 const error = new Error(data.message || 'No se pudo registrar la inscripción.');
                 error.status = response.status;
+                error.data = data;
                 throw error;
             }
 
@@ -185,6 +196,13 @@
             }));
         } catch (error) {
             console.error('No se pudo completar la inscripción.', error);
+            if (error.data?.code === 'cuestionario_seguridad_requerido') {
+                window.location.assign(learningUrl(
+                    error.data.cuestionario || 'seguridad-limpieza',
+                    `${window.location.pathname}${window.location.search}${window.location.hash}`,
+                ));
+                return;
+            }
             if (message) message.textContent = error.message || 'No se pudo completar la inscripción.';
             if (error.status === 401) {
                 sessionStorage.removeItem('regenera_access_token');

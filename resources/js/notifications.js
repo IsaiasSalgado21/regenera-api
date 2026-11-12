@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiUrl } from './api-url';
 
 const drawer = document.querySelector('[data-notification-drawer]');
 if (drawer) {
@@ -73,7 +74,7 @@ if (drawer) {
             return;
         }
         try {
-            const response = await axios.get('/api/notificaciones', { headers: tokenHeaders() });
+            const response = await axios.get(apiUrl('/api/notificaciones'), { headers: tokenHeaders() });
             notifications = response.data.data ?? [];
             isAdmin = response.data.esAdmin === true;
             recipientFilters.hidden = !isAdmin;
@@ -126,7 +127,7 @@ if (drawer) {
         if (button.disabled) return;
         button.disabled = true;
         try {
-            await axios.patch('/api/notificaciones/marcar-todas-leidas', {}, { headers: tokenHeaders() });
+            await axios.patch(apiUrl('/api/notificaciones/marcar-todas-leidas'), {}, { headers: tokenHeaders() });
             notifications = notifications.map(item => item.esPropia ? { ...item, leida: true } : item);
             updateBadge(notifications.filter(item => !item.leida).length);
             render();
@@ -151,7 +152,7 @@ if (drawer) {
         if (item.disabled) return;
         item.disabled = true;
         try {
-            await axios.patch(`/api/notificaciones/${encodeURIComponent(item.dataset.notificationId)}/leida`, {}, { headers: tokenHeaders() });
+            await axios.patch(apiUrl(`/api/notificaciones/${encodeURIComponent(item.dataset.notificationId)}/leida`), {}, { headers: tokenHeaders() });
             if (notification) notification.leida = true;
             updateBadge(notifications.filter(value => !value.leida).length);
             if (notification?.url) window.location.assign(notification.url);

@@ -8,6 +8,7 @@ use App\Models\Notificacion;
 use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\NotificationService;
+use App\Services\GamificacionService;
 use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class AsistenciaController extends Controller
         private readonly NotificationService $notificaciones,
         private readonly VoluntariadoHorario $horario,
         private readonly VoluntariadoWorkflow $workflow,
+        private readonly GamificacionService $gamificacion,
     ) {}
 
     public function index(Request $request)
@@ -192,6 +194,7 @@ class AsistenciaController extends Controller
             return $this->asistenciaDuplicada();
         }
 
+        $this->gamificacion->registrarParticipacion($usuario, $voluntariado);
         $this->notificaciones->asistenciaRegistrada($usuarioId, $voluntariado);
         $this->notificaciones->asistenciaRegistradaParaPropietario($asistencia, $voluntariado);
 
@@ -363,6 +366,7 @@ class AsistenciaController extends Controller
             );
             abort_unless($finalizada->getMatchedCount() === 1, 409, 'No se pudo completar la respuesta. Vuelve a intentarlo.');
 
+            $this->gamificacion->registrarParticipacion($participante, $voluntariado);
             $this->notificaciones->respuestaSolicitudAsistencia(
                 $participante,
                 $voluntariado,

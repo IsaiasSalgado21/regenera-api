@@ -16,10 +16,13 @@ Route::get('/login', function () {
 Route::get('/mapa', [MapPageController::class, 'index'])->name('mapa');
 Route::get('/admin/dashboard', fn () => view('dashboard.index', ['dashboardRole' => 'admin']))
     ->name('dashboard.admin');
+Route::get('/admin/cuestionarios', fn () => view('dashboard.cuestionarios'))
+    ->name('dashboard.quizzes');
 Route::get('/organizador/dashboard', fn () => view('dashboard.index', ['dashboardRole' => 'organizador']))
     ->name('dashboard.organizador');
 Route::get('/notificaciones', fn () => view('notifications.index'))->name('notifications.index');
 Route::get('/perfil', fn () => view('profile.show'))->name('profile.show');
+Route::get('/aprendizaje', fn () => view('learning.index'))->name('learning.index');
 
 // Voluntariados
 Route::get('/voluntariados', [VoluntariadoPageController::class, 'index'])->name('voluntariados.index');

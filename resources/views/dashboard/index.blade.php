@@ -47,6 +47,7 @@
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
             <button type="button" class="dashboard-tab" data-section="voluntariados">Voluntariados</button>
             <button type="button" class="dashboard-tab" data-section="impact-log" data-admin-only hidden>Bitácora de impacto</button>
+            <button type="button" class="dashboard-tab" data-section="gamification" data-admin-only hidden>Gamificación</button>
             <button type="button" class="dashboard-tab" data-section="users" data-admin-only hidden>Usuarios</button>
         </nav>
 
@@ -435,6 +436,45 @@
                             <tbody data-impact-history></tbody>
                         </table>
                     </div>
+                </section>
+            </div>
+        </section>
+
+        <section class="dashboard-section" id="section-gamification" data-resource="gamification" data-admin-only hidden>
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-eyebrow">APRENDIZAJE Y RECOMPENSAS</span>
+                    <h2>Gamificación</h2>
+                    <p class="impact-log-caption">Intentos, aprobaciones y recompensas registradas en MongoDB.</p>
+                </div>
+                <a class="button button-secondary" href="{{ route('dashboard.quizzes') }}">Gestionar cuestionarios</a>
+            </div>
+            <div class="dashboard-loading" data-loading="gamification" hidden>Consultando estadísticas…</div>
+            <div class="dashboard-error" data-error="gamification" hidden>
+                <p>No se pudieron cargar las estadísticas de gamificación.</p>
+                <button type="button" class="button button-secondary" data-retry="gamification">Reintentar</button>
+            </div>
+            <p class="dashboard-empty" data-empty="gamification" hidden>No hay intentos registrados.</p>
+            <div class="gamification-admin-content" data-gamification-admin-content hidden>
+                <div class="impact-kpi-grid gamification-admin-kpis">
+                    <article class="impact-kpi"><span>Intentos de cuestionarios</span><strong data-gamification-admin-kpi="intentos">0</strong></article>
+                    <article class="impact-kpi"><span>Aprobaciones</span><strong data-gamification-admin-kpi="aprobados">0</strong></article>
+                    <article class="impact-kpi"><span>Puntos otorgados</span><strong data-gamification-admin-kpi="puntos">0</strong></article>
+                    <article class="impact-kpi"><span>Organizadores certificados</span><strong data-gamification-admin-kpi="certificaciones">0</strong></article>
+                </div>
+                <section class="impact-history gamification-admin-summary">
+                    <h3>Resumen por cuestionario</h3>
+                    <div class="impact-history-scroll"><table>
+                        <thead><tr><th>Cuestionario</th><th>Intentos</th><th>Aprobados</th></tr></thead>
+                        <tbody data-gamification-admin-summary></tbody>
+                    </table></div>
+                </section>
+                <section class="impact-history gamification-admin-attempts">
+                    <div class="dashboard-section-heading"><h3>Intentos recientes</h3><span>Máximo 100 registros</span></div>
+                    <div class="impact-history-scroll"><table>
+                        <thead><tr><th>Participante</th><th>Cuestionario</th><th>Estado</th><th>Puntuación</th><th>Último intento</th></tr></thead>
+                        <tbody data-gamification-admin-attempts></tbody>
+                    </table></div>
                 </section>
             </div>
         </section>

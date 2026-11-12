@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiUrl } from './api-url';
 
 const page = document.querySelector('[data-notification-profile]');
 if (page) {
@@ -36,8 +37,8 @@ if (page) {
         pushButton.disabled = false;
         try {
             const [userResponse, preferenceResponse] = await Promise.all([
-                axios.get('/api/auth/me', { headers: headers() }),
-                axios.get('/api/notificaciones/preferencias', { headers: headers() }),
+                axios.get(apiUrl('/api/auth/me'), { headers: headers() }),
+                axios.get(apiUrl('/api/notificaciones/preferencias'), { headers: headers() }),
             ]);
             if (userResponse.data.usuario.rol === 'admin') {
                 reminderSettings.hidden = true;
@@ -75,7 +76,7 @@ if (page) {
         const submit = frequencyForm.querySelector('button[type="submit"]');
         submit.disabled = true;
         try {
-            await axios.patch('/api/notificaciones/preferencias', {
+            await axios.patch(apiUrl('/api/notificaciones/preferencias'), {
                 recordatorioFrecuencia: frequencyForm.elements.recordatorioFrecuencia.value,
             }, { headers: headers() });
             setStatus('Frecuencia de recordatorios guardada.');
@@ -92,7 +93,7 @@ if (page) {
             const registration = await navigator.serviceWorker.register('/sw.js');
             const existing = await registration.pushManager.getSubscription();
             if (existing) {
-                await axios.delete('/api/notificaciones/push/suscripcion', {
+                await axios.delete(apiUrl('/api/notificaciones/push/suscripcion'), {
                     headers: headers(),
                     data: { endpoint: existing.endpoint },
                 });
@@ -108,12 +109,12 @@ if (page) {
                 setStatus('No se activaron las push porque no se concedió permiso.', true);
                 return;
             }
-            const keyResponse = await axios.get('/api/notificaciones/push/clave-publica', { headers: headers() });
+            const keyResponse = await axios.get(apiUrl('/api/notificaciones/push/clave-publica'), { headers: headers() });
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: decodeApplicationServerKey(keyResponse.data.data.publicKey),
             });
-            await axios.post('/api/notificaciones/push/suscripcion', {
+            await axios.post(apiUrl('/api/notificaciones/push/suscripcion'), {
                 ...subscription.toJSON(),
                 contentEncoding: PushManager.supportedContentEncodings?.[0] || 'aes128gcm',
             }, { headers: headers() });

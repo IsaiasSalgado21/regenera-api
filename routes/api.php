@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ArticuloController as AdminArticuloController;
 use App\Http\Controllers\Admin\BitacoraImpactoController;
+use App\Http\Controllers\Admin\CuestionarioController as AdminCuestionarioController;
 use App\Http\Controllers\Admin\FloraFaunaController as AdminFloraFaunaController;
 use App\Http\Controllers\Admin\LugarController as AdminLugarController;
 use App\Http\Controllers\Admin\VoluntariadoController as AdminVoluntariadoController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GridFsImageController;
+use App\Http\Controllers\GamificacionController;
 use App\Http\Controllers\ImpactoVoluntariadoController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\MapApiController;
@@ -53,6 +55,13 @@ Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']
 
 Route::middleware('auth:sanctum')->post('/auth/logout', [AuthController::class, 'logout']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/cuestionarios', [GamificacionController::class, 'cuestionarios']);
+    Route::post('/cuestionarios/{slug}/intentos', [GamificacionController::class, 'iniciar']);
+    Route::post('/cuestionarios/intentos/{attemptId}/respuestas', [GamificacionController::class, 'responder']);
+    Route::get('/gamificacion/progreso', [GamificacionController::class, 'progreso']);
+});
+
 Route::prefix('v1/mapa')->group(function () {
     Route::get('/voluntariados', [MapApiController::class, 'voluntariados'])->middleware('auth.optional');
     Route::get('/lugares', [MapApiController::class, 'lugares']);
@@ -93,6 +102,12 @@ Route::put('/flora-fauna/{id}', [FloraFaunaController::class, 'update'])->middle
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
+        Route::get('/cuestionarios', [AdminCuestionarioController::class, 'index']);
+        Route::post('/cuestionarios', [AdminCuestionarioController::class, 'store']);
+        Route::put('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'update']);
+        Route::patch('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'update']);
+        Route::delete('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'destroy']);
+        Route::get('/gamificacion/estadisticas', [GamificacionController::class, 'estadisticas']);
         Route::get('/bitacora-impacto', [BitacoraImpactoController::class, 'index']);
         Route::get('/usuarios', [UserController::class, 'index']);
         Route::post('/usuarios', [UserController::class, 'store']);

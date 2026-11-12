@@ -12,6 +12,7 @@ use App\Models\Voluntariado;
 use App\Services\AuditoriaService;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
+use App\Services\GamificacionService;
 use App\Services\NotificationService;
 use App\Services\VoluntariadoCupoService;
 use App\Services\VoluntariadoWorkflow;
@@ -30,6 +31,7 @@ class VoluntariadoController extends Controller
         private readonly VoluntariadoWorkflow $workflow,
         private readonly VoluntariadoHorario $horario,
         private readonly VoluntariadoCupoService $cupos,
+        private readonly GamificacionService $gamificacion,
     ) {}
 
     public function organizadores()
@@ -267,6 +269,17 @@ class VoluntariadoController extends Controller
                 : $organizadorId;
             $validated['estado'] = $this->workflow->estadoInicial($request->user());
         }
+        if ($validated['estado'] === 'publicado') {
+            $organizador = User::find((string) $validated['organizadorId']);
+            if ($organizador && $this->gamificacion->requiereCertificacionPrimeraPublicacion($organizador)) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'certificacion_organizador_requerida',
+                    'cuestionario' => 'organizacion-responsable',
+                    'message' => 'El organizador debe aprobar su cuestionario antes de publicar su primer voluntariado.',
+                ], 428);
+            }
+        }
 
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated);
 
@@ -313,6 +326,17 @@ class VoluntariadoController extends Controller
             $voluntariado,
             $validated['estado'] ?? null,
         );
+        if ($estadoAnterior !== 'publicado' && $validated['estado'] === 'publicado') {
+            $organizador = User::find((string) $voluntariado->organizadorId);
+            if ($organizador && $this->gamificacion->requiereCertificacionPrimeraPublicacion($organizador)) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'certificacion_organizador_requerida',
+                    'cuestionario' => 'organizacion-responsable',
+                    'message' => 'El organizador debe aprobar su cuestionario antes de publicar su primer voluntariado.',
+                ], 428);
+            }
+        }
         $hayCambiosImportantes = $this->workflow->hayCambiosImportantes($voluntariado, $validated);
 
         [$validated, $removedImages] = $this->applyImageChanges($request, $validated, $voluntariado);
@@ -383,6 +407,15 @@ class VoluntariadoController extends Controller
     public function aprobar(Request $request, string $id)
     {
         $voluntariado = Voluntariado::findOrFail($id);
+        $organizador = User::find((string) $voluntariado->organizadorId);
+        if ($organizador && $this->gamificacion->requiereCertificacionPrimeraPublicacion($organizador)) {
+            return response()->json([
+                'success' => false,
+                'code' => 'certificacion_organizador_requerida',
+                'cuestionario' => 'organizacion-responsable',
+                'message' => 'El organizador debe aprobar su cuestionario antes de publicar su primer voluntariado.',
+            ], 428);
+        }
         $voluntariado->update(['estado' => 'publicado']);
         $voluntariado = $voluntariado->fresh();
         $this->notificaciones->voluntariadoAprobado($voluntariado);

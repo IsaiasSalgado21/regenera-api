@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             RegeneraCatalogSeeder::class,
             VoluntariadoActividadDemoSeeder::class,
             BitacoraImpactoDemoSeeder::class,
+            GamificacionSeeder::class,
         ]);
     }
 }

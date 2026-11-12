@@ -39,7 +39,10 @@ async function request(method, path, data) {
                 ? 'No tienes permiso para realizar esta acción.'
                 : error.response?.data?.message
                     || 'No se pudo completar la solicitud. Revisa tu conexión e inténtalo de nuevo.';
-        throw new Error(message, { cause: error });
+            const failure = new Error(message, { cause: error });
+            failure.status = error.response?.status;
+            failure.data = error.response?.data;
+            throw failure;
     }
 }
 
@@ -61,6 +64,7 @@ export const dashboardApi = {
         const query = new URLSearchParams(filters).toString();
         return request('get', `/api/admin/bitacora-impacto${query ? `?${query}` : ''}`);
     },
+    gamificationStats: () => request('get', '/api/admin/gamificacion/estadisticas'),
     saveUser: (id, data) => request(id ? 'put' : 'post', id ? `/api/admin/usuarios/${id}` : '/api/admin/usuarios', data),
     deleteUser: id => request('delete', `/api/admin/usuarios/${id}`),
     listArticles: () => request('get', '/api/articulos'),

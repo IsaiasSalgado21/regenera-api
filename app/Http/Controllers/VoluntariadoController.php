@@ -6,6 +6,7 @@ use App\Models\Inscripcion;
 use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
+use App\Services\GamificacionService;
 use App\Services\NotificationService;
 use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
@@ -21,6 +22,7 @@ class VoluntariadoController extends Controller
         private readonly NotificationService $notificaciones,
         private readonly VoluntariadoWorkflow $workflow,
         private readonly VoluntariadoHorario $horario,
+        private readonly GamificacionService $gamificacion,
     ) {}
 
     public function index(Request $request)
@@ -158,7 +160,16 @@ class VoluntariadoController extends Controller
             'imagen' => 'nullable|file|image|max:5120',
         ]);
 
-        $validated['estado'] = $this->workflow->estadoInicial($user);
+        $initialState = $this->workflow->estadoInicial($user);
+        if ($initialState === 'publicado' && $this->gamificacion->requiereCertificacionPrimeraPublicacion($user)) {
+            return response()->json([
+                'success' => false,
+                'code' => 'certificacion_organizador_requerida',
+                'cuestionario' => 'organizacion-responsable',
+                'message' => 'Aprueba la verificación para organizadores antes de publicar tu primer voluntariado.',
+            ], 428);
+        }
+        $validated['estado'] = $initialState;
         $validated['organizadorId'] = $user->getAuthIdentifier();
         $validated['requisitos'] = $validated['requisitos'] ?? [];
         $validated['materiales'] = $validated['materiales'] ?? [];

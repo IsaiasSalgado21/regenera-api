@@ -56,6 +56,7 @@
                 <a href="{{ url('/') }}">Inicio</a>
                 <a href="{{ url('/flora') }}">Flora y fauna</a>
                 <a href="{{ url('/voluntariados') }}">Voluntariados</a>
+                <a href="{{ route('learning.index') }}">Aprendizaje</a>
                 <a href="{{ route('mapa') }}">Mapa</a>
                 <a href="{{ url('/articulos') }}">Artículos</a>
                 <button type="button" class="notification-nav-button" data-notification-toggle
@@ -93,6 +94,7 @@
             <a href="{{ url('/') }}">Inicio</a>
             <a href="{{ url('/flora') }}">Flora y fauna</a>
             <a href="{{ url('/voluntariados') }}">Voluntariados</a>
+            <a href="{{ route('learning.index') }}">Aprendizaje</a>
             <a href="{{ route('mapa') }}">Mapa</a>
             <a href="{{ url('/articulos') }}">Artículos</a>
             <a href="{{ route('notifications.index') }}" class="user-nav" data-auth-required hidden>Centro de notificaciones</a>
