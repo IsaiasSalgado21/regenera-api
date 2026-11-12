@@ -135,8 +135,16 @@ if (detailCard) {
     const attendanceResultTitle = detailCard.querySelector('[data-participant-attendance-result-title]');
     const attendanceResultMessage = detailCard.querySelector('[data-participant-attendance-result-message]');
     const requestAttendanceButton = detailCard.querySelector('[data-request-attendance-review]');
-    const token = sessionStorage.getItem('regenera_access_token');
+    const cancelDialog = document.querySelector('[data-enrollment-cancel-dialog]');
+    const cancelDialogConfirm = cancelDialog?.querySelector('[data-enrollment-cancel-confirm]');
+    const cancelDialogDismiss = cancelDialog?.querySelector('[data-enrollment-cancel-dismiss]');
+    const cancelDialogStatus = cancelDialog?.querySelector('[data-enrollment-cancel-status]');
+    let token = sessionStorage.getItem('regenera_access_token');
+    const volunteerId = detailCard.dataset.volunteerId;
     let isEnrolled = false;
+    let currentUser = null;
+    let canViewOwnerActivity = false;
+    let ownerActivityInterval = null;
     let cameraControls = null;
     const qrReader = new BrowserQRCodeReader();
     const getJoinControl = () => detailCard.querySelector('[data-voluntariado-id]');
@@ -204,16 +212,34 @@ if (detailCard) {
         };
     }
 
+    function updateCapacity(delta) {
+        const enrolled = detailCard.querySelector('[data-capacity-enrolled]');
+        const available = detailCard.querySelector('[data-capacity-available-count]');
+        const availableLabel = detailCard.querySelector('[data-capacity-available]');
+        const progress = detailCard.querySelector('[data-capacity-progress]');
+        if (!enrolled || !available) return;
+
+        const total = Number(detailCard.querySelector('.volunteer-capacity-stats > div:last-child strong')?.textContent) || 0;
+        const enrolledCount = Math.max(0, Number(enrolled.textContent) + delta);
+        const availableCount = Math.max(0, total - enrolledCount);
+        enrolled.textContent = String(enrolledCount);
+        available.textContent = String(availableCount);
+        if (availableLabel) availableLabel.textContent = String(availableCount);
+        if (progress) progress.style.width = `${total ? Math.min(100, (enrolledCount / total) * 100) : 0}%`;
+    }
+
     async function loadVolunteerPermissions() {
-        if (!token) return;
+        if (!token) return null;
 
         try {
             const { data } = await axios.get('/api/auth/me', {
                 headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
             });
             const user = data.usuario;
+            currentUser = user;
             const isAdmin = user.rol === 'admin';
             const isOwner = String(user.id) === String(detailCard.dataset.organizerId);
+            canViewOwnerActivity = isAdmin || isOwner;
             const started = Date.now() >= startAt.getTime();
             const isCancelled = detailCard.dataset.volunteerState === 'cancelado';
             const ownerActions = detailCard.querySelector('[data-volunteer-owner-actions]');
@@ -246,14 +272,14 @@ if (detailCard) {
                 const volunteerId = encodeURIComponent(detailCard.dataset.volunteerId);
                 editLink.href = `${dashboardPath}?voluntariado=${volunteerId}&editar=1`;
             }
+            return user;
         } catch (error) {
             if (error.response?.status !== 401) {
                 console.error('No se pudieron consultar los permisos del voluntariado.', error);
             }
+            return null;
         }
     }
-
-    loadVolunteerPermissions();
 
     detailCard.querySelectorAll('[data-volunteer-management-action]').forEach(button => {
         button.addEventListener('click', async () => {
@@ -379,7 +405,7 @@ if (detailCard) {
     });
 
     async function loadOwnerActivity() {
-        if (!token) return;
+        if (!token || !canViewOwnerActivity) return;
         const section = detailCard.querySelector('[data-owner-volunteer-activity]');
         const status = detailCard.querySelector('[data-owner-activity-status]');
         const statsList = detailCard.querySelector('[data-owner-activity-stats]');
@@ -460,14 +486,18 @@ if (detailCard) {
                     const acceptButton = document.createElement('button');
                     acceptButton.className = 'button button-primary';
                     acceptButton.type = 'button';
+                    acceptButton.dataset.requestDecision = 'accept';
                     acceptButton.textContent = 'Aceptar solicitud';
                     const rejectButton = document.createElement('button');
                     rejectButton.className = 'button button-secondary';
                     rejectButton.type = 'button';
+                    rejectButton.dataset.requestDecision = 'reject';
                     rejectButton.textContent = 'Rechazar';
                     acceptButton.addEventListener('click', () => respondToAttendanceRequest(request.id, 'aceptar', acceptButton, status));
                     rejectButton.addEventListener('click', () => {
-                        const motivo = window.prompt('Motivo del rechazo (opcional):') || '';
+                        const motivoIngresado = window.prompt('Motivo del rechazo (opcional):');
+                        if (motivoIngresado === null) return;
+                        const motivo = motivoIngresado.trim();
                         respondToAttendanceRequest(request.id, 'rechazar', rejectButton, status, motivo);
                     });
                     row.append(acceptButton, rejectButton);
@@ -483,12 +513,25 @@ if (detailCard) {
         }
     }
 
-    detailCard.addEventListener('regenera:attendance-recorded', loadOwnerActivity);
-    loadOwnerActivity();
-    window.setInterval(loadOwnerActivity, 15_000);
+    detailCard.addEventListener('regenera:attendance-recorded', () => {
+        if (canViewOwnerActivity) loadOwnerActivity();
+    });
+
+    function startOwnerActivityPolling() {
+        if (!canViewOwnerActivity) return;
+        void loadOwnerActivity();
+        if (!ownerActivityInterval) ownerActivityInterval = window.setInterval(loadOwnerActivity, 15_000);
+    }
 
     async function respondToAttendanceRequest(requestId, decision, button, status, motivo = '') {
-        button.disabled = true;
+        const siblingDecision = decision === 'aceptar' ? 'reject' : 'accept';
+        const sibling = button.parentElement.querySelector(`[data-request-decision="${siblingDecision}"]`);
+        const buttons = [button, sibling].filter(Boolean);
+        const labels = buttons.map(item => item.textContent);
+        buttons.forEach((item, index) => {
+            item.disabled = true;
+            if (index === 0) item.textContent = 'Procesando…';
+        });
         try {
             const response = await fetch(`/api/asistencias/solicitudes/${encodeURIComponent(requestId)}/responder`, {
                 method: 'PATCH',
@@ -501,111 +544,159 @@ if (detailCard) {
             await loadOwnerActivity();
         } catch (error) {
             status.textContent = error.message;
-            button.disabled = false;
+            buttons.forEach((item, index) => {
+                item.disabled = false;
+                item.textContent = labels[index];
+            });
         }
     }
 
     updateCountdown();
     window.setInterval(updateCountdown, 1000);
 
-    if (token) {
-        const headers = {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-        };
-        const volunteerId = detailCard.dataset.volunteerId;
+    function showEnrollment(data) {
+        isEnrolled = true;
+        const inscriptionId = data.inscripcionId || '';
+        const joinControl = getJoinControl();
+        if (joinControl) joinControl.hidden = true;
+        if (cancelButton) {
+            cancelButton.dataset.inscriptionId = inscriptionId;
+            cancelButton.hidden = !inscriptionId || Date.now() >= startAt.getTime();
+        }
+        if (enrollmentNote && cancelButton && !cancelButton.hidden) {
+            enrollmentNote.textContent = 'Ya tienes tu lugar. Puedes cancelar tu participación antes de que inicie la actividad.';
+        }
+        attendanceResult.hidden = false;
+        if (data.asistio) {
+            attendanceResultTitle.textContent = '¡Gracias por participar!';
+            attendanceResultMessage.textContent = 'Tu asistencia quedó registrada en esta actividad.';
+            requestAttendanceButton.hidden = true;
+        } else if (data.falto) {
+            attendanceResultTitle.textContent = 'No se registró tu asistencia';
+            attendanceResultMessage.textContent = 'Lo sentimos, no se registró tu asistencia en este voluntariado al que te inscribiste.';
+            const solicitudPendiente = ['pendiente', 'aceptando'].includes(data.solicitudAsistenciaEstado);
+            requestAttendanceButton.hidden = false;
+            requestAttendanceButton.disabled = solicitudPendiente;
+            requestAttendanceButton.textContent = solicitudPendiente
+                ? 'Solicitud enviada al propietario'
+                : 'Solicitar revisión al propietario';
+        } else {
+            attendanceResultTitle.textContent = 'Inscripción confirmada';
+            attendanceResultMessage.textContent = nowWithinEvent()
+                ? 'Estás inscrito. Registra tu asistencia antes de que termine la actividad.'
+                : 'Tu inscripción está guardada. La asistencia se podrá registrar durante el horario del evento.';
+            requestAttendanceButton.hidden = true;
+        }
+        updateCountdown();
+    }
 
-        axios.get(`/api/inscripciones/voluntariado/${encodeURIComponent(volunteerId)}/mia`, { headers })
-            .then(async ({ data }) => {
-                if (!data.inscrito) return;
-                isEnrolled = true;
-                const joinControl = getJoinControl();
-                if (joinControl) joinControl.hidden = true;
-                if (cancelButton) {
-                    cancelButton.dataset.inscriptionId = data.inscripcionId;
-                    cancelButton.hidden = new Date() >= startAt;
-                }
-                if (enrollmentNote && cancelButton && !cancelButton.hidden) {
-                    enrollmentNote.textContent = 'Ya tienes tu lugar. Puedes cancelar tu participación antes de que inicie la actividad.';
-                }
-                attendanceResult.hidden = false;
-                if (data.asistio) {
-                    attendanceResultTitle.textContent = '¡Gracias por participar!';
-                    attendanceResultMessage.textContent = 'Tu asistencia quedó registrada en esta actividad.';
-                    requestAttendanceButton.hidden = true;
-                } else if (data.falto) {
-                    attendanceResultTitle.textContent = 'No se registró tu asistencia';
-                    attendanceResultMessage.textContent = 'Lo sentimos, no se registró tu asistencia en este voluntariado al que te inscribiste.';
-                    const solicitudPendiente = ['pendiente', 'aceptando'].includes(data.solicitudAsistenciaEstado);
-                    requestAttendanceButton.hidden = false;
-                    requestAttendanceButton.disabled = solicitudPendiente;
-                    requestAttendanceButton.textContent = solicitudPendiente
-                        ? 'Solicitud enviada al propietario'
-                        : 'Solicitar revisión al propietario';
-                } else {
-                    attendanceResultTitle.textContent = 'Inscripción confirmada';
-                    attendanceResultMessage.textContent = nowWithinEvent()
-                        ? 'Estás inscrito. Registra tu asistencia antes de que termine la actividad.'
-                        : 'Tu inscripción está guardada. La asistencia se podrá registrar durante el horario del evento.';
-                    requestAttendanceButton.hidden = true;
-                }
-            })
-            .catch(error => {
-                if (error.response?.status !== 401) {
-                    console.error('No se pudo consultar la inscripción al voluntariado.', error);
-                    message.textContent = 'No se pudo consultar tu estado de inscripción.';
-                }
-            });
-
-        cancelButton?.addEventListener('click', async () => {
-            if (!window.confirm('¿Quieres cancelar tu participación en este voluntariado?')) return;
-            cancelButton.disabled = true;
-            message.textContent = '';
-            try {
-                const { data } = await axios.post(
-                    `/api/inscripciones/${encodeURIComponent(cancelButton.dataset.inscriptionId)}/cancelar`,
-                    {},
-                    { headers },
-                );
-                cancelButton.hidden = true;
-                isEnrolled = false;
-                const joinControl = getJoinControl();
-                if (joinControl && initialJoinLink) {
-                    joinControl.replaceWith(initialJoinLink.cloneNode(true));
-                }
-                cancelButton.dataset.inscriptionId = '';
-                if (enrollmentNote) enrollmentNote.textContent = 'Puedes volver a inscribirte si cambias de opinión.';
-                message.textContent = data.message;
-            } catch (error) {
-                message.textContent = error.response?.data?.message || 'No se pudo cancelar tu participación.';
-            } finally {
-                cancelButton.disabled = false;
+    async function loadEnrollmentStatus() {
+        if (!token) return null;
+        try {
+            const { data } = await axios.get(
+                `/api/inscripciones/voluntariado/${encodeURIComponent(volunteerId)}/mia`,
+                { headers: attendanceHeaders() },
+            );
+            if (!data.inscrito) return false;
+            showEnrollment(data);
+            return true;
+        } catch (error) {
+            if (error.response?.status !== 401) {
+                console.error('No se pudo consultar la inscripción al voluntariado.', error);
+                message.textContent = 'No se pudo consultar tu estado de inscripción.';
             }
-        });
+            return null;
+        }
+    }
 
-        document.addEventListener('regenera:inscription-created', event => {
-            if (event.detail?.voluntariadoId !== volunteerId) return;
-            isEnrolled = true;
+    cancelButton?.addEventListener('click', async () => {
+        if (!token || !cancelButton.dataset.inscriptionId || cancelButton.disabled) return;
+        cancelDialogStatus.textContent = '';
+        cancelDialogConfirm.disabled = false;
+        cancelDialogConfirm.textContent = 'Cancelar participación';
+        cancelDialog.showModal();
+    });
+
+    cancelDialogDismiss?.addEventListener('click', () => cancelDialog.close());
+
+    cancelDialogConfirm?.addEventListener('click', async () => {
+        if (!token || !cancelButton.dataset.inscriptionId || cancelDialogConfirm.disabled) return;
+        const originalLabel = cancelButton.textContent;
+        cancelButton.disabled = true;
+        cancelButton.textContent = 'Cancelando…';
+        cancelDialogConfirm.disabled = true;
+        cancelDialogConfirm.textContent = 'Cancelando…';
+        cancelDialogStatus.textContent = '';
+        message.textContent = '';
+        try {
+            const { data } = await axios.post(
+                `/api/inscripciones/${encodeURIComponent(cancelButton.dataset.inscriptionId)}/cancelar`,
+                {},
+                { headers: attendanceHeaders() },
+            );
+            updateCapacity(-1);
+            cancelButton.hidden = true;
+            cancelButton.dataset.inscriptionId = '';
+            isEnrolled = false;
+            attendanceResult.hidden = true;
             const joinControl = getJoinControl();
-            if (joinControl) joinControl.hidden = true;
-            if (cancelButton) {
-                cancelButton.dataset.inscriptionId = event.detail.inscripcionId || '';
-                cancelButton.hidden = !event.detail.inscripcionId || new Date() >= startAt;
+            if (joinControl && initialJoinLink) {
+                const restoredLink = initialJoinLink.cloneNode(true);
+                restoredLink.hidden = false;
+                joinControl.replaceWith(restoredLink);
             }
-            if (enrollmentNote) enrollmentNote.textContent = 'Ya tienes tu lugar. Puedes cancelar tu participación antes de que inicie la actividad.';
-        });
+            if (enrollmentNote) enrollmentNote.textContent = 'Puedes volver a inscribirte si cambias de opinión.';
+            message.textContent = data.message || 'Participación cancelada.';
+            cancelDialog.close();
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'No se pudo cancelar tu participación.';
+            cancelDialogStatus.textContent = errorMessage;
+            message.textContent = errorMessage;
+        } finally {
+            cancelButton.disabled = false;
+            cancelButton.textContent = originalLabel;
+            cancelDialogConfirm.disabled = false;
+            cancelDialogConfirm.textContent = 'Cancelar participación';
+        }
+    });
 
-        requestAttendanceButton?.addEventListener('click', async () => {
-            requestAttendanceButton.disabled = true;
-            try {
-                const { data } = await axios.post('/api/asistencias/solicitudes', { voluntariadoId: volunteerId }, { headers });
-                attendanceResultMessage.textContent = data.message || 'Enviamos tu solicitud al propietario.';
-                requestAttendanceButton.textContent = 'Solicitud enviada al propietario';
-            } catch (error) {
-                attendanceResultMessage.textContent = error.response?.data?.message || 'No se pudo enviar la solicitud.';
-                requestAttendanceButton.disabled = false;
-            }
-        });
+    requestAttendanceButton?.addEventListener('click', async () => {
+        if (!token || requestAttendanceButton.disabled) return;
+        const originalLabel = requestAttendanceButton.textContent;
+        requestAttendanceButton.disabled = true;
+        requestAttendanceButton.textContent = 'Enviando solicitud…';
+        try {
+            const { data } = await axios.post('/api/asistencias/solicitudes', { voluntariadoId: volunteerId }, { headers: attendanceHeaders() });
+            attendanceResultMessage.textContent = data.message || 'Enviamos tu solicitud al propietario.';
+            requestAttendanceButton.textContent = 'Solicitud enviada al propietario';
+        } catch (error) {
+            attendanceResultMessage.textContent = error.response?.data?.message || 'No se pudo enviar la solicitud.';
+            requestAttendanceButton.disabled = false;
+            requestAttendanceButton.textContent = originalLabel;
+        }
+    });
+
+    document.addEventListener('regenera:inscription-created', event => {
+        if (event.detail?.voluntariadoId !== volunteerId || isEnrolled) return;
+        if (!event.detail?.alreadyEnrolled) updateCapacity(1);
+        showEnrollment({ inscrito: true, inscripcionId: event.detail.inscripcionId || '' });
+    });
+
+    async function refreshAfterAuthentication() {
+        token = sessionStorage.getItem('regenera_access_token');
+        if (!token) return;
+        await Promise.all([loadVolunteerPermissions(), loadEnrollmentStatus()]);
+        startOwnerActivityPolling();
+    }
+
+    document.addEventListener('regenera:auth-changed', event => {
+        if (event.detail?.user) void refreshAfterAuthentication();
+    });
+
+    if (token) {
+        Promise.all([loadVolunteerPermissions(), loadEnrollmentStatus()])
+            .then(startOwnerActivityPolling)
+            .catch(error => console.error('No se pudo inicializar la actividad del voluntariado.', error));
     }
 
     function nowWithinEvent() {

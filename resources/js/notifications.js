@@ -121,7 +121,10 @@ if (drawer) {
             render();
         });
     });
-    drawer.querySelector('[data-notification-mark-all]').addEventListener('click', async () => {
+    drawer.querySelector('[data-notification-mark-all]').addEventListener('click', async event => {
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
         try {
             await axios.patch('/api/notificaciones/marcar-todas-leidas', {}, { headers: tokenHeaders() });
             notifications = notifications.map(item => item.esPropia ? { ...item, leida: true } : item);
@@ -129,6 +132,8 @@ if (drawer) {
             render();
         } catch {
             status.textContent = 'No se pudieron marcar como leídas.';
+        } finally {
+            button.disabled = false;
         }
     });
     list.addEventListener('click', async event => {
@@ -139,6 +144,12 @@ if (drawer) {
             if (notification?.url) window.location.assign(notification.url);
             return;
         }
+        if (notification.leida) {
+            if (notification.url) window.location.assign(notification.url);
+            return;
+        }
+        if (item.disabled) return;
+        item.disabled = true;
         try {
             await axios.patch(`/api/notificaciones/${encodeURIComponent(item.dataset.notificationId)}/leida`, {}, { headers: tokenHeaders() });
             if (notification) notification.leida = true;
@@ -147,6 +158,7 @@ if (drawer) {
             else render();
         } catch {
             status.textContent = 'No se pudo actualizar la notificación.';
+            item.disabled = false;
         }
     });
     document.addEventListener('regenera:auth-changed', event => {

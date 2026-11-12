@@ -207,21 +207,21 @@
                             <span class="volunteer-detail-fact-icon">👥</span>
                             <span>
                                 <small>Disponibilidad de lugares</small>
-                                <strong>{{ $disponibles }} espacios disponibles</strong>
+                                <strong><span data-capacity-available>{{ $disponibles }}</span> espacios disponibles</strong>
                             </span>
                         </div>
 
                         <div class="volunteer-capacity-bar">
-                            <span style="width: {{ $ocupacion }}%"></span>
+                            <span data-capacity-progress style="width: {{ $ocupacion }}%"></span>
                         </div>
 
                         <div class="volunteer-capacity-stats">
                             <div>
-                                <strong>{{ $totalInscritos }}</strong>
+                                <strong data-capacity-enrolled>{{ $totalInscritos }}</strong>
                                 <small>Inscritos</small>
                             </div>
                             <div>
-                                <strong>{{ $disponibles }}</strong>
+                                <strong data-capacity-available-count>{{ $disponibles }}</strong>
                                 <small>Disponibles</small>
                             </div>
                             <div>
@@ -250,7 +250,7 @@
             @else
                 {{-- Acciones de inscripción --}}
                 <div class="volunteer-enrollment-actions" data-enrollment-actions>
-                    <a href="{{ route('login', ['redirect' => request()->getPathInfo()]) }}"
+                    <a href="{{ route('login', ['redirect' => request()->getPathInfo() . '?participar=1']) }}"
                         class="volunteer-cta"
                         data-voluntariado-id="{{ (string) $voluntariado->_id }}">
                         <span aria-hidden="true">🙌</span>
@@ -423,6 +423,19 @@
         <figcaption data-lightbox-caption>1 / {{ count($voluntariado->imagenes ?? []) }}</figcaption>
     </figure>
     <button type="button" class="volunteer-lightbox-arrow is-next" data-lightbox-step="1" aria-label="Imagen siguiente">›</button>
+</dialog>
+
+<dialog class="volunteer-cancel-dialog" data-enrollment-cancel-dialog aria-labelledby="cancelEnrollmentTitle" aria-describedby="cancelEnrollmentDescription">
+    <div class="volunteer-cancel-dialog-content">
+        <span class="volunteer-cancel-dialog-icon" aria-hidden="true">!</span>
+        <h2 id="cancelEnrollmentTitle">Cancelar participación</h2>
+        <p id="cancelEnrollmentDescription">¿Quieres cancelar tu lugar en este voluntariado? El cupo quedará disponible para otra persona.</p>
+        <p class="volunteer-cancel-dialog-status" data-enrollment-cancel-status role="status" aria-live="polite"></p>
+        <div class="volunteer-cancel-dialog-actions">
+            <button type="button" class="button button-secondary" data-enrollment-cancel-dismiss>Conservar mi lugar</button>
+            <button type="button" class="button button-danger" data-enrollment-cancel-confirm>Cancelar participación</button>
+        </div>
+    </div>
 </dialog>
 
 <footer class="page-footer">

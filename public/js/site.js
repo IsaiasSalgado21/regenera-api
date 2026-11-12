@@ -112,25 +112,129 @@
         });
     }
 
+    function clearEnrollmentReturnFlag() {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has('participar')) return;
+        url.searchParams.delete('participar');
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    async function submitEnrollment(button) {
+        if (button.disabled) return;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        const originalLabel = button.textContent;
+        const message = document.getElementById('enrollmentMessage');
+        if (message) message.textContent = 'Verificando tu inscripción…';
+
+        try {
+            const volunteerId = button.dataset.voluntariadoId;
+            const statusResponse = await fetch(`/api/inscripciones/voluntariado/${encodeURIComponent(volunteerId)}/mia`, {
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token()}`,
+                },
+            });
+            const enrollment = await statusResponse.json().catch(() => ({}));
+            if (!statusResponse.ok) {
+                const error = new Error(enrollment.message || 'No se pudo verificar tu inscripción.');
+                error.status = statusResponse.status;
+                throw error;
+            }
+            if (enrollment.inscrito) {
+                button.textContent = 'Inscripción registrada';
+                button.removeAttribute('aria-busy');
+                if (message) message.textContent = 'Ya tienes una inscripción activa para este voluntariado.';
+                document.dispatchEvent(new CustomEvent('regenera:inscription-created', {
+                    detail: {
+                        voluntariadoId: volunteerId,
+                        inscripcionId: enrollment.inscripcionId || '',
+                        alreadyEnrolled: true,
+                    },
+                }));
+                return;
+            }
+
+            if (message) message.textContent = 'Registrando tu participación…';
+            const response = await fetch('/api/inscripciones', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token()}`,
+                },
+                body: JSON.stringify({ voluntariadoId: button.dataset.voluntariadoId }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const error = new Error(data.message || 'No se pudo registrar la inscripción.');
+                error.status = response.status;
+                throw error;
+            }
+
+            button.textContent = 'Inscripción registrada';
+            button.removeAttribute('aria-busy');
+            if (message) message.textContent = data.message || 'Inscripción registrada correctamente.';
+            clearEnrollmentReturnFlag();
+            document.dispatchEvent(new CustomEvent('regenera:inscription-created', {
+                detail: {
+                    voluntariadoId: volunteerId,
+                    inscripcionId: data.inscripcion?.id || data.inscripcion?._id || '',
+                },
+            }));
+        } catch (error) {
+            console.error('No se pudo completar la inscripción.', error);
+            if (message) message.textContent = error.message || 'No se pudo completar la inscripción.';
+            if (error.status === 401) {
+                sessionStorage.removeItem('regenera_access_token');
+                document.dispatchEvent(new CustomEvent('regenera:auth-required', {
+                    detail: {
+                        mode: 'login',
+                        intent: { type: 'enrollment', voluntariadoId: button.dataset.voluntariadoId },
+                    },
+                }));
+            }
+            button.disabled = false;
+            button.textContent = originalLabel;
+            button.removeAttribute('aria-busy');
+        }
+    }
+
+    function beginEnrollment(link) {
+        if (!link || link.dataset.enrollmentPending === 'true') return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = link.className;
+        button.dataset.voluntariadoId = link.dataset.voluntariadoId;
+        button.dataset.enrollmentPending = 'true';
+        button.textContent = link.textContent.trim();
+        link.replaceWith(button);
+        button.addEventListener('click', () => submitEnrollment(button));
+        void submitEnrollment(button);
+    }
+
     document.addEventListener("regenera:auth-changed", event => {
         const user = event.detail?.user;
         if (!user) return;
         updateNavigation(user);
 
         if (event.detail?.intent?.type === "enrollment") {
-            const link = [...document.querySelectorAll("[data-voluntariado-id]")]
+            const control = [...document.querySelectorAll("[data-voluntariado-id]")]
                 .find(item => item.dataset.voluntariadoId === event.detail.intent.voluntariadoId);
-            if (link?.tagName === "A") {
-                link.click();
-                const button = [...document.querySelectorAll("[data-voluntariado-id]")]
-                    .find(item => item.dataset.voluntariadoId === event.detail.intent.voluntariadoId);
-                button?.click();
-            }
+            if (control?.tagName === "A") beginEnrollment(control);
+            else if (control?.tagName === "BUTTON") void submitEnrollment(control);
         }
     });
 
     currentUser()
-        .then(updateNavigation)
+        .then(user => {
+            updateNavigation(user);
+            const returningToParticipate = new URLSearchParams(window.location.search).get('participar') === '1';
+            if (!user || !returningToParticipate) return;
+            const link = document.querySelector('[data-voluntariado-id]');
+            if (link?.tagName === 'A') beginEnrollment(link);
+            else clearEnrollmentReturnFlag();
+        })
         .catch(error => console.error("No se pudo verificar la sesión.", error));
 
     document.addEventListener("click", async event => {
@@ -174,45 +278,7 @@
             }));
             return;
         }
-
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = enrollmentLink.className;
-        button.dataset.voluntariadoId = enrollmentLink.dataset.voluntariadoId;
-        button.textContent = enrollmentLink.textContent;
-        enrollmentLink.replaceWith(button);
-        const message = document.getElementById("enrollmentMessage");
-
-        button.addEventListener("click", async () => {
-            button.disabled = true;
-            message.textContent = "";
-            try {
-                const response = await fetch("/api/inscripciones", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                        Authorization: `Bearer ${token()}`,
-                    },
-                    body: JSON.stringify({ voluntariadoId: button.dataset.voluntariadoId }),
-                });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.message || "No se pudo registrar la inscripción.");
-
-                button.textContent = "Inscripción registrada";
-                message.textContent = data.message || "Inscripción registrada correctamente.";
-                document.dispatchEvent(new CustomEvent("regenera:inscription-created", {
-                    detail: {
-                        voluntariadoId: button.dataset.voluntariadoId,
-                        inscripcionId: data.inscripcion?.id || data.inscripcion?._id || "",
-                    },
-                }));
-            } catch (error) {
-                console.error("No se pudo completar la inscripción.", error);
-                message.textContent = error.message;
-                button.disabled = false;
-            }
-        });
+        beginEnrollment(enrollmentLink);
     });
 
     const menuButton = document.getElementById("menuButton");

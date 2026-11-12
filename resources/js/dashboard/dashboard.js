@@ -2078,13 +2078,18 @@ function initializeDashboard() {
         byId('notificationToggle').setAttribute('aria-expanded', String(open));
         if (open) await loadNotifications(true);
     });
-    byId('markAllRead').addEventListener('click', async () => {
+    byId('markAllRead').addEventListener('click', async event => {
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
         try {
             await dashboardApi.markAllNotificationsRead();
             await loadNotifications(true);
             showNotice('Notificaciones marcadas como leídas.');
         } catch (error) {
             showNotice(error.message, 'error');
+        } finally {
+            button.disabled = false;
         }
     });
 

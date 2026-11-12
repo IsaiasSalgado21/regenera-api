@@ -459,6 +459,36 @@ html[data-theme="dark"] .volunteer-map-edge-link:focus-visible {
     color: #e7eee9;
 }
 
+html[data-theme="dark"] .volunteer-cancel-dialog {
+    border-color: #35473d;
+    background: #1b2822;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteer-cancel-dialog h2 {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteer-cancel-dialog p {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .volunteer-cancel-dialog-icon {
+    background: #1d3a2b;
+    color: #bce6c9;
+}
+
+html[data-theme="dark"] .volunteer-cancel-dialog .button-secondary {
+    border-color: #45594e;
+    background: #1b2822;
+    color: #d7e8dd;
+}
+
+html[data-theme="dark"] .volunteer-cancel-dialog .volunteer-cancel-dialog-status:not(:empty) {
+    background: #402723;
+    color: #ffc0b5;
+}
+
 html[data-theme="dark"] .volunteers-board-header h1,
 html[data-theme="dark"] .volunteer-column-heading h2 {
     color: #e7eee9;
