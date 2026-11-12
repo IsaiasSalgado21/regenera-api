@@ -30,27 +30,32 @@ class VoluntariadoController extends Controller
             ->get();
         $propios = collect();
         $inscritos = collect();
+        $todosVoluntariados = collect();
+        $esAdmin = $request->user()?->rol === 'admin';
 
-        if ($request->user() && $request->user()->rol !== 'admin') {
-            $organizadorId = (string) $request->user()->getAuthIdentifier();
+        if ($esAdmin) {
+            $todosVoluntariados = Voluntariado::query()->orderBy('fechaInicio')->get();
+        } elseif ($request->user()) {
+            $usuarioId = (string) $request->user()->getAuthIdentifier();
             $propios = Voluntariado::query()
-                ->where(function ($query) use ($organizadorId): void {
-                    $query->where('organizadorId', $organizadorId);
-                    if (preg_match('/^[a-f0-9]{24}$/i', $organizadorId)) {
-                        $query->orWhere('organizadorId', new ObjectId($organizadorId));
+                ->where(function ($query) use ($usuarioId): void {
+                    $query->where('organizadorId', $usuarioId);
+                    if (preg_match('/^[a-f0-9]{24}$/i', $usuarioId)) {
+                        $query->orWhere('organizadorId', new ObjectId($usuarioId));
                     }
                 })
-                ->whereIn('estado', ['pendiente', 'publicado', 'rechazado'])
                 ->orderBy('fechaInicio')
                 ->get();
 
             $propiosIds = $propios->map(fn (Voluntariado $item) => (string) $item->_id)->all();
             $voluntariados = $voluntariados
                 ->reject(fn (Voluntariado $item) => in_array((string) $item->_id, $propiosIds, true))
+                ->filter(fn (Voluntariado $item) => ($inicio = $this->horario->inicio($item))
+                    && $inicio->greaterThan($this->horario->ahora()))
                 ->values();
 
             $misInscripciones = Inscripcion::query()
-                ->where('usuarioId', $organizadorId)
+                ->where('usuarioId', $usuarioId)
                 ->whereIn('estado', ['inscrita', 'activa', 'completada'])
                 ->orderBy('fechaInscripcion', 'desc')
                 ->get();
@@ -59,19 +64,29 @@ class VoluntariadoController extends Controller
                 if (! $voluntariado || ! in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true)) {
                     continue;
                 }
+                if ((string) $voluntariado->organizadorId === $usuarioId) {
+                    continue;
+                }
 
                 $item = $this->presentListItem($voluntariado);
                 $item['inscripcionId'] = (string) $inscripcion->getKey();
                 $item['estadoInscripcion'] = $inscripcion->estado;
                 $inscritos->push($item);
             }
+        } else {
+            $voluntariados = $voluntariados
+                ->filter(fn (Voluntariado $item) => ($inicio = $this->horario->inicio($item))
+                    && $inicio->greaterThan($this->horario->ahora()))
+                ->values();
         }
 
         return response()->json([
             'success' => true,
+            'esAdmin' => $esAdmin,
             'voluntariados' => $voluntariados->map(fn (Voluntariado $item) => $this->presentListItem($item)),
             'misVoluntariados' => $propios->map(fn (Voluntariado $item) => $this->presentListItem($item)),
             'misInscripciones' => $inscritos,
+            'todosVoluntariados' => $todosVoluntariados->map(fn (Voluntariado $item) => $this->presentListItem($item)),
         ]);
     }
 

@@ -33,28 +33,12 @@ class VoluntariadoPageController extends Controller
     {
         $query = Voluntariado::query()->where('estado', 'publicado');
 
-        // Filtro por categoría
-        if ($request->filled('categoria')) {
-            $query->where('categoria', $request->categoria);
-        }
-
-        // Búsqueda por texto libre
-        if ($request->filled('q')) {
-            $termino = $request->q;
-            $query->where(function ($sub) use ($termino) {
-                $sub->where('titulo', 'like', '%'.$termino.'%')
-                    ->orWhere('descripcion', 'like', '%'.$termino.'%');
-            });
-        }
-
-        // Filtro por lugar
         $lugares = Lugar::orderBy('nombre')->get();
-
-        if ($request->filled('lugarId')) {
-            $query->where('lugarId', $request->lugarId);
-        }
-
-        $voluntariados = $query->orderBy('fechaInicio', 'asc')->get();
+        $ahora = $this->horario->ahora();
+        $voluntariados = $query->orderBy('fechaInicio', 'asc')->get()
+            ->filter(fn (Voluntariado $voluntariado) => ($inicio = $this->horario->inicio($voluntariado))
+                && $inicio->greaterThan($ahora))
+            ->values();
         $organizadorIds = $voluntariados->pluck('organizadorId')
             ->filter()
             ->map(fn ($id) => (string) $id)
@@ -77,6 +61,7 @@ class VoluntariadoPageController extends Controller
                 'descripcion' => Str::limit(strip_tags($v->descripcion), 160),
                 'imagen' => $this->gridFsImages->url($v->imagen),
                 'categoria' => $v->categoria ?? null,
+                'lugar_id' => (string) $v->lugarId,
                 'lugar' => $lugar?->nombre,
                 'fecha' => $v->fechaInicio?->format('d/m/Y'),
                 'fecha_iso' => $v->fechaInicio?->format('Y-m-d'),
@@ -94,9 +79,6 @@ class VoluntariadoPageController extends Controller
         return view('voluntariados', [
             'voluntariados' => $voluntariados,
             'lugares' => $lugares,
-            'categoria' => $request->categoria,
-            'q' => $request->q,
-            'lugarId' => $request->lugarId,
         ]);
     }
 

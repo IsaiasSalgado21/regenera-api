@@ -309,6 +309,7 @@
             <section class="volunteer-owner-activity" data-owner-volunteer-activity hidden aria-labelledby="ownerActivityHeading">
                 <h3 id="ownerActivityHeading">Actividad del voluntariado</h3>
                 <p data-owner-activity-status role="status" aria-live="polite">Cargando participantes…</p>
+                <div class="volunteer-owner-activity-stats" data-owner-activity-stats></div>
                 <div class="volunteer-owner-participants" data-owner-activity-participants></div>
             </section>
 

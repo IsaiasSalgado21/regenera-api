@@ -24,7 +24,7 @@ export async function fetchMapLayer(layer, params = {}) {
         const response = await axios.get(endpoint, {
             params,
             signal: controller.signal,
-            headers: { Accept: 'application/json' },
+            headers: { Accept: 'application/json', ...tokenHeaders() },
         });
 
         if (!Array.isArray(response.data?.data)) {

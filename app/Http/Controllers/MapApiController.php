@@ -29,6 +29,7 @@ class MapApiController extends Controller
             'fecha_hasta' => 'sometimes|nullable|date|after_or_equal:fecha_desde',
             'lugar_id' => 'sometimes|nullable|string|max:100',
             'disponibles' => 'sometimes|nullable|boolean',
+            'voluntariado_id' => 'sometimes|nullable|string|max:100',
         ]);
 
         $lugares = Lugar::query()
@@ -38,6 +39,22 @@ class MapApiController extends Controller
             ->keyBy(fn (Lugar $lugar) => (string) $lugar->_id);
 
         $query = Voluntariado::query()->where('estado', 'publicado');
+
+        if (! empty($filters['voluntariado_id'])) {
+            $voluntariado = Voluntariado::find($filters['voluntariado_id']);
+            abort_unless($voluntariado, 404, 'El voluntariado no existe.');
+            $usuario = $request->user();
+            $esPropio = $usuario
+                && (string) $voluntariado->organizadorId === (string) $usuario->getAuthIdentifier();
+            abort_unless(
+                $voluntariado->estado === 'publicado'
+                    || $usuario?->rol === 'admin'
+                    || $esPropio,
+                403,
+                'No tienes permiso para consultar la ubicación de este voluntariado.',
+            );
+            $query = Voluntariado::query()->where('_id', $voluntariado->getKey());
+        }
 
         if (! empty($filters['categoria'])) {
             $query->where('categoria', $filters['categoria']);

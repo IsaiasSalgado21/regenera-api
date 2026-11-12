@@ -1,7 +1,15 @@
 const sections = document.querySelector('[data-personal-volunteer-sections]');
 const listOrder = new WeakMap();
+const pageNumbers = new WeakMap();
+const pageSize = 10;
+const searchInput = document.querySelector('[data-volunteer-search]');
+const categoryFilter = document.querySelector('[data-volunteer-category]');
+const placeFilter = document.querySelector('[data-volunteer-place]');
+const resetFilters = document.querySelector('[data-volunteer-reset]');
+const filterStatus = document.querySelector('[data-volunteer-filter-status]');
 
 if (sections) {
+    initializeVolunteerFilters();
     sortPublicVolunteers();
     updateTimers();
     window.setInterval(updateTimers, 1000);
@@ -17,8 +25,10 @@ async function loadPersonalVolunteers(token) {
         if (!response.ok) return;
 
         const data = await response.json();
+        const isAdmin = data.esAdmin === true;
         const owned = data.misVoluntariados || [];
         const enrolled = data.misInscripciones || [];
+        sections.classList.add('has-personal-columns');
         const publishedIds = new Set(owned
             .filter(item => item.estado === 'publicado')
             .map(item => String(item.id || item._id)));
@@ -27,9 +37,25 @@ async function loadPersonalVolunteers(token) {
             if (publishedIds.has(card.dataset.publicVolunteer)) card.remove();
         });
 
-        renderGroup('[data-owned-volunteers]', '[data-owned-volunteer-list]', owned, 'owner');
-        renderGroup('[data-enrolled-volunteers]', '[data-enrolled-volunteer-list]', enrolled, 'enrolled');
+        if (isAdmin) {
+            const allEvents = data.todosVoluntariados || [];
+            const ownedColumn = document.querySelector('[data-owned-volunteers]');
+            const heading = ownedColumn?.querySelector('#ownedVolunteersHeading');
+            const eyebrow = ownedColumn?.querySelector('.volunteer-column-heading > div > span');
+            const publicColumn = document.querySelector('[data-public-column]');
+            const enrolledColumn = document.querySelector('[data-enrolled-volunteers]');
+            sections.classList.add('is-admin-board');
+            if (heading) heading.textContent = 'Todos los voluntariados';
+            if (eyebrow) eyebrow.textContent = 'ADMINISTRACIÓN · TODOS LOS ESTADOS';
+            if (publicColumn) publicColumn.hidden = true;
+            if (enrolledColumn) enrolledColumn.hidden = true;
+            renderGroup('[data-owned-volunteers]', '[data-owned-volunteer-list]', allEvents, 'admin');
+        } else {
+            renderGroup('[data-owned-volunteers]', '[data-owned-volunteer-list]', owned, 'owner');
+            renderGroup('[data-enrolled-volunteers]', '[data-enrolled-volunteer-list]', enrolled, 'enrolled');
+        }
         updateTimers();
+        renderVolunteerBoard();
     } catch (error) {
         console.error('No se pudieron cargar los voluntariados personales.', error);
     }
@@ -38,24 +64,33 @@ async function loadPersonalVolunteers(token) {
 function renderGroup(sectionSelector, listSelector, items, type) {
     const section = document.querySelector(sectionSelector);
     const list = document.querySelector(listSelector);
-    if (!section || !list || !items.length) return;
+    if (!section || !list) return;
 
     section.hidden = false;
+    list.replaceChildren();
     [...items].sort(compareVolunteers).forEach(item => {
         const card = document.createElement('article');
         card.className = 'volunteer-card volunteer-owned-card';
+        card.dataset.volunteerItem = '';
         card.dataset.startAt = item.inicioIso || '';
         card.dataset.endAt = item.finIso || '';
         card.dataset.sortId = String(item.id || item._id || '');
+        card.dataset.category = item.categoria || '';
+        card.dataset.placeId = String(item.lugarId || '');
+        card.dataset.search = [item.titulo, item.descripcion, item.organizadorNombre, item.lugar?.nombre, item.categoria].join(' ');
         const content = document.createElement('div');
         content.className = 'volunteer-card-content';
 
-        if (type === 'owner') {
+        if (type === 'owner' || type === 'admin') {
             const status = document.createElement('span');
             status.className = `volunteer-owned-status is-${item.estado}`;
-            status.textContent = item.estado === 'pendiente'
-                ? 'Pendiente de aprobación'
-                : item.estado === 'rechazado' ? 'Rechazado' : 'Publicado';
+            status.textContent = ({
+                pendiente: 'Pendiente de aprobación',
+                rechazado: 'Requiere cambios',
+                publicado: 'Publicado',
+                cancelado: 'Cancelado',
+                finalizado: 'Finalizado',
+            })[item.estado] || 'Sin estado';
             content.append(status);
         }
 
@@ -93,6 +128,13 @@ function renderGroup(sectionSelector, listSelector, items, type) {
             content.append(link);
         }
         card.append(content);
+        const mapLink = document.createElement('a');
+        mapLink.className = 'volunteer-map-edge-link';
+        mapLink.href = `/mapa?voluntariado=${encodeURIComponent(item.id || item._id)}`;
+        mapLink.setAttribute('aria-label', `Ver ubicación en el mapa: ${item.titulo || 'Voluntariado'}`);
+        mapLink.title = 'Ver ubicación en el mapa';
+        mapLink.textContent = '⌖';
+        card.append(mapLink);
         list.append(card);
     });
 }
@@ -178,4 +220,86 @@ function updateTimers() {
     });
     sortPublicVolunteers();
     sortPersonalVolunteers();
+}
+
+function initializeVolunteerFilters() {
+    [searchInput, categoryFilter, placeFilter].filter(Boolean).forEach(input => {
+        input.addEventListener(input === searchInput ? 'input' : 'change', applyVolunteerFilters);
+    });
+    resetFilters?.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        if (categoryFilter) categoryFilter.value = '';
+        if (placeFilter) placeFilter.value = '';
+        applyVolunteerFilters();
+        searchInput?.focus();
+    });
+    document.querySelectorAll('[data-volunteer-pagination]').forEach(pagination => {
+        pagination.addEventListener('click', event => {
+            const button = event.target.closest('[data-page-step]');
+            if (!button || button.disabled) return;
+            const column = pagination.closest('[data-volunteer-column]');
+            if (!column) return;
+            pageNumbers.set(column, (pageNumbers.get(column) || 1) + Number(button.dataset.pageStep));
+            renderVolunteerBoard();
+        });
+    });
+    renderVolunteerBoard();
+}
+
+function normalizeFilterValue(value) {
+    return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().trim();
+}
+
+function renderVolunteerBoard() {
+    if (!sections) return;
+    const query = normalizeFilterValue(searchInput?.value);
+    const category = normalizeFilterValue(categoryFilter?.value);
+    const place = String(placeFilter?.value || '');
+    let matchingTotal = 0;
+    let displayedTotal = 0;
+
+    sections.querySelectorAll('[data-volunteer-column]').forEach(column => {
+        const cards = [...column.querySelectorAll('[data-volunteer-item]')];
+        const matching = cards.filter(card => {
+            const textMatches = !query || normalizeFilterValue(card.dataset.search).includes(query);
+            const categoryMatches = !category || normalizeFilterValue(card.dataset.category) === category;
+            const placeMatches = !place || card.dataset.placeId === place;
+            return textMatches && categoryMatches && placeMatches;
+        });
+        const totalPages = Math.max(1, Math.ceil(matching.length / pageSize));
+        const currentPage = Math.min(pageNumbers.get(column) || 1, totalPages);
+        pageNumbers.set(column, currentPage);
+        const start = (currentPage - 1) * pageSize;
+        const visibleCards = new Set(matching.slice(start, start + pageSize));
+        cards.forEach(card => { card.hidden = !visibleCards.has(card); });
+
+        const count = column.querySelector('[data-column-count]');
+        const empty = column.querySelector('[data-column-empty]');
+        const pagination = column.querySelector('[data-volunteer-pagination]');
+        if (count) count.textContent = String(matching.length);
+        if (empty) empty.hidden = matching.length > 0;
+        if (pagination) {
+            pagination.hidden = matching.length <= pageSize;
+            const label = pagination.querySelector('[data-page-label]');
+            const previous = pagination.querySelector('[data-page-step="-1"]');
+            const next = pagination.querySelector('[data-page-step="1"]');
+            if (label) label.textContent = `${currentPage} / ${totalPages}`;
+            if (previous) previous.disabled = currentPage <= 1;
+            if (next) next.disabled = currentPage >= totalPages;
+        }
+        matchingTotal += matching.length;
+        displayedTotal += visibleCards.size;
+    });
+
+    if (filterStatus) {
+        filterStatus.textContent = query || category || place
+            ? `${displayedTotal} visibles de ${matchingTotal} resultados en tus columnas.`
+            : `${matchingTotal} voluntariados disponibles y personales.`;
+    }
+    if (resetFilters) resetFilters.disabled = !query && !category && !place;
+}
+
+function applyVolunteerFilters() {
+    sections?.querySelectorAll('[data-volunteer-column]').forEach(column => pageNumbers.set(column, 1));
+    renderVolunteerBoard();
 }

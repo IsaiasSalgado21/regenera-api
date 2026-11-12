@@ -447,6 +447,66 @@ html[data-theme="dark"] .volunteer-map-unavailable {
     background: #22332a;
 }
 
+html[data-theme="dark"] .volunteer-map-edge-link {
+    border-color: #35473d;
+    background: #16231c;
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .volunteer-map-edge-link:hover,
+html[data-theme="dark"] .volunteer-map-edge-link:focus-visible {
+    background: #223b2e;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteers-board-header h1,
+html[data-theme="dark"] .volunteer-column-heading h2 {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(
+    .volunteers-board-header p,
+    .volunteers-board-eyebrow,
+    .volunteer-column-heading > div > span,
+    .volunteer-filter-bar label,
+    .volunteer-filter-status,
+    .volunteer-empty-state,
+    .volunteer-board-card .volunteer-author,
+    .volunteer-board-card .volunteer-meta,
+    .volunteer-board-card .volunteer-card-content > p:not(.volunteer-author),
+    .volunteer-pagination
+) {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .volunteer-column-heading {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .volunteer-column-heading strong {
+    background: #294536;
+    color: #d7ecdf;
+}
+
+html[data-theme="dark"] .volunteer-board-card h3,
+html[data-theme="dark"] .volunteer-board-card .volunteer-link {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteer-board-card .personal-volunteer-timer {
+    color: #f0d889;
+}
+
+html[data-theme="dark"] .volunteer-pagination button {
+    border-color: #45594e;
+    background: #1b2822;
+    color: #d7e8dd;
+}
+
+html[data-theme="dark"] .volunteer-empty-state {
+    border-color: #45594e;
+}
+
 html[data-theme="dark"] .volunteer-detail-page {
     background: #14201b;
 }

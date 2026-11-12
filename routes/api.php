@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']
 Route::middleware('auth:sanctum')->post('/auth/logout', [AuthController::class, 'logout']);
 
 Route::prefix('v1/mapa')->group(function () {
-    Route::get('/voluntariados', [MapApiController::class, 'voluntariados']);
+    Route::get('/voluntariados', [MapApiController::class, 'voluntariados'])->middleware('auth.optional');
     Route::get('/lugares', [MapApiController::class, 'lugares']);
     Route::get('/flora-fauna', [MapApiController::class, 'floraFauna']);
 });

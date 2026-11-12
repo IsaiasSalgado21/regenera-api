@@ -382,6 +382,7 @@ if (detailCard) {
         if (!token) return;
         const section = detailCard.querySelector('[data-owner-volunteer-activity]');
         const status = detailCard.querySelector('[data-owner-activity-status]');
+        const statsList = detailCard.querySelector('[data-owner-activity-stats]');
         const list = detailCard.querySelector('[data-owner-activity-participants]');
         try {
             const response = await fetch(`/api/admin/voluntariados/${encodeURIComponent(detailCard.dataset.volunteerId)}/dashboard`, {
@@ -390,8 +391,26 @@ if (detailCard) {
             if (!response.ok) return;
             const result = await response.json();
             const participants = result.data?.participantes || [];
+            const stats = result.data?.estadisticas || {};
             const eventStarted = result.data?.voluntariado?.iniciadoPorFecha === true;
             section.hidden = false;
+            statsList.replaceChildren();
+            [
+                ['Inscripciones totales', stats.totalInscripciones],
+                ['Asistieron', stats.asistencias],
+                ['Faltas', stats.faltas],
+                ['Cancelaciones', stats.canceladas],
+                ['Pendientes', stats.pendientes],
+            ].forEach(([label, value]) => {
+                const metric = document.createElement('div');
+                metric.className = 'volunteer-owner-activity-stat';
+                const amount = document.createElement('strong');
+                amount.textContent = String(Number(value) || 0);
+                const caption = document.createElement('span');
+                caption.textContent = label;
+                metric.append(amount, caption);
+                statsList.append(metric);
+            });
             status.textContent = participants.length
                 ? `${participants.length} personas inscritas`
                 : 'Aún no hay personas inscritas.';

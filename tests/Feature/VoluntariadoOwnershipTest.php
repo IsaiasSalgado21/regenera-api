@@ -83,6 +83,38 @@ class VoluntariadoOwnershipTest extends TestCase
             ->assertJsonCount(3, 'misVoluntariados');
     }
 
+    public function test_organizer_sees_own_inactive_events_enrollments_and_other_available_events(): void
+    {
+        $organizer = $this->user('organizador', true);
+        $this->voluntariado($organizer, 'publicado');
+        $cancelled = $this->voluntariado($organizer, 'cancelado');
+        $finished = $this->voluntariado($organizer, 'finalizado');
+        $participantOwner = $this->user();
+        $available = $this->voluntariado($participantOwner, 'publicado');
+        Inscripcion::create([
+            'usuarioId' => (string) $organizer->getAuthIdentifier(),
+            'voluntariadoId' => (string) $available->getKey(),
+            'claveRegistroActiva' => (string) $organizer->getAuthIdentifier().'|'.$available->getKey(),
+            'fechaInscripcion' => now(),
+            'estado' => 'inscrita',
+        ]);
+        Sanctum::actingAs($organizer);
+
+        $this->getJson('/api/voluntariados')->assertOk()
+            ->assertJsonCount(1, 'voluntariados')
+            ->assertJsonPath('voluntariados.0.id', (string) $available->getKey())
+            ->assertJsonCount(3, 'misVoluntariados')
+            ->assertJsonCount(1, 'misInscripciones')
+            ->assertJsonFragment([
+                'id' => (string) $cancelled->getKey(),
+                'estado' => 'cancelado',
+            ])
+            ->assertJsonFragment([
+                'id' => (string) $finished->getKey(),
+                'estado' => 'finalizado',
+            ]);
+    }
+
     public function test_admin_can_read_private_proposals(): void
     {
         $pending = $this->voluntariado($this->user(), 'pendiente');
@@ -93,6 +125,46 @@ class VoluntariadoOwnershipTest extends TestCase
         $this->getJson('/api/admin/voluntariados')
             ->assertOk()
             ->assertJsonFragment(['id' => (string) $pending->getKey(), 'estado' => 'pendiente']);
+    }
+
+    public function test_admin_personal_volunteers_endpoint_returns_every_volunteer(): void
+    {
+        $published = $this->voluntariado($this->user(), 'publicado');
+        $pending = $this->voluntariado($this->user(), 'pendiente');
+        $cancelled = $this->voluntariado($this->user(), 'cancelado');
+        $admin = $this->user('admin');
+        Sanctum::actingAs($admin);
+
+        $this->getJson('/api/voluntariados')->assertOk()
+            ->assertJsonPath('esAdmin', true)
+            ->assertJsonCount(3, 'todosVoluntariados')
+            ->assertJsonFragment(['id' => (string) $published->getKey(), 'estado' => 'publicado'])
+            ->assertJsonFragment(['id' => (string) $pending->getKey(), 'estado' => 'pendiente'])
+            ->assertJsonFragment(['id' => (string) $cancelled->getKey(), 'estado' => 'cancelado']);
+    }
+
+    public function test_owner_or_admin_can_open_own_private_volunteer_map_point(): void
+    {
+        $owner = $this->user('organizador', true);
+        $private = $this->voluntariado($owner, 'pendiente');
+        $private->forceFill([
+            'latitud' => 24.3217,
+            'longitud' => -110.3248,
+        ])->save();
+
+        Sanctum::actingAs($owner);
+        $this->getJson('/api/v1/mapa/voluntariados?voluntariado_id='.$private->getKey())
+            ->assertOk()
+            ->assertJsonPath('data.0.id', (string) $private->getKey());
+
+        Sanctum::actingAs($this->user());
+        $this->getJson('/api/v1/mapa/voluntariados?voluntariado_id='.$private->getKey())
+            ->assertForbidden();
+
+        Sanctum::actingAs($this->user('admin'));
+        $this->getJson('/api/v1/mapa/voluntariados?voluntariado_id='.$private->getKey())
+            ->assertOk()
+            ->assertJsonPath('data.0.id', (string) $private->getKey());
     }
 
     public function test_verified_organizer_can_read_own_pending_proposal(): void

@@ -182,7 +182,22 @@ if (mapElement) {
             if (selectedFeature) renderFeature(selectedFeature);
         });
 
-    Promise.all(layerNames.map(layer => loadLayer(layer))).then(() => {
+    const focusedVolunteerId = new URLSearchParams(window.location.search).get('voluntariado');
+    const focusedVolunteerFilters = focusedVolunteerId
+        ? { ...filters.getFilters('voluntariados'), voluntariado_id: focusedVolunteerId }
+        : undefined;
+
+    Promise.all(layerNames.map(layer => loadLayer(
+        layer,
+        layer === 'voluntariados' ? focusedVolunteerFilters : undefined,
+    ))).then(() => {
         fitMapToResults(map, layerNames.flatMap(layer => latestItems.get(layer)));
+        if (!focusedVolunteerId) return;
+
+        const selected = latestItems.get('voluntariados')
+            .find(item => String(item.id) === String(focusedVolunteerId));
+        if (!selected) return;
+        map.setView([selected.lat, selected.lng], 14);
+        showFeature(selected);
     });
 }
