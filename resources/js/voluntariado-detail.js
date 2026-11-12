@@ -135,6 +135,9 @@ if (detailCard) {
     const attendanceResultTitle = detailCard.querySelector('[data-participant-attendance-result-title]');
     const attendanceResultMessage = detailCard.querySelector('[data-participant-attendance-result-message]');
     const requestAttendanceButton = detailCard.querySelector('[data-request-attendance-review]');
+    const capacityCard = document.querySelector('[data-volunteer-capacity]');
+    const impactForm = document.querySelector('[data-volunteer-impact-form]');
+    const impactStatus = impactForm?.querySelector('[data-impact-status]');
     const cancelDialog = document.querySelector('[data-enrollment-cancel-dialog]');
     const cancelDialogConfirm = cancelDialog?.querySelector('[data-enrollment-cancel-confirm]');
     const cancelDialogDismiss = cancelDialog?.querySelector('[data-enrollment-cancel-dismiss]');
@@ -213,10 +216,10 @@ if (detailCard) {
     }
 
     function updateCapacity(delta) {
-        const enrolled = detailCard.querySelector('[data-capacity-enrolled]');
-        const available = detailCard.querySelector('[data-capacity-available-count]');
-        const availableLabel = detailCard.querySelector('[data-capacity-available]');
-        const progress = detailCard.querySelector('[data-capacity-progress]');
+        const enrolled = capacityCard?.querySelector('[data-capacity-enrolled]');
+        const available = capacityCard?.querySelector('[data-capacity-available-count]');
+        const availableLabel = capacityCard?.querySelector('[data-capacity-available]');
+        const progress = capacityCard?.querySelector('[data-capacity-progress]');
         if (!enrolled || !available) return;
 
         const total = Number(detailCard.querySelector('.volunteer-capacity-stats > div:last-child strong')?.textContent) || 0;
@@ -241,7 +244,11 @@ if (detailCard) {
             const isOwner = String(user.id) === String(detailCard.dataset.organizerId);
             canViewOwnerActivity = isAdmin || isOwner;
             const started = Date.now() >= startAt.getTime();
+            const ended = Date.now() >= endAt.getTime();
             const isCancelled = detailCard.dataset.volunteerState === 'cancelado';
+            const impactEligible = ended
+                && ['publicado', 'finalizado'].includes(detailCard.dataset.volunteerState)
+                && (isAdmin || (isOwner && user.rol === 'organizador'));
             const ownerActions = detailCard.querySelector('[data-volunteer-owner-actions]');
             const editLink = detailCard.querySelector('[data-volunteer-owner-edit]');
             const cancelEventButton = detailCard.querySelector('[data-volunteer-management-action="cancel"]');
@@ -251,6 +258,7 @@ if (detailCard) {
             const mayManage = isAdmin || (isOwner && !started);
 
             ownerActions.hidden = !mayManage;
+            if (impactForm) impactForm.hidden = !impactEligible;
             editLink.hidden = !(isAdmin || (isOwner && !started && user.rol === 'organizador'));
             cancelEventButton.hidden = !mayManage || isCancelled;
             deleteEventButton.hidden = !isAdmin;
@@ -406,10 +414,10 @@ if (detailCard) {
 
     async function loadOwnerActivity() {
         if (!token || !canViewOwnerActivity) return;
-        const section = detailCard.querySelector('[data-owner-volunteer-activity]');
-        const status = detailCard.querySelector('[data-owner-activity-status]');
-        const statsList = detailCard.querySelector('[data-owner-activity-stats]');
-        const list = detailCard.querySelector('[data-owner-activity-participants]');
+        const section = document.querySelector('[data-owner-volunteer-activity]');
+        const status = document.querySelector('[data-owner-activity-status]');
+        const statsList = document.querySelector('[data-owner-activity-stats]');
+        const list = document.querySelector('[data-owner-activity-participants]');
         try {
             const response = await fetch(`/api/admin/voluntariados/${encodeURIComponent(detailCard.dataset.volunteerId)}/dashboard`, {
                 headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
@@ -703,4 +711,35 @@ if (detailCard) {
         const now = new Date();
         return Number.isFinite(startAt.getTime()) && Number.isFinite(endAt.getTime()) && now >= startAt && now <= endAt;
     }
+
+    impactForm?.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submit = impactForm.querySelector('[data-impact-submit]');
+        if (submit.disabled) return;
+        const formData = new FormData(impactForm);
+        const originalLabel = submit.textContent;
+        submit.disabled = true;
+        submit.setAttribute('aria-busy', 'true');
+        submit.textContent = 'Registrando…';
+        impactStatus.textContent = '';
+
+        try {
+            const { data } = await axios.post(
+                `/api/admin/voluntariados/${encodeURIComponent(volunteerId)}/impactos`,
+                {
+                    tipo: formData.get('tipo'),
+                    cantidad: Number(formData.get('cantidad')),
+                    nota: String(formData.get('nota') || '').trim() || null,
+                },
+                { headers: attendanceHeaders() },
+            );
+            impactStatus.textContent = data.message || 'Impacto registrado correctamente.';
+            window.location.reload();
+        } catch (error) {
+            impactStatus.textContent = error.response?.data?.message || 'No se pudo registrar el impacto.';
+            submit.disabled = false;
+            submit.textContent = originalLabel;
+            submit.removeAttribute('aria-busy');
+        }
+    });
 }

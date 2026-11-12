@@ -191,47 +191,6 @@
                     @endif
                 </div>
 
-                {{-- Capacidad e inscripciones --}}
-                @if ($voluntariado->cupo)
-                    @php
-                        $totalCupo = (int) $voluntariado->cupo;
-                        $totalInscritos = (int) ($inscritosCount ?? 0);
-                        $disponibles = max(0, $totalCupo - $totalInscritos);
-                        $ocupacion = $totalCupo > 0
-                            ? min(100, ($totalInscritos / $totalCupo) * 100)
-                            : 0;
-                    @endphp
-
-                    <div class="volunteer-capacity">
-                        <div class="volunteer-capacity-heading">
-                            <span class="volunteer-detail-fact-icon">👥</span>
-                            <span>
-                                <small>Disponibilidad de lugares</small>
-                                <strong><span data-capacity-available>{{ $disponibles }}</span> espacios disponibles</strong>
-                            </span>
-                        </div>
-
-                        <div class="volunteer-capacity-bar">
-                            <span data-capacity-progress style="width: {{ $ocupacion }}%"></span>
-                        </div>
-
-                        <div class="volunteer-capacity-stats">
-                            <div>
-                                <strong data-capacity-enrolled>{{ $totalInscritos }}</strong>
-                                <small>Inscritos</small>
-                            </div>
-                            <div>
-                                <strong data-capacity-available-count>{{ $disponibles }}</strong>
-                                <small>Disponibles</small>
-                            </div>
-                            <div>
-                                <strong>{{ $totalCupo }}</strong>
-                                <small>Cupo total</small>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
                 @if ($voluntariado->estado)
                     <span class="volunteer-detail-status volunteer-detail-status--{{ $voluntariado->estado }}">
                         <span aria-hidden="true">●</span>
@@ -306,15 +265,42 @@
                 </button>
             </section>
 
+        </section>
+        </div>
+
+        @php
+            $totalCupo = (int) ($voluntariado->cupo ?? 0);
+            $totalInscritos = (int) ($inscritosCount ?? 0);
+            $disponibles = max(0, $totalCupo - $totalInscritos);
+            $ocupacion = $totalCupo > 0 ? min(100, ($totalInscritos / $totalCupo) * 100) : 0;
+        @endphp
+        <section class="volunteer-activity-card" aria-labelledby="volunteer-activity-title">
+            <header class="volunteer-activity-card-heading">
+                <div><span>SEGUIMIENTO</span><h2 id="volunteer-activity-title">Actividad del voluntariado</h2></div>
+                <span>{{ ucfirst($voluntariado->estado) }}</span>
+            </header>
+            <div class="volunteer-capacity" data-volunteer-capacity>
+                <div class="volunteer-capacity-heading">
+                    <span class="volunteer-detail-fact-icon">👥</span>
+                    <span>
+                        <small>Disponibilidad de lugares</small>
+                        <strong><span data-capacity-available>{{ $disponibles }}</span> espacios disponibles</strong>
+                    </span>
+                </div>
+                <div class="volunteer-capacity-bar"><span data-capacity-progress style="width: {{ $ocupacion }}%"></span></div>
+                <div class="volunteer-capacity-stats">
+                    <div><strong data-capacity-enrolled>{{ $totalInscritos }}</strong><small>Inscritos</small></div>
+                    <div><strong data-capacity-available-count>{{ $disponibles }}</strong><small>Disponibles</small></div>
+                    <div><strong>{{ $totalCupo }}</strong><small>Cupo total</small></div>
+                </div>
+            </div>
             <section class="volunteer-owner-activity" data-owner-volunteer-activity hidden aria-labelledby="ownerActivityHeading">
-                <h3 id="ownerActivityHeading">Actividad del voluntariado</h3>
+                <h3 id="ownerActivityHeading">Participantes y resultados</h3>
                 <p data-owner-activity-status role="status" aria-live="polite">Cargando participantes…</p>
                 <div class="volunteer-owner-activity-stats" data-owner-activity-stats></div>
                 <div class="volunteer-owner-participants" data-owner-activity-participants></div>
             </section>
-
         </section>
-        </div>
 
         <section class="volunteer-impact" aria-labelledby="volunteer-impact-title">
             <header class="volunteer-impact-heading">
@@ -322,6 +308,25 @@
                 <h2 id="volunteer-impact-title">Impacto de esta actividad</h2>
                 <p>Resultados reportados por el equipo organizador. Cada gráfica tiene su propia unidad y escala.</p>
             </header>
+
+                <form class="volunteer-impact-form" data-volunteer-impact-form hidden>
+                    <label>Tipo de impacto
+                        <select name="tipo" required>
+                            <option value="">Selecciona un resultado</option>
+                            @foreach ($impactoCatalogo as $tipo => $metric)
+                                <option value="{{ $tipo }}">{{ $metric['etiqueta'] }} ({{ $metric['unidad'] }})</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label>Cantidad
+                        <input name="cantidad" type="number" min="0.01" max="1000000000" step="0.01" required>
+                    </label>
+                    <label>Nota <span>Opcional</span>
+                        <input name="nota" type="text" maxlength="500" placeholder="Contexto del resultado">
+                    </label>
+                    <button class="button button-primary" type="submit" data-impact-submit>Registrar impacto</button>
+                    <p class="volunteer-impact-form-status" data-impact-status role="status" aria-live="polite"></p>
+                </form>
 
             @if (count($impacto['totales']))
                 <div class="volunteer-impact-grid">

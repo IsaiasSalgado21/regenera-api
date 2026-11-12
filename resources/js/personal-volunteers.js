@@ -127,7 +127,16 @@ function renderGroup(sectionSelector, listSelector, items, type) {
             link.textContent = 'Ver voluntariado';
             content.append(link);
         }
-        card.append(content);
+        if (['publicado', 'cancelado', 'finalizado'].includes(item.estado)) {
+            const detailLink = document.createElement('a');
+            detailLink.className = 'volunteer-owned-card-link';
+            detailLink.href = `/voluntariados/${encodeURIComponent(item.id || item._id)}`;
+            detailLink.setAttribute('aria-label', `Ver voluntariado: ${item.titulo || 'Voluntariado'}`);
+            detailLink.append(content);
+            card.append(detailLink);
+        } else {
+            card.append(content);
+        }
         const mapLink = document.createElement('a');
         mapLink.className = 'volunteer-map-edge-link';
         mapLink.href = `/mapa?voluntariado=${encodeURIComponent(item.id || item._id)}`;

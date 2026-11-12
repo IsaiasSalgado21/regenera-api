@@ -214,6 +214,99 @@
     gap: 8px;
 }
 
+.volunteer-activity-card {
+    margin: 28px 0 42px;
+    border: 1px solid #dfe8df;
+    border-radius: 12px;
+    padding: clamp(18px, 3vw, 28px);
+    background: #fff;
+}
+
+.volunteer-activity-card-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e4ebe4;
+}
+
+.volunteer-activity-card-heading > div > span {
+    color: #47745e;
+    font-size: .68rem;
+    font-weight: 800;
+}
+
+.volunteer-activity-card-heading h2 {
+    margin: 4px 0 0;
+    color: #183f30;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.45rem;
+}
+
+.volunteer-activity-card-heading > span:last-child {
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: #edf4ee;
+    color: #315e49;
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.volunteer-activity-card .volunteer-capacity {
+    margin-bottom: 18px;
+    border: 0;
+    border-bottom: 1px solid #e4ebe4;
+    padding: 0 0 18px;
+}
+
+.volunteer-impact-form {
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) minmax(120px, .5fr) minmax(200px, 1.2fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin: 0 0 24px;
+    border: 1px solid #dce8dd;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f7faf7;
+}
+
+.volunteer-impact-form label {
+    display: grid;
+    gap: 6px;
+    color: #53665b;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.volunteer-impact-form label span {
+    color: #78857d;
+    font-weight: 400;
+}
+
+.volunteer-impact-form input,
+.volunteer-impact-form select {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #cfdcd1;
+    border-radius: 5px;
+    padding: 0 10px;
+    background: #fff;
+    color: #253e31;
+    font: inherit;
+    font-weight: 400;
+}
+
+.volunteer-impact-form-status {
+    grid-column: 1 / -1;
+    min-height: 1em;
+    margin: 0;
+    color: #53665b;
+    font-size: .8rem;
+}
+
 .volunteer-owner-activity-stat {
     display: grid;
     gap: 4px;
@@ -1328,9 +1421,26 @@
     .volunteer-calendar-card {
         max-width: 460px;
     }
+
+    .volunteer-impact-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 560px) {
+    .volunteer-activity-card {
+        padding: 17px;
+    }
+
+    .volunteer-activity-card-heading h2 {
+        font-size: 1.25rem;
+    }
+
+    .volunteer-impact-form {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 13px;
+    }
+
     .volunteer-detail-page .page-hero {
         min-height: 360px;
     }
@@ -1593,6 +1703,23 @@
 .volunteer-home-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 42px;
+    padding: 0;
+}
+
+.volunteer-owned-card-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    grid-column: 1;
+    grid-row: 1;
+    color: inherit;
+    text-decoration: none;
+}
+
+.volunteer-owned-card-link:focus-visible {
+    outline: 3px solid #47745e;
+    outline-offset: -3px;
 }
 
 .volunteer-home-card .volunteer-card-link {

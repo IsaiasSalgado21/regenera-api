@@ -489,6 +489,45 @@ html[data-theme="dark"] .volunteer-cancel-dialog .volunteer-cancel-dialog-status
     color: #ffc0b5;
 }
 
+html[data-theme="dark"] .volunteer-activity-card {
+    border-color: #35473d;
+    background: #1b2822;
+}
+
+html[data-theme="dark"] .volunteer-activity-card-heading {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .volunteer-activity-card-heading h2 {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteer-activity-card-heading > div > span {
+    color: #9bd5bb;
+}
+
+html[data-theme="dark"] .volunteer-activity-card-heading > span:last-child {
+    background: #1d3a2b;
+    color: #bce6c9;
+}
+
+html[data-theme="dark"] .volunteer-impact-form {
+    border-color: #35473d;
+    background: #142019;
+}
+
+html[data-theme="dark"] .volunteer-impact-form label,
+html[data-theme="dark"] .volunteer-impact-form-status {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .volunteer-impact-form input,
+html[data-theme="dark"] .volunteer-impact-form select {
+    border-color: #45594e;
+    background: #101915;
+    color: #e7eee9;
+}
+
 html[data-theme="dark"] .volunteers-board-header h1,
 html[data-theme="dark"] .volunteer-column-heading h2 {
     color: #e7eee9;

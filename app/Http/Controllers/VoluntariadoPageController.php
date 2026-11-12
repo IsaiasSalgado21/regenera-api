@@ -116,7 +116,6 @@ class VoluntariadoPageController extends Controller
         $hasValidLocation = $this->boundary->contains($latitude, $longitude);
         $inicioFechaHora = $this->horario->inicio($voluntariado);
         $finFechaHora = $this->horario->fin($voluntariado);
-        $iniciado = $inicioFechaHora && $this->horario->ahora()->greaterThanOrEqualTo($inicioFechaHora);
         $isAdmin = $request->user()?->rol === 'admin';
         $isOwner = $request->user()
             && (string) $voluntariado->organizadorId === (string) $request->user()->getAuthIdentifier();
@@ -135,6 +134,7 @@ class VoluntariadoPageController extends Controller
             'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
             'isOwner' => (bool) $isOwner,
             'isAdmin' => $isAdmin,
+            'impactoCatalogo' => $this->impactos->catalog(),
             'impacto' => $impacto,
             'inscritosCount' => $inscritosCount,
             'lugar' => $lugar,
