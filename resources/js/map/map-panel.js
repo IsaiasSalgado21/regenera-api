@@ -21,6 +21,9 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
                     : 'Fauna';
         addText(panel, 'p', type, 'map-panel-type');
         addText(panel, 'h2', item.titulo || item.nombre || 'Registro del mapa');
+        if (item.tipo === 'voluntariado' && item.organizadorNombre) {
+            addText(panel, 'p', `Organiza: ${item.organizadorNombre}`);
+        }
 
         if (item.tipo === 'lugar' && item.imagen) {
             const image = document.createElement('img');
@@ -63,6 +66,7 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
         if (getAuthError()) reason = getAuthError();
         else if (!user) reason = 'Inicia sesión para consultar si puedes inscribirte.';
         else if (!['usuario', 'organizador'].includes(user.rol)) reason = 'Tu rol no permite inscribirte a voluntariados.';
+        else if (String(user.id || user._id) === String(item.organizadorId)) reason = 'Organizas este voluntariado y no puedes inscribirte.';
         else if (user.estado !== 'activo') reason = 'Tu cuenta no está activa.';
         else if (item.estado !== 'publicado') reason = 'Este voluntariado no está publicado.';
         else if (item.lleno) reason = 'Este voluntariado ya no tiene cupo disponible.';

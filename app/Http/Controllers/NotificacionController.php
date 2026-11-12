@@ -230,12 +230,17 @@ class NotificacionController extends Controller
             'organizador_verificado' => 'shield',
             'sistema' => 'info',
         ];
-        $entity = is_array($notificacion->entidad) ? $notificacion->entidad : [];
+        $entity = $notificacion->entidad;
+        $entityType = data_get($entity, 'tipo', data_get($entity, 'entidadtipo'));
+        $entityId = data_get($entity, 'id');
+        $entityData = $entityType && $entityId
+            ? ['tipo' => $entityType, 'id' => (string) $entityId]
+            : [];
         $url = data_get($notificacion->datos, 'url');
-        if (! $url && ($entity['tipo'] ?? null) === 'voluntariado') {
-            $url = url('/voluntariados/'.($entity['id'] ?? ''));
-        } elseif (! $url && ($entity['tipo'] ?? null) === 'articulo') {
-            $url = url('/articulos/'.($entity['id'] ?? ''));
+        if ($entityType === 'voluntariado' && $entityId) {
+            $url = '/voluntariados/'.rawurlencode((string) $entityId);
+        } elseif ($entityType === 'articulo' && $entityId) {
+            $url = '/articulos/'.rawurlencode((string) $entityId);
         }
 
         return [
@@ -243,7 +248,7 @@ class NotificacionController extends Controller
             'tipo' => (string) $notificacion->tipo,
             'titulo' => $notificacion->titulo,
             'mensaje' => $notificacion->mensaje,
-            'entidad' => $entity,
+            'entidad' => $entityData,
             'prioridad' => $notificacion->prioridad ?: 'baja',
             'leida' => (bool) $notificacion->leida,
             'fechaCreacion' => $notificacion->fechaCreacion?->toISOString(),

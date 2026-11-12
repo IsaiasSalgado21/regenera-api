@@ -25,6 +25,7 @@
             @endif
             <span class="page-label">PARTICIPA</span>
             <h1>{{ $voluntariado->titulo }}</h1>
+            <p class="volunteer-author">Organiza: {{ $organizadorNombre ?: 'Organizador' }}</p>
             <p>{{ \Illuminate\Support\Str::limit($voluntariado->descripcion, 180) }}</p>
         </div>
     </section>
@@ -97,11 +98,26 @@
             
         <section class="volunteer-detail-card"
             data-volunteer-id="{{ (string) $voluntariado->_id }}"
+            data-organizer-id="{{ (string) $voluntariado->organizadorId }}"
+            data-volunteer-state="{{ $voluntariado->estado }}"
             data-event-start-at="{{ $inicioFechaHora?->toIso8601String() ?? '' }}"
             data-event-end-at="{{ $finFechaHora?->toIso8601String() ?? '' }}">
 
             <span class="volunteer-detail-card-kicker">ÚNETE A LA ACCIÓN</span>
             <h2>Tu participación importa.</h2>
+
+            <div class="volunteer-owner-actions" data-volunteer-owner-actions hidden aria-label="Administrar voluntariado">
+                <a class="button button-secondary" data-volunteer-owner-edit hidden>
+                    Editar voluntariado
+                </a>
+                <button class="button button-secondary" type="button" data-volunteer-management-action="cancel" hidden>
+                    Cancelar voluntariado
+                </button>
+                <button class="button button-secondary" type="button" data-volunteer-management-action="delete" hidden>
+                    Eliminar voluntariado
+                </button>
+            </div>
+            <p data-volunteer-management-status role="status" aria-live="polite"></p>
 
             <div class="volunteer-detail-facts">
 
@@ -229,6 +245,8 @@
                 <p class="volunteer-cta-note" role="status">Este voluntariado fue cancelado.</p>
             @elseif ($voluntariadoFinalizado)
                 <p class="volunteer-cta-note" role="status">Este voluntariado ya finalizó.</p>
+            @elseif ($isOwner || $isAdmin)
+                <p class="volunteer-cta-note" role="status">{{ $isOwner ? 'Organizas este voluntariado; no puedes inscribirte.' : 'La administración no puede inscribirse a voluntariados.' }}</p>
             @else
                 {{-- Acciones de inscripción --}}
                 <div class="volunteer-enrollment-actions" data-enrollment-actions>
@@ -245,6 +263,8 @@
                         Cancelar participación
                     </button>
                 </div>
+
+                <p class="volunteer-cta-note" data-owner-enrollment-note hidden></p>
 
                 <p class="volunteer-cta-note" data-enrollment-note>
                     Súmate y forma parte del cambio en Baja California Sur.

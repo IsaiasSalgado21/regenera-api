@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lugar;
 use App\Models\Inscripcion;
 use App\Models\ImpactoVoluntariado;
+use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
@@ -13,6 +14,7 @@ use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use MongoDB\BSON\ObjectId;
 
 class VoluntariadoPageController extends Controller
 {
@@ -52,12 +54,26 @@ class VoluntariadoPageController extends Controller
             $query->where('lugarId', $request->lugarId);
         }
 
-        $voluntariados = $query->orderBy('fechaInicio', 'asc')->get()->map(function ($v) use ($lugares) {
+        $voluntariados = $query->orderBy('fechaInicio', 'asc')->get();
+        $organizadorIds = $voluntariados->pluck('organizadorId')
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values();
+        $storedOrganizadorIds = $organizadorIds->flatMap(fn (string $id) => preg_match('/^[a-f0-9]{24}$/i', $id)
+            ? [$id, new ObjectId($id)]
+            : [$id])->all();
+        $organizadores = User::query()
+            ->whereIn('_id', $storedOrganizadorIds)
+            ->get(['_id', 'nombre'])
+            ->keyBy(fn (User $user) => (string) $user->_id);
+        $voluntariados = $voluntariados->map(function ($v) use ($lugares, $organizadores) {
             $lugar = $lugares->firstWhere('_id', (string) $v->lugarId);
 
             return [
                 'id' => (string) $v->_id,
                 'titulo' => $v->titulo,
+                'organizadorNombre' => $organizadores->get((string) $v->organizadorId)?->nombre,
                 'descripcion' => Str::limit(strip_tags($v->descripcion), 160),
                 'imagen' => $this->gridFsImages->url($v->imagen),
                 'categoria' => $v->categoria ?? null,
@@ -95,7 +111,7 @@ class VoluntariadoPageController extends Controller
     /**
      * Detalle de un voluntariado.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $voluntariado = Voluntariado::find($id);
 
@@ -118,6 +134,10 @@ class VoluntariadoPageController extends Controller
         $hasValidLocation = $this->boundary->contains($latitude, $longitude);
         $inicioFechaHora = $this->horario->inicio($voluntariado);
         $finFechaHora = $this->horario->fin($voluntariado);
+        $iniciado = $inicioFechaHora && $this->horario->ahora()->greaterThanOrEqualTo($inicioFechaHora);
+        $isAdmin = $request->user()?->rol === 'admin';
+        $isOwner = $request->user()
+            && (string) $voluntariado->organizadorId === (string) $request->user()->getAuthIdentifier();
         $inscritosCount = Inscripcion::query()
             ->where('voluntariadoId', (string) $voluntariado->_id)
             ->whereIn('estado', ['inscrita', 'activa'])
@@ -130,6 +150,9 @@ class VoluntariadoPageController extends Controller
 
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
+            'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+            'isOwner' => (bool) $isOwner,
+            'isAdmin' => $isAdmin,
             'impacto' => $impacto,
             'inscritosCount' => $inscritosCount,
             'lugar' => $lugar,

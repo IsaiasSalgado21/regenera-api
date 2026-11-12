@@ -59,6 +59,28 @@ class VoluntariadoWorkflowTest extends TestCase
         ));
     }
 
+    public function test_owner_can_request_cancellation_for_pending_or_published_activity(): void
+    {
+        $workflow = new VoluntariadoWorkflow;
+        $owner = new User(['rol' => 'organizador']);
+
+        $this->assertSame('cancelado', $workflow->estadoTrasEdicion(
+            $owner,
+            new Voluntariado(['estado' => 'publicado']),
+            'cancelado',
+        ));
+        $this->assertSame('cancelado', $workflow->estadoTrasEdicion(
+            $owner,
+            new Voluntariado(['estado' => 'pendiente']),
+            'cancelado',
+        ));
+        $this->assertSame('pendiente', $workflow->estadoTrasEdicion(
+            $owner,
+            new Voluntariado(['estado' => 'rechazado']),
+            'cancelado',
+        ));
+    }
+
     public function test_absence_is_derived_only_after_a_non_cancelled_event_ends(): void
     {
         $workflow = new VoluntariadoWorkflow;

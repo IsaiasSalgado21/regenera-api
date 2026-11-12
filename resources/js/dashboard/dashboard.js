@@ -328,7 +328,7 @@ function initializeDashboard() {
         const list = cache.voluntariados;
 
         byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
-            const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
+            const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>Organiza: ${escapeHtml(voluntariado.organizadorNombre || 'No disponible')}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
             let actions = '';
             if (user.rol === 'admin') {
                 actions += action('Editar', 'edit-voluntariado', voluntariado.id);
@@ -337,7 +337,8 @@ function initializeDashboard() {
                     actions += action('Rechazar', 'reject-voluntariado', voluntariado.id, 'danger');
                 }
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
-            } else if (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado)) {
+            } else if (!voluntariado.iniciadoPorFecha
+                && (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado))) {
                 actions += action('Editar y reenviar', 'edit-voluntariado', voluntariado.id);
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
             }
@@ -404,7 +405,8 @@ function initializeDashboard() {
         const { voluntariado, estadisticas, participantes } = data;
         const ownsVolunteer = String(voluntariado.organizadorId) === String(user.id);
         const canEdit = user.rol === 'admin'
-            || (ownsVolunteer && (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado)));
+            || (ownsVolunteer && !voluntariado.iniciadoPorFecha
+                && (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado)));
         const image = voluntariado.imagen
             ? `<img class="volunteer-detail-cover" src="${escapeHtml(voluntariado.imagen)}" alt="" loading="lazy">`
             : '';
@@ -502,6 +504,7 @@ function initializeDashboard() {
                 <div class="volunteer-detail-hero-content">
                     <div class="volunteer-detail-kicker"><span class="volunteer-status ${voluntariado.estado === 'publicado' ? 'is-active' : 'is-inactive'}"><i></i>${escapeHtml(voluntariado.estado || 'Sin estado')}</span><span>${escapeHtml(voluntariado.categoria || 'Voluntariado')}</span></div>
                     <h2>${escapeHtml(voluntariado.titulo)}</h2>
+                    <p class="volunteer-author">Organiza: ${escapeHtml(voluntariado.organizador?.nombre || voluntariado.organizadorNombre || 'No disponible')}</p>
                     <p>${escapeHtml(voluntariado.descripcion || 'Sin descripción disponible.')}</p>
                     <div class="volunteer-hero-meta"><span>◷ ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>⌖ ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
                 </div>
@@ -2131,6 +2134,12 @@ function initializeDashboard() {
                     section.classList.toggle('is-active', selected);
                 });
                 await showVolunteerDetail(volunteerId, false);
+                const record = cache.voluntariados.find(item => String(item.id) === String(volunteerId));
+                if (new URLSearchParams(window.location.search).get('editar') === '1'
+                    && record
+                    && (user.rol === 'admin' || !record.iniciadoPorFecha)) {
+                    openForm('voluntariado', record);
+                }
             }
             if (user.rol === 'admin') await loadResource('users');
             await loadNotifications();

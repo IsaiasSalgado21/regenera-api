@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Articulo;
 use App\Models\FloraFauna;
+use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
 use App\Services\VoluntariadoHorario;
@@ -42,6 +43,7 @@ class HomeController extends Controller
                 return [
                     'id'         => (string) $voluntariado->_id,
                     'titulo'     => $voluntariado->titulo,
+                    'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
                     'descripcion'=> $voluntariado->descripcion,
                     'imagen'     => $this->gridFsImages->url($voluntariado->imagen),
                     'categoria'  => $voluntariado->estado,

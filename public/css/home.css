@@ -365,6 +365,11 @@
     font-size: 11px;
 }
 
+#inicio.home-page .volunteer-card-content .volunteer-author {
+    margin: -7px 0 10px;
+    font-size: 11px;
+}
+
 #inicio.home-page .volunteer-card-content p {
     font-size: 12px;
 }

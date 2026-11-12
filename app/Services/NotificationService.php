@@ -287,7 +287,7 @@ class NotificationService
                 'estadoSolicitud' => 'pendiente',
                 'inscripcionId' => $inscripcionId,
                 'solicitanteId' => (string) $participante->getAuthIdentifier(),
-                'url' => url('/voluntariados/'.(string) $voluntariado->_id),
+                'url' => '/voluntariados/'.(string) $voluntariado->_id,
             ],
         );
     }

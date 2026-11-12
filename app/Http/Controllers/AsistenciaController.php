@@ -130,20 +130,26 @@ class AsistenciaController extends Controller
             }
         }
 
-        if (($voluntariado->estado ?? null) !== 'publicado') {
+        $esManual = $validated['metodo'] === 'manual';
+        $estadosPermitidos = $esManual ? ['publicado', 'finalizado'] : ['publicado'];
+        if (! in_array($voluntariado->estado ?? null, $estadosPermitidos, true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'La asistencia solo puede registrarse en un voluntariado publicado.',
+                'message' => $esManual
+                    ? 'La asistencia manual solo puede registrarse en una actividad publicada o finalizada.'
+                    : 'La asistencia solo puede registrarse en un voluntariado publicado.',
             ], 409);
         }
 
         $inicio = $this->horario->inicio($voluntariado);
         $fin = $this->horario->fin($voluntariado);
         $ahora = $this->horario->ahora();
-        if (! $inicio || ! $fin || $ahora->lt($inicio) || $ahora->gt($fin)) {
+        if (! $inicio || ! $fin || $ahora->lt($inicio) || (! $esManual && $ahora->gt($fin))) {
             return response()->json([
                 'success' => false,
-                'message' => 'La asistencia solo puede registrarse durante el horario del voluntariado.',
+                'message' => $esManual
+                    ? 'La asistencia manual solo puede registrarse a partir del inicio del voluntariado.'
+                    : 'La asistencia solo puede registrarse durante el horario del voluntariado.',
             ], 409);
         }
 

@@ -54,6 +54,7 @@
                             </span>
 
                             <h3>{{ $voluntariado['titulo'] }}</h3>
+                            <p class="volunteer-author">Organiza: {{ $voluntariado['organizadorNombre'] ?: 'Organizador' }}</p>
 
                             <div class="volunteer-meta">
                                 @if ($voluntariado['fecha'])

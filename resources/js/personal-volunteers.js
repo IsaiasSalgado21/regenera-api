@@ -61,6 +61,9 @@ function renderGroup(sectionSelector, listSelector, items, type) {
 
         const title = document.createElement('h3');
         title.textContent = item.titulo || 'Voluntariado sin título';
+        const organizer = document.createElement('p');
+        organizer.className = 'volunteer-author';
+        organizer.textContent = `Organiza: ${item.organizadorNombre || 'No disponible'}`;
         const description = document.createElement('p');
         description.textContent = item.descripcion || 'Sin descripción disponible.';
         const details = document.createElement('div');
@@ -81,7 +84,7 @@ function renderGroup(sectionSelector, listSelector, items, type) {
         timer.dataset.startAt = item.inicioIso || '';
         timer.dataset.endAt = item.finIso || '';
 
-        content.append(title, description, details, timer);
+        content.append(title, organizer, description, details, timer);
         if (['publicado', 'cancelado', 'finalizado'].includes(item.estado)) {
             const link = document.createElement('a');
             link.className = 'volunteer-link';

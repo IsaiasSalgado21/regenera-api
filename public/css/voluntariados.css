@@ -580,6 +580,12 @@
     text-transform: uppercase;
 }
 
+.volunteer-detail-hero-content > .volunteer-author {
+    margin: -4px 0 12px;
+    color: #d3ded7;
+    font-size: .9rem;
+}
+
 .volunteer-detail-content {
     max-width: 1160px;
 }

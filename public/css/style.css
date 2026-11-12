@@ -1323,6 +1323,24 @@ footer {
     font-size: 12px;
 }
 
+.volunteer-card-content .volunteer-author {
+    margin: -7px 0 12px;
+    color: #53625a;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.volunteer-owner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px;
+}
+
+.volunteer-owner-actions[hidden] {
+    display: none;
+}
+
 .volunteer-card-content p {
     margin-bottom: 20px;
 

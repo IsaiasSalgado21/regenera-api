@@ -149,6 +149,64 @@ class VoluntariadoOwnershipTest extends TestCase
         );
     }
 
+    public function test_owner_cannot_register_for_own_volunteer(): void
+    {
+        $owner = $this->user('organizador', true);
+        $voluntariado = $this->voluntariado($owner, 'publicado');
+        Sanctum::actingAs($owner);
+
+        $this->postJson('/api/inscripciones', [
+            'voluntariadoId' => (string) $voluntariado->getKey(),
+        ])->assertForbidden()
+            ->assertJsonPath('message', 'No puedes inscribirte a un voluntariado que organizas.');
+    }
+
+    public function test_owner_can_cancel_own_volunteer_before_it_starts(): void
+    {
+        $owner = $this->user('organizador', true);
+        $voluntariado = $this->voluntariado($owner, 'publicado');
+        Sanctum::actingAs($owner);
+
+        $this->patchJson('/api/voluntariados/'.$voluntariado->getKey(), [
+            'estado' => 'cancelado',
+        ])->assertOk();
+
+        $this->assertSame('cancelado', $voluntariado->fresh()->estado);
+    }
+
+    public function test_only_admin_can_manage_or_delete_a_volunteer_after_it_starts(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-11 12:00:00', 'America/Mazatlan'));
+        $owner = $this->user('organizador', true);
+        $voluntariado = $this->voluntariado($owner, 'publicado');
+        $voluntariado->forceFill([
+            'fechaInicio' => Carbon::parse('2026-11-11', 'UTC'),
+            'fechaFin' => Carbon::parse('2026-11-11', 'UTC'),
+            'horaInicio' => '09:00',
+            'horaFin' => '11:00',
+        ])->save();
+        Sanctum::actingAs($owner);
+
+        $this->patchJson('/api/admin/voluntariados/'.$voluntariado->getKey(), [
+            'titulo' => 'Cambio no permitido',
+        ])->assertStatus(409);
+        $this->patchJson('/api/voluntariados/'.$voluntariado->getKey(), [
+            'estado' => 'cancelado',
+        ])->assertStatus(409);
+        $this->deleteJson('/api/admin/voluntariados/'.$voluntariado->getKey())
+            ->assertStatus(409);
+
+        Sanctum::actingAs($this->user('admin'));
+        $this->patchJson('/api/admin/voluntariados/'.$voluntariado->getKey(), [
+            'titulo' => 'Cambio autorizado por administración',
+        ])->assertOk();
+        $this->patchJson('/api/admin/voluntariados/'.$voluntariado->getKey(), [
+            'estado' => 'cancelado',
+        ])->assertOk();
+        $this->deleteJson('/api/admin/voluntariados/'.$voluntariado->getKey())
+            ->assertOk();
+    }
+
     public function test_normal_owner_can_read_approved_volunteer_activity_but_other_user_cannot(): void
     {
         $owner = $this->user();

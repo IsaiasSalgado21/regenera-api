@@ -77,6 +77,7 @@ if (page) {
         return `<article class="profile-list-item">
             <div class="profile-list-copy">
                     <h4>${title}</h4>
+                <p>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</p>
                 <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}${volunteer.lugar?.nombre ? ` · ${escapeHtml(volunteer.lugar.nombre)}` : ''}</p>
             </div>
                 <div class="profile-activity-status"><span class="profile-item-status">${escapeHtml(status)}</span>${requestButton}</div>
@@ -220,6 +221,7 @@ if (page) {
                 ? volunteers.map(volunteer => `<article class="profile-list-item">
                     <div class="profile-list-copy">
                         <h4><a href="/voluntariados/${encodeURIComponent(volunteer.id)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a></h4>
+                        <p>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</p>
                         <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}</p>
                     </div>
                     <span class="profile-item-status">${escapeHtml(volunteer.estado || 'Sin estado')}</span>

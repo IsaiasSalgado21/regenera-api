@@ -78,6 +78,11 @@ function openFeature(marker, item, onSelect) {
     const label = document.createElement('span');
     label.textContent = markerLabel(item);
     tooltip.appendChild(label);
+    if (item.tipo === 'voluntariado' && item.organizadorNombre) {
+        const organizer = document.createElement('small');
+        organizer.textContent = `Organiza: ${item.organizadorNombre}`;
+        tooltip.appendChild(organizer);
+    }
 
     if (item.tipo === 'lugar' && item.imagen) {
         const image = document.createElement('img');

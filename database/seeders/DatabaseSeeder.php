@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             RegeneraBCSSeeder::class,
             RegeneraCatalogSeeder::class,
+            VoluntariadoActividadDemoSeeder::class,
         ]);
     }
 }

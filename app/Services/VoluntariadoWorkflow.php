@@ -24,6 +24,10 @@ class VoluntariadoWorkflow
             return $estadoSolicitado ?? $voluntariado->estado ?? 'pendiente';
         }
 
+        if ($estadoSolicitado === 'cancelado' && in_array($voluntariado->estado, ['pendiente', 'publicado'], true)) {
+            return 'cancelado';
+        }
+
         if ($voluntariado->estado === 'rechazado') {
             return 'pendiente';
         }

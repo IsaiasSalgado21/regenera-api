@@ -143,6 +143,7 @@ class VoluntariadoController extends Controller
             $asistenciaPorUsuario->get((string) $inscripcion->usuarioId),
             $this->horario,
         ))->count();
+        $inicioEvento = $this->horario->inicio($voluntariado);
         $cupo = max(0, (int) ($voluntariado->cupo ?? 0));
         $asistentes = $asistenciasConfirmadas->count();
         $lugar = Lugar::find((string) $voluntariado->lugarId);
@@ -186,6 +187,7 @@ class VoluntariadoController extends Controller
             'data' => [
                 'voluntariado' => [
                     ...$this->present($voluntariado),
+                    'iniciadoPorFecha' => $inicioEvento?->lte($this->horario->ahora()) ?? false,
                     'finalizadoPorFecha' => $this->workflow->finalizado($voluntariado, $this->horario),
                     'cancelado' => $voluntariado->estado === 'cancelado',
                     'creadoEn' => $voluntariado->created_at?->toIso8601String(),
@@ -292,6 +294,7 @@ class VoluntariadoController extends Controller
     {
         $voluntariado = Voluntariado::findOrFail($id);
         $this->ensureCanManage($request, $voluntariado);
+        $this->ensureBeforeStartForOwner($request, $voluntariado);
         $validated = $request->validate($this->rules(true));
         $validated = $this->normalize($validated, true);
         if (array_key_exists('lugarId', $validated)) {
@@ -359,6 +362,7 @@ class VoluntariadoController extends Controller
     {
         $voluntariado = Voluntariado::findOrFail($id);
         $this->ensureCanManage($request, $voluntariado);
+        $this->ensureBeforeStartForOwner($request, $voluntariado);
         $this->auditoria->registrar(
             $request->user(),
             'eliminar',
@@ -453,6 +457,8 @@ class VoluntariadoController extends Controller
         return [
             'id' => (string) $voluntariado->_id,
             'titulo' => $voluntariado->titulo,
+            'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+            'iniciadoPorFecha' => $this->horario->inicio($voluntariado)?->lte($this->horario->ahora()) ?? false,
             'descripcion' => $voluntariado->descripcion,
             'categoria' => $voluntariado->categoria,
             'lugarId' => (string) $voluntariado->lugarId,
@@ -565,6 +571,20 @@ class VoluntariadoController extends Controller
         abort_unless(
             (string) $voluntariado->organizadorId === (string) $request->user()->getAuthIdentifier(),
             403,
+        );
+    }
+
+    private function ensureBeforeStartForOwner(Request $request, Voluntariado $voluntariado): void
+    {
+        if ($request->user()->rol === 'admin') {
+            return;
+        }
+
+        $inicio = $this->horario->inicio($voluntariado);
+        abort_if(
+            $inicio && $this->horario->ahora()->greaterThanOrEqualTo($inicio),
+            409,
+            'No puedes editar, cancelar o eliminar un voluntariado después de su inicio.',
         );
     }
 }

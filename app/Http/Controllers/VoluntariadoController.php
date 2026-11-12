@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inscripcion;
+use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
 use App\Services\NotificationService;
@@ -104,6 +105,7 @@ class VoluntariadoController extends Controller
     {
         $data = $voluntariado->toArray();
         $data['id'] = (string) $voluntariado->_id;
+        $data['organizadorNombre'] = User::find((string) $voluntariado->organizadorId)?->nombre;
         $data['imagen'] = $this->gridFsImages->url($voluntariado->imagen);
         $data['inicioIso'] = $this->horario->inicio($voluntariado)?->toIso8601String();
         $data['finIso'] = $this->horario->fin($voluntariado)?->toIso8601String();
@@ -193,6 +195,10 @@ class VoluntariadoController extends Controller
                     'finalizadoPorFecha',
                     $this->workflow->finalizado($voluntariado, $this->horario),
                 );
+                $voluntariado->setAttribute(
+                    'organizadorNombre',
+                    User::find((string) $voluntariado->organizadorId)?->nombre,
+                );
             }),
         ]);
     }
@@ -209,6 +215,7 @@ class VoluntariadoController extends Controller
         }
 
         $this->ensureCanManage($request, $voluntariado);
+        $this->ensureBeforeStartForOwner($request, $voluntariado);
 
         $validated = $request->validate([
             'titulo' => 'sometimes|required|string|max:150',
@@ -287,6 +294,7 @@ class VoluntariadoController extends Controller
         }
 
         $this->ensureCanManage($request, $voluntariado);
+        $this->ensureBeforeStartForOwner($request, $voluntariado);
 
         $voluntariado->delete();
 
@@ -302,6 +310,20 @@ class VoluntariadoController extends Controller
             $request->user()->rol === 'admin'
                 || (string) $voluntariado->organizadorId === (string) $request->user()->getAuthIdentifier(),
             403,
+        );
+    }
+
+    private function ensureBeforeStartForOwner(Request $request, Voluntariado $voluntariado): void
+    {
+        if ($request->user()->rol === 'admin') {
+            return;
+        }
+
+        $inicio = $this->horario->inicio($voluntariado);
+        abort_if(
+            $inicio && $this->horario->ahora()->greaterThanOrEqualTo($inicio),
+            409,
+            'No puedes editar, cancelar o eliminar un voluntariado después de su inicio.',
         );
     }
 }

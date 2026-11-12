@@ -204,6 +204,94 @@ if (detailCard) {
         };
     }
 
+    async function loadVolunteerPermissions() {
+        if (!token) return;
+
+        try {
+            const { data } = await axios.get('/api/auth/me', {
+                headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+            });
+            const user = data.usuario;
+            const isAdmin = user.rol === 'admin';
+            const isOwner = String(user.id) === String(detailCard.dataset.organizerId);
+            const started = Date.now() >= startAt.getTime();
+            const isCancelled = detailCard.dataset.volunteerState === 'cancelado';
+            const ownerActions = detailCard.querySelector('[data-volunteer-owner-actions]');
+            const editLink = detailCard.querySelector('[data-volunteer-owner-edit]');
+            const cancelEventButton = detailCard.querySelector('[data-volunteer-management-action="cancel"]');
+            const deleteEventButton = detailCard.querySelector('[data-volunteer-management-action="delete"]');
+            const enrollmentActions = detailCard.querySelector('[data-enrollment-actions]');
+            const ownerEnrollmentNote = detailCard.querySelector('[data-owner-enrollment-note]');
+            const mayManage = isAdmin || (isOwner && !started);
+
+            ownerActions.hidden = !mayManage;
+            editLink.hidden = !(isAdmin || (isOwner && !started && user.rol === 'organizador'));
+            cancelEventButton.hidden = !mayManage || isCancelled;
+            deleteEventButton.hidden = !isAdmin;
+
+            if (isAdmin || isOwner) {
+                const joinControl = getJoinControl();
+                if (joinControl) joinControl.hidden = true;
+                if (enrollmentActions) enrollmentActions.hidden = true;
+                if (ownerEnrollmentNote) {
+                    ownerEnrollmentNote.hidden = false;
+                    ownerEnrollmentNote.textContent = isOwner
+                        ? 'Organizas este voluntariado; no puedes inscribirte.'
+                        : 'La administración no puede inscribirse a voluntariados.';
+                }
+            }
+
+            if (editLink && !editLink.hidden) {
+                const dashboardPath = isAdmin ? '/admin/dashboard' : '/organizador/dashboard';
+                const volunteerId = encodeURIComponent(detailCard.dataset.volunteerId);
+                editLink.href = `${dashboardPath}?voluntariado=${volunteerId}&editar=1`;
+            }
+        } catch (error) {
+            if (error.response?.status !== 401) {
+                console.error('No se pudieron consultar los permisos del voluntariado.', error);
+            }
+        }
+    }
+
+    loadVolunteerPermissions();
+
+    detailCard.querySelectorAll('[data-volunteer-management-action]').forEach(button => {
+        button.addEventListener('click', async () => {
+            const action = button.dataset.volunteerManagementAction;
+            const managementStatus = detailCard.querySelector('[data-volunteer-management-status]');
+            const actionLabel = action === 'delete' ? 'eliminar' : 'cancelar';
+            if (!token) {
+                managementStatus.textContent = 'Inicia sesión para administrar este voluntariado.';
+                return;
+            }
+            if (!window.confirm(`¿Seguro que deseas ${actionLabel} este voluntariado?`)) return;
+
+            button.disabled = true;
+            try {
+                const volunteerId = encodeURIComponent(detailCard.dataset.volunteerId);
+                const deleting = action === 'delete';
+                const endpoint = deleting
+                    ? `/api/admin/voluntariados/${volunteerId}`
+                    : `/api/voluntariados/${volunteerId}`;
+                const response = await fetch(endpoint, {
+                    method: deleting ? 'DELETE' : 'PATCH',
+                    headers: attendanceHeaders(),
+                    ...(deleting ? {} : { body: JSON.stringify({ estado: 'cancelado' }) }),
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.message || `No se pudo ${actionLabel} el voluntariado.`);
+                if (deleting) {
+                    window.location.assign('/voluntariados');
+                    return;
+                }
+                window.location.reload();
+            } catch (error) {
+                managementStatus.textContent = error.message;
+                button.disabled = false;
+            }
+        });
+    });
+
     function extractCode(value) {
         try {
             const parsed = new URL(value);
@@ -302,6 +390,7 @@ if (detailCard) {
             if (!response.ok) return;
             const result = await response.json();
             const participants = result.data?.participantes || [];
+            const eventStarted = result.data?.voluntariado?.iniciadoPorFecha === true;
             section.hidden = false;
             status.textContent = participants.length
                 ? `${participants.length} personas inscritas`
@@ -318,8 +407,8 @@ if (detailCard) {
                     : participant.falto ? 'Falta' : 'Pendiente';
                 row.append(identity, attendance);
 
-                if (!participant.asistencia?.confirmada && !participant.falto
-                    && ['inscrita', 'activa'].includes(participant.estadoInscripcion)) {
+                if (eventStarted && !participant.asistencia?.confirmada
+                    && ['inscrita', 'activa', 'completada'].includes(participant.estadoInscripcion)) {
                     const button = document.createElement('button');
                     button.className = 'button button-secondary';
                     button.type = 'button';

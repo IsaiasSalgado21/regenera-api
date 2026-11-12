@@ -1388,6 +1388,12 @@
     line-height: 1.55;
 }
 
+.volunteer-detail-hero-content > .volunteer-author {
+    margin: 0 0 8px;
+    color: #d3ded7;
+    font-size: .9rem;
+}
+
 .volunteer-status {
     display: inline-flex;
     align-items: center;

@@ -115,6 +115,63 @@ class InscripcionCupoTest extends TestCase
         $this->assertSame(1, (int) $voluntariado->fresh()->inscritosActivos);
     }
 
+    public function test_owner_cannot_mark_attendance_manually_before_event_starts(): void
+    {
+        $now = \Carbon\Carbon::parse('2026-11-11 10:00:00', 'America/Mazatlan');
+        \Carbon\Carbon::setTestNow($now);
+        $organizadorId = $this->usuarioId();
+        $participante = $this->usuario();
+        $voluntariado = $this->voluntariado(1, 1);
+        $voluntariado->forceFill([
+            'organizadorId' => $organizadorId,
+            'fechaInicio' => \Carbon\Carbon::parse('2026-11-11', 'UTC'),
+            'fechaFin' => \Carbon\Carbon::parse('2026-11-11', 'UTC'),
+            'horaInicio' => '11:00',
+            'horaFin' => '13:00',
+        ])->save();
+        $this->inscripcionActiva($voluntariado, (string) $participante->getAuthIdentifier());
+        Sanctum::actingAs($this->usuario($organizadorId, 'organizador'));
+
+        $this->postJson('/api/asistencias', [
+            'metodo' => 'manual',
+            'usuarioId' => (string) $participante->getAuthIdentifier(),
+            'voluntariadoId' => (string) $voluntariado->getKey(),
+        ])->assertStatus(409)
+            ->assertJsonPath('message', 'La asistencia manual solo puede registrarse a partir del inicio del voluntariado.');
+
+        $this->assertSame(0, \App\Models\Asistencia::count());
+        $this->assertSame(1, (int) $voluntariado->fresh()->inscritosActivos);
+    }
+
+    public function test_owner_can_mark_attendance_manually_after_event_ends(): void
+    {
+        $now = \Carbon\Carbon::parse('2026-11-11 14:00:00', 'America/Mazatlan');
+        \Carbon\Carbon::setTestNow($now);
+        $organizadorId = $this->usuarioId();
+        $participante = $this->usuario();
+        $voluntariado = $this->voluntariado(1, 1);
+        $voluntariado->forceFill([
+            'organizadorId' => $organizadorId,
+            'estado' => 'finalizado',
+            'fechaInicio' => \Carbon\Carbon::parse('2026-11-11', 'UTC'),
+            'fechaFin' => \Carbon\Carbon::parse('2026-11-11', 'UTC'),
+            'horaInicio' => '11:00',
+            'horaFin' => '13:00',
+        ])->save();
+        $inscripcion = $this->inscripcionActiva($voluntariado, (string) $participante->getAuthIdentifier());
+        Sanctum::actingAs($this->usuario($organizadorId, 'organizador'));
+
+        $this->postJson('/api/asistencias', [
+            'metodo' => 'manual',
+            'usuarioId' => (string) $participante->getAuthIdentifier(),
+            'voluntariadoId' => (string) $voluntariado->getKey(),
+        ])->assertCreated();
+
+        $this->assertSame('inscrita', $inscripcion->fresh()->estado);
+        $this->assertSame(1, (int) $voluntariado->fresh()->inscritosActivos);
+        $this->assertSame(1, \App\Models\Asistencia::count());
+    }
+
     public function test_admin_cannot_reduce_capacity_below_active_registrations(): void
     {
         $voluntariado = $this->voluntariado(3, 2);

@@ -76,6 +76,13 @@ class InscripcionController extends Controller
             ], 404);
         }
 
+        if ((string) $voluntariado->organizadorId === (string) $usuario->getAuthIdentifier()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No puedes inscribirte a un voluntariado que organizas.',
+            ], 403);
+        }
+
         if (($voluntariado->estado ?? null) !== 'publicado') {
             return response()->json([
                 'success' => false,

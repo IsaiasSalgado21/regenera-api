@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FloraFauna;
 use App\Models\Inscripcion;
 use App\Models\Lugar;
+use App\Models\User;
 use App\Services\GridFsImageService;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Models\Voluntariado;
@@ -82,6 +83,8 @@ class MapApiController extends Controller
                 'id' => (string) $voluntariado->_id,
                 'tipo' => 'voluntariado',
                 'titulo' => $voluntariado->titulo,
+                'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+                'organizadorId' => (string) $voluntariado->organizadorId,
                 'descripcion' => $voluntariado->descripcion,
                 'imagen' => $imageUrls[0] ?? null,
                 'imagenes' => $imageUrls,
