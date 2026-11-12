@@ -1,5 +1,6 @@
 (() => {
     const modal = document.querySelector('[data-auth-modal]');
+    const apiUrl = path => `${document.querySelector('meta[name="api-base-url"]')?.content || ''}${path}`;
     let lastFocusedElement = null;
     let authIntent = null;
 
@@ -69,7 +70,7 @@
     }
 
     async function callApi(mode, payload) {
-        const response = await fetch(`/api/auth/${mode === 'register' ? 'register' : 'login'}`, {
+        const response = await fetch(apiUrl(`/auth/${mode === 'register' ? 'register' : 'login'}`), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

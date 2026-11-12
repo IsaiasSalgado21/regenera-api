@@ -46,6 +46,7 @@
             <button type="button" class="dashboard-tab" data-section="places">Lugares</button>
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
             <button type="button" class="dashboard-tab" data-section="voluntariados">Voluntariados</button>
+            <button type="button" class="dashboard-tab" data-section="impact-log" data-admin-only hidden>Bitácora de impacto</button>
             <button type="button" class="dashboard-tab" data-section="users" data-admin-only hidden>Usuarios</button>
         </nav>
 
@@ -380,6 +381,62 @@
                     <button class="button button-secondary" type="button" data-cancel="flora">Cancelar</button>
                 </div>
             </form>
+        </section>
+
+        <section class="dashboard-section" id="section-impact-log" data-resource="impact-log" data-admin-only hidden>
+            <div class="dashboard-section-heading">
+                <div>
+                    <span class="dashboard-eyebrow">RESULTADOS REGISTRADOS</span>
+                    <h2>Bitácora de impacto</h2>
+                    <p class="impact-log-caption">Actividades finalizadas; participantes únicos y asistencias confirmadas.</p>
+                </div>
+            </div>
+            <div class="impact-log-filters" aria-label="Filtros de la bitácora">
+                <label>Desde<input type="date" data-impact-log-filter="desde"></label>
+                <label>Hasta<input type="date" data-impact-log-filter="hasta"></label>
+                <label>Categoría<select data-impact-log-filter="categoria"><option value="">Todas</option></select></label>
+                <label>Ubicación<select data-impact-log-filter="lugarId"><option value="">Todas</option></select></label>
+                <label>Estado<select data-impact-log-filter="estado"><option value="">Todos</option><option value="finalizado">Finalizado</option><option value="publicado">Publicado con fecha de fin superada</option></select></label>
+                <button class="button button-secondary" type="button" data-impact-log-reset>Limpiar filtros</button>
+            </div>
+            <div class="dashboard-loading" data-loading="impact-log" hidden>Consultando registros finalizados…</div>
+            <div class="dashboard-error" data-error="impact-log" hidden>
+                <p>No se pudo cargar la bitácora de impacto.</p>
+                <button type="button" class="button button-secondary" data-retry="impact-log">Reintentar</button>
+            </div>
+            <p class="dashboard-empty impact-log-empty" data-empty="impact-log" hidden>No hay actividades finalizadas para estos filtros.</p>
+            <div class="impact-log-content" data-impact-log-content hidden>
+                <div class="impact-kpi-grid" aria-label="Indicadores generales de impacto">
+                    <article class="impact-kpi"><span>Voluntariados realizados</span><strong data-impact-kpi="voluntariados">0</strong></article>
+                    <article class="impact-kpi"><span>Participantes únicos</span><strong data-impact-kpi="participantes">0</strong></article>
+                    <article class="impact-kpi"><span>Horas de voluntariado</span><strong data-impact-kpi="horas">0 h</strong></article>
+                    <article class="impact-kpi"><span>Residuos recolectados</span><strong data-impact-kpi="kilogramosResiduos">0 kg</strong></article>
+                    <article class="impact-kpi"><span>Costa limpiada</span><strong data-impact-kpi="kilometrosCosta">0 km</strong></article>
+                    <article class="impact-kpi"><span>Árboles y plantas</span><strong data-impact-kpi="plantasReforestadas">0</strong></article>
+                    <article class="impact-kpi"><span>Superficie recuperada</span><strong data-impact-kpi="superficieRecuperada">0 m²</strong></article>
+                    <article class="impact-kpi"><span>Ubicaciones intervenidas</span><strong data-impact-kpi="ubicaciones">0</strong></article>
+                </div>
+                <p class="impact-log-method">Las horas se estiman con la duración programada de cada actividad y sus asistencias confirmadas.</p>
+                <div class="impact-chart-grid">
+                    <section class="impact-chart-panel">
+                        <h3>Evolución temporal</h3>
+                        <div class="impact-chart-frame"><canvas id="impactEvolutionChart" role="img" aria-label="Evolución mensual de voluntariados y participación"></canvas></div>
+                    </section>
+                    <section class="impact-chart-panel">
+                        <h3>Actividades por categoría</h3>
+                        <div class="impact-chart-frame impact-chart-frame-doughnut"><canvas id="impactCategoryChart" role="img" aria-label="Distribución de actividades finalizadas por categoría"></canvas></div>
+                    </section>
+                </div>
+                <section class="impact-history">
+                    <div class="dashboard-section-heading"><h3>Historial de actividades finalizadas</h3><span data-impact-history-count>0 actividades</span></div>
+                    <div class="impact-history-scroll">
+                        <table>
+                            <thead><tr><th>Actividad</th><th>Fecha</th><th>Categoría</th><th>Ubicación</th><th>Asistencias</th><th>Horas</th></tr></thead>
+                            <tbody data-impact-history></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </section>
 
         <section class="dashboard-section" id="section-users" data-resource="users" data-admin-only hidden>

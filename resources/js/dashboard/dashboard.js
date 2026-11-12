@@ -3,6 +3,19 @@ import QRCode from 'qrcode';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
+    ArcElement,
+    CategoryScale,
+    Chart,
+    DoughnutController,
+    Filler,
+    Legend,
+    LineController,
+    LineElement,
+    LinearScale,
+    PointElement,
+    Tooltip,
+} from 'chart.js';
+import {
     bajaCaliforniaSurBounds,
     isInsideBajaCaliforniaSur,
 } from '../geo/baja-california-sur';
@@ -12,10 +25,25 @@ import { initializeLocationSelector } from '../map-selector';
 const root = document.getElementById('dashboardRoot');
 if (root) initializeDashboard();
 
+Chart.register(
+    ArcElement,
+    CategoryScale,
+    DoughnutController,
+    Filler,
+    Legend,
+    LineController,
+    LineElement,
+    LinearScale,
+    PointElement,
+    Tooltip,
+);
+
 function initializeDashboard() {
     const routeRole = root.dataset.dashboardRole;
-    const cache = { articles: [], places: [], flora: [], voluntariados: [], users: [], organizers: [], pending: [], notifications: [] };
+    const cache = { articles: [], places: [], flora: [], voluntariados: [], users: [], organizers: [], pending: [], notifications: [], impactLog: null };
     const byId = id => document.getElementById(id);
+    let impactEvolutionChart = null;
+    let impactCategoryChart = null;
     const volunteerTokenOptions = {
         requisitos: [
             ['🧴', 'Usar bloqueador biodegradable'],
@@ -658,7 +686,146 @@ function initializeDashboard() {
         showResourceState('users', users.length ? 'ready' : 'empty');
     }
 
+    function renderImpactLog(data) {
+        const formatNumber = value => new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(value) || 0);
+        const kpis = data.kpis || {};
+        const formattedKpis = {
+            voluntariados: formatNumber(kpis.voluntariados),
+            participantes: formatNumber(kpis.participantes),
+            horas: `${formatNumber(kpis.horas)} h`,
+            kilogramosResiduos: `${formatNumber(kpis.kilogramosResiduos)} kg`,
+            kilometrosCosta: `${formatNumber(kpis.kilometrosCosta)} km`,
+            plantasReforestadas: formatNumber(kpis.plantasReforestadas),
+            superficieRecuperada: `${formatNumber(kpis.superficieRecuperada)} m²`,
+            ubicaciones: formatNumber(kpis.ubicaciones),
+        };
+        root.querySelectorAll('[data-impact-kpi]').forEach(element => {
+            element.textContent = formattedKpis[element.dataset.impactKpi] || '0';
+        });
+
+        const categories = data.opciones?.categorias || [];
+        const places = data.opciones?.lugares || [];
+        const updateOptions = (select, options, valueFor, labelFor) => {
+            const selectedValue = select.value;
+            select.replaceChildren(new Option('Todas', ''));
+            options.forEach(option => select.add(new Option(labelFor(option), valueFor(option))));
+            select.value = options.some(option => String(valueFor(option)) === selectedValue) ? selectedValue : '';
+        };
+        updateOptions(
+            root.querySelector('[data-impact-log-filter="categoria"]'),
+            categories,
+            category => category.id,
+            category => category.nombre,
+        );
+        updateOptions(
+            root.querySelector('[data-impact-log-filter="lugarId"]'),
+            places,
+            place => place.id,
+            place => `${place.nombre}${place.municipio ? ` · ${place.municipio}` : ''}`,
+        );
+
+        const timeline = data.evolucion || [];
+        const evolutionCanvas = byId('impactEvolutionChart');
+        impactEvolutionChart?.destroy();
+        impactEvolutionChart = new Chart(evolutionCanvas, {
+            type: 'line',
+            data: {
+                labels: timeline.map(row => row.periodo),
+                datasets: [
+                    {
+                        label: 'Voluntariados',
+                        data: timeline.map(row => row.voluntariados),
+                        borderColor: '#28775a',
+                        backgroundColor: 'rgba(40, 119, 90, .14)',
+                        pointBackgroundColor: '#28775a',
+                        tension: .28,
+                        fill: true,
+                    },
+                    {
+                        label: 'Asistencias confirmadas',
+                        data: timeline.map(row => row.participaciones),
+                        borderColor: '#d07a43',
+                        backgroundColor: 'rgba(208, 122, 67, .12)',
+                        pointBackgroundColor: '#d07a43',
+                        tension: .28,
+                    },
+                ],
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            },
+        });
+
+        const categoryData = data.categorias || [];
+        impactCategoryChart?.destroy();
+        impactCategoryChart = new Chart(byId('impactCategoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.map(row => row.categoria),
+                datasets: [{
+                    data: categoryData.map(row => row.voluntariados),
+                    backgroundColor: ['#28775a', '#d07a43', '#4b83a3', '#d1a739', '#7b8b55', '#b35454', '#5971a0'],
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                cutout: '62%',
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+
+        const history = data.historial || [];
+        root.querySelector('[data-impact-history-count]').textContent = `${formatNumber(history.length)} ${history.length === 1 ? 'actividad' : 'actividades'}`;
+        const formatDate = value => {
+            if (!value) return 'Sin fecha';
+            const [year, month, day] = value.split('-').map(Number);
+            return new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                .format(new Date(year, month - 1, day));
+        };
+        const historyBody = root.querySelector('[data-impact-history]');
+        historyBody.innerHTML = history.length
+            ? history.map(row => `<tr>
+                <td><strong>${escapeHtml(row.titulo)}</strong></td>
+                <td>${escapeHtml(formatDate(row.fechaInicio))}</td>
+                <td>${escapeHtml(row.categoria)}</td>
+                <td>${escapeHtml(row.lugar)}</td>
+                <td>${formatNumber(row.participantes)}</td>
+                <td>${formatNumber(row.horas)} h</td>
+            </tr>`).join('')
+            : '<tr><td class="impact-history-empty" colspan="6">Sin actividades finalizadas para estos filtros.</td></tr>';
+    }
+
+    async function loadImpactLog() {
+        const content = root.querySelector('[data-impact-log-content]');
+        content.hidden = true;
+        showResourceState('impact-log', 'loading');
+        const filters = Object.fromEntries([...root.querySelectorAll('[data-impact-log-filter]')]
+            .filter(input => input.value)
+            .map(input => [input.dataset.impactLogFilter, input.value]));
+        try {
+            const response = await dashboardApi.impactLog(filters);
+            cache.impactLog = response.data;
+            content.hidden = false;
+            renderImpactLog(cache.impactLog);
+            showResourceState('impact-log', cache.impactLog.historial.length ? 'ready' : 'empty');
+        } catch (error) {
+            showResourceState('impact-log', 'error');
+            console.error('No se pudo cargar la bitácora de impacto.', error);
+        }
+    }
+
     async function loadResource(resource) {
+        if (resource === 'impact-log') {
+            await loadImpactLog();
+            return;
+        }
         showResourceState(resource, 'loading');
         try {
             if (resource === 'articles') {
@@ -1631,6 +1798,16 @@ function initializeDashboard() {
         }
 
         if (event.target.closest('[data-participant-search]')) applyParticipantFilters();
+    });
+
+    root.addEventListener('change', event => {
+        if (event.target.matches('[data-impact-log-filter]') && activeSection === 'impact-log') {
+            void loadResource('impact-log');
+        }
+    });
+    root.querySelector('[data-impact-log-reset]')?.addEventListener('click', () => {
+        root.querySelectorAll('[data-impact-log-filter]').forEach(input => { input.value = ''; });
+        void loadResource('impact-log');
     });
 
     root.addEventListener('focusin', event => {

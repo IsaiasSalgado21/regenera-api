@@ -4,6 +4,7 @@
 (function () {
     const token = () => sessionStorage.getItem("regenera_access_token");
     const themeToggle = document.querySelector("[data-theme-toggle]");
+    const apiUrl = path => `${document.querySelector('meta[name="api-base-url"]')?.content || ''}${path}`;
 
     function setTheme(theme, save = false) {
         document.documentElement.dataset.theme = theme;
@@ -32,7 +33,7 @@
     async function currentUser() {
         if (!token()) return null;
 
-        const response = await fetch("/api/auth/me", {
+        const response = await fetch(apiUrl("/auth/me"), {
             headers: {
                 Accept: "application/json",
                 Authorization: `Bearer ${token()}`,
@@ -129,7 +130,7 @@
 
         try {
             const volunteerId = button.dataset.voluntariadoId;
-            const statusResponse = await fetch(`/api/inscripciones/voluntariado/${encodeURIComponent(volunteerId)}/mia`, {
+            const statusResponse = await fetch(apiUrl(`/inscripciones/voluntariado/${encodeURIComponent(volunteerId)}/mia`), {
                 headers: {
                     Accept: 'application/json',
                     Authorization: `Bearer ${token()}`,
@@ -156,7 +157,7 @@
             }
 
             if (message) message.textContent = 'Registrando tu participación…';
-            const response = await fetch('/api/inscripciones', {
+            const response = await fetch(apiUrl('/inscripciones'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -243,7 +244,7 @@
             event.preventDefault();
             try {
                 if (token()) {
-                    const response = await fetch("/api/auth/logout", {
+                    const response = await fetch(apiUrl("/auth/logout"), {
                         method: "POST",
                         headers: {
                             Accept: "application/json",

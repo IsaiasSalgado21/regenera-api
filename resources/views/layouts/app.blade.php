@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="api-base-url" content="{{ url('/api') }}">
     <script>
         (() => {
             const savedTheme = document.cookie
@@ -119,10 +120,10 @@
 
         {{-- Script global del sitio (menú móvil) --}}
         @if (file_exists(public_path('js/site.js')))
-            <script src="{{ asset('js/site.js') }}"></script>
+            <script src="{{ asset('js/site.js') }}?v={{ filemtime(public_path('js/site.js')) }}"></script>
         @endif
         @if (file_exists(public_path('js/login.js')))
-            <script src="{{ asset('js/login.js') }}"></script>
+            <script src="{{ asset('js/login.js') }}?v={{ filemtime(public_path('js/login.js')) }}"></script>
         @endif
 
     </body>

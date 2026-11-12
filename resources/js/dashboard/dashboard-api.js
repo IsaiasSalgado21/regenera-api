@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+const apiBaseUrl = document.querySelector('meta[name="api-base-url"]')?.content || '/api';
+
+function apiUrl(path) {
+    return path.startsWith('/api/') ? `${apiBaseUrl}${path.slice(4)}` : path;
+}
+
 function accessToken() {
     return sessionStorage.getItem('regenera_access_token');
 }
@@ -16,7 +22,7 @@ async function request(method, path, data) {
     try {
         const response = await axios.request({
             method,
-            url: path,
+            url: apiUrl(path),
             data,
             headers: headers(),
         });
@@ -51,6 +57,10 @@ export const dashboardApi = {
     voluntariadoDashboard: id => request('get', `/api/admin/voluntariados/${id}/dashboard`),
     listOrganizadores: () => request('get', '/api/admin/voluntariados/organizadores'),
     listUsers: () => request('get', '/api/admin/usuarios'),
+    impactLog: filters => {
+        const query = new URLSearchParams(filters).toString();
+        return request('get', `/api/admin/bitacora-impacto${query ? `?${query}` : ''}`);
+    },
     saveUser: (id, data) => request(id ? 'put' : 'post', id ? `/api/admin/usuarios/${id}` : '/api/admin/usuarios', data),
     deleteUser: id => request('delete', `/api/admin/usuarios/${id}`),
     listArticles: () => request('get', '/api/articulos'),

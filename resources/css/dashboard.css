@@ -200,6 +200,185 @@
     padding: 10px 0 40px;
 }
 
+.impact-log-caption,
+.impact-log-method {
+    margin: 6px 0 0;
+    color: var(--dashboard-muted);
+    font-size: .82rem;
+}
+
+.impact-log-filters {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(130px, 1fr)) auto;
+    align-items: end;
+    gap: 12px;
+    margin: 0 0 22px;
+    border-bottom: 1px solid var(--dashboard-border);
+    padding: 0 0 18px;
+}
+
+.impact-log-filters label {
+    display: grid;
+    gap: 6px;
+    color: var(--dashboard-muted);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.impact-log-filters input,
+.impact-log-filters select {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: #fff;
+    color: var(--dashboard-text);
+    font: inherit;
+    font-size: .82rem;
+}
+
+.impact-log-content[hidden] {
+    display: none;
+}
+
+.impact-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.impact-kpi {
+    display: grid;
+    min-height: 112px;
+    align-content: space-between;
+    gap: 12px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+}
+
+.impact-kpi span {
+    color: var(--dashboard-muted);
+    font-size: .78rem;
+    font-weight: 600;
+}
+
+.impact-kpi strong {
+    color: var(--dashboard-green);
+    font-size: 1.65rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.impact-log-method {
+    margin: 12px 0 20px;
+    font-size: .74rem;
+}
+
+.impact-chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    gap: 14px;
+}
+
+.impact-chart-panel {
+    min-width: 0;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+}
+
+.impact-chart-panel h3,
+.impact-history h3 {
+    margin: 0;
+    color: var(--dashboard-green);
+    font-size: 1rem;
+}
+
+.impact-chart-frame {
+    position: relative;
+    height: 280px;
+    margin-top: 14px;
+}
+
+.impact-chart-frame canvas {
+    display: block;
+    max-width: 100%;
+}
+
+.impact-chart-frame-doughnut {
+    height: 280px;
+}
+
+.impact-history {
+    margin-top: 20px;
+}
+
+.impact-history .dashboard-section-heading {
+    margin-bottom: 12px;
+}
+
+.impact-history .dashboard-section-heading > span {
+    color: var(--dashboard-muted);
+    font-size: .8rem;
+}
+
+.impact-history-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.impact-history table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.impact-history th,
+.impact-history td {
+    border-bottom: 1px solid var(--dashboard-border);
+    padding: 12px 14px;
+    font-size: .8rem;
+}
+
+.impact-history th {
+    background: #f3f6f2;
+    color: var(--dashboard-muted);
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.impact-history td {
+    color: var(--dashboard-text);
+}
+
+.impact-history td strong {
+    display: block;
+    min-width: 150px;
+    font-weight: 650;
+}
+
+.impact-history tr:last-child td {
+    border-bottom: 0;
+}
+
+.impact-history .impact-history-empty {
+    padding: 26px;
+    color: var(--dashboard-muted);
+    text-align: center;
+}
+
+.impact-log-empty {
+    margin-bottom: 16px;
+}
+
 .dashboard-section-heading {
     margin: 10px 0 22px;
 }
@@ -2013,6 +2192,37 @@
 
     .dashboard-choice-grid {
         grid-template-columns: 1fr;
+    }
+
+    .impact-log-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .impact-log-filters .button {
+        grid-column: 1 / -1;
+    }
+
+    .impact-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .impact-kpi {
+        min-height: 100px;
+        padding: 12px;
+    }
+
+    .impact-kpi strong {
+        font-size: 1.35rem;
+    }
+
+    .impact-chart-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .impact-chart-frame,
+    .impact-chart-frame-doughnut {
+        height: 240px;
     }
 }
 

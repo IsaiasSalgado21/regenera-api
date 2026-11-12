@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticuloController as AdminArticuloController;
+use App\Http\Controllers\Admin\BitacoraImpactoController;
 use App\Http\Controllers\Admin\FloraFaunaController as AdminFloraFaunaController;
 use App\Http\Controllers\Admin\LugarController as AdminLugarController;
 use App\Http\Controllers\Admin\VoluntariadoController as AdminVoluntariadoController;
@@ -92,6 +93,7 @@ Route::put('/flora-fauna/{id}', [FloraFaunaController::class, 'update'])->middle
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function () {
+        Route::get('/bitacora-impacto', [BitacoraImpactoController::class, 'index']);
         Route::get('/usuarios', [UserController::class, 'index']);
         Route::post('/usuarios', [UserController::class, 'store']);
         Route::get('/usuarios/{id}', [UserController::class, 'show']);
