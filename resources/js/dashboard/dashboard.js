@@ -207,6 +207,18 @@ function initializeDashboard() {
         return `<button class="button button-${style}" type="button" data-action="${actionName}" data-id="${escapeHtml(id)}">${label}</button>`;
     }
 
+    function locationActions(latitude, longitude, type, id, availableInMap = true) {
+        if (latitude == null || latitude === '' || longitude == null || longitude === ''
+            || !isInsideBajaCaliforniaSur(Number(latitude), Number(longitude))) return '';
+
+        const coordinates = encodeURIComponent(`${Number(latitude)},${Number(longitude)}`);
+        const google = `<a class="button button-secondary" href="https://www.google.com/maps/search/?api=1&amp;query=${coordinates}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps</a>`;
+        const map = availableInMap && id
+            ? `<a class="button button-secondary" href="${escapeHtml(appBasePath)}/mapa?${type}=${encodeURIComponent(String(id))}">Ver en mapa de Regenera</a>`
+            : '';
+        return google + map;
+    }
+
     function renderArticles(user) {
         const isAdmin = user.rol === 'admin';
         const ownArticles = isAdmin
@@ -284,6 +296,7 @@ function initializeDashboard() {
             const hasCoordinates = place.latitud !== null && place.latitud !== ''
                 && place.longitud !== null && place.longitud !== ''
                 && isInsideBajaCaliforniaSur(Number(place.latitud), Number(place.longitud));
+            actions += locationActions(place.latitud, place.longitud, 'lugar', place.id, place.estado === 'activo');
             const hasImage = user.rol === 'admin' && typeof place.imagen === 'string' && place.imagen !== '';
             const media = user.rol !== 'admin'
                 ? ''
@@ -291,8 +304,7 @@ function initializeDashboard() {
                     <div class="dashboard-place-slides">
                         <div class="dashboard-place-slide is-active" data-place-slide="0" aria-hidden="false">
                             ${hasCoordinates
-                                ? `<div class="dashboard-place-preview" data-place-preview data-lat="${escapeHtml(place.latitud)}" data-lng="${escapeHtml(place.longitud)}" role="img" aria-label="Mapa de ${escapeHtml(place.nombre)}"></div>
-                                    <a class="dashboard-place-map-link" href="https://www.openstreetmap.org/?mlat=${encodeURIComponent(place.latitud)}&mlon=${encodeURIComponent(place.longitud)}#map=15/${encodeURIComponent(place.latitud)}/${encodeURIComponent(place.longitud)}" target="_blank" rel="noopener noreferrer">Ver punto en el mapa</a>`
+                                ? `<div class="dashboard-place-preview" data-place-preview data-lat="${escapeHtml(place.latitud)}" data-lng="${escapeHtml(place.longitud)}" role="img" aria-label="Mapa de ${escapeHtml(place.nombre)}"></div>`
                                 : '<p class="dashboard-place-no-coordinates">Este lugar no tiene una ubicación registrada dentro de Baja California Sur.</p>'}
                         </div>
                         ${hasImage
@@ -447,6 +459,15 @@ function initializeDashboard() {
         const lugar = voluntariado.lugar
             ? [voluntariado.lugar.nombre, voluntariado.lugar.municipio, voluntariado.lugar.direccion].filter(Boolean).join(' · ')
             : 'Lugar no disponible';
+        const ownLocationValid = voluntariado.latitud != null && voluntariado.latitud !== ''
+            && voluntariado.longitud != null && voluntariado.longitud !== ''
+            && isInsideBajaCaliforniaSur(Number(voluntariado.latitud), Number(voluntariado.longitud));
+        const locationLinks = locationActions(
+            ownLocationValid ? voluntariado.latitud : voluntariado.lugar?.latitud,
+            ownLocationValid ? voluntariado.longitud : voluntariado.lugar?.longitud,
+            'voluntariado',
+            voluntariado.id,
+        );
         const actionButtons = `${canEdit ? action('Editar voluntariado', 'edit-voluntariado', voluntariado.id) : ''}${user.rol === 'admin' && voluntariado.estado === 'pendiente' ? `${action('Aprobar', 'approve-voluntariado', voluntariado.id, 'primary')}${action('Rechazar', 'reject-voluntariado', voluntariado.id, 'danger')}` : ''}`;
         const totalRegistros = Math.max(0, Number(estadisticas.totalInscripciones ?? participantes.length) || 0);
         const outcomes = [
@@ -541,6 +562,7 @@ function initializeDashboard() {
                     <p class="volunteer-author">Organiza: ${escapeHtml(voluntariado.organizador?.nombre || voluntariado.organizadorNombre || 'No disponible')}</p>
                     <p>${escapeHtml(voluntariado.descripcion || 'Sin descripción disponible.')}</p>
                     <div class="volunteer-hero-meta"><span>${symbol('calendario', '◷')} ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>${symbol('ubicacion', '⌖')} ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
+                    ${locationLinks ? `<div class="volunteer-detail-actions">${locationLinks}</div>` : ''}
                 </div>
             </header>
             ${outcomeChart}

@@ -182,7 +182,10 @@ if (mapElement) {
             if (selectedFeature) renderFeature(selectedFeature);
         });
 
-    const focusedVolunteerId = new URLSearchParams(window.location.search).get('voluntariado');
+    const query = new URLSearchParams(window.location.search);
+    const focusedVolunteerId = query.get('voluntariado');
+    const focusedLayer = focusedVolunteerId ? 'voluntariados' : query.get('lugar') ? 'lugares' : query.get('especie') ? 'flora-fauna' : null;
+    const focusedId = focusedVolunteerId || query.get('lugar') || query.get('especie');
     const focusedVolunteerFilters = focusedVolunteerId
         ? { ...filters.getFilters('voluntariados'), voluntariado_id: focusedVolunteerId }
         : undefined;
@@ -192,12 +195,17 @@ if (mapElement) {
         layer === 'voluntariados' ? focusedVolunteerFilters : undefined,
     ))).then(() => {
         fitMapToResults(map, layerNames.flatMap(layer => latestItems.get(layer)));
-        if (!focusedVolunteerId) return;
+        if (!focusedLayer) return;
 
-        const selected = latestItems.get('voluntariados')
-            .find(item => String(item.id) === String(focusedVolunteerId));
-        if (!selected) return;
-        map.setView([selected.lat, selected.lng], 14);
+        const selected = latestItems.get(focusedLayer)
+            .find(item => String(item.id) === String(focusedId));
+        if (!selected) {
+            if (!feedbackElements.get(focusedLayer)?.classList.contains('is-error')) {
+                showFeedback(focusedLayer, 'No se encontró la ubicación solicitada o no está disponible en el mapa.', 'empty');
+            }
+            return;
+        }
+        map.setView([selected.lat, selected.lng], selected.zona_aproximada ? 10 : 14);
         showFeature(selected);
     });
 }

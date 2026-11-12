@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
 use App\Services\VoluntariadoHorario;
+use App\Services\VoluntariadoUbicacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,6 +17,7 @@ class HomeController extends Controller
     public function __construct(
         private readonly GridFsImageService $gridFsImages,
         private readonly VoluntariadoHorario $horario,
+        private readonly VoluntariadoUbicacion $ubicaciones,
     ) {}
 
     /**
@@ -48,6 +50,7 @@ class HomeController extends Controller
                     'imagen'     => $this->gridFsImages->url($voluntariado->imagen),
                     'categoria'  => $voluntariado->estado,
                     'lugar'      => $lugar?->nombre,
+                    'ubicacion'  => $this->ubicaciones->resolver($voluntariado, $lugar),
                     'fecha'      => $voluntariado->fechaInicio?->format('d/m/Y'),
                     'inicioIso'  => $this->horario->inicio($voluntariado)?->toIso8601String(),
                     'finIso'     => $this->horario->fin($voluntariado)?->toIso8601String(),

@@ -192,6 +192,10 @@
                             role="application"
                             aria-label="Mapa de ubicación del voluntariado">
                         </div>
+                        <div class="volunteer-map-links">
+                            <a href="https://www.google.com/maps/search/?api=1&amp;query={{ $ubicacion['latitud'] }},{{ $ubicacion['longitud'] }}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps</a>
+                            <a href="{{ route('mapa', ['voluntariado' => (string) $voluntariado->_id]) }}">Ver en mapa de Regenera</a>
+                        </div>
                     @else
                         <p class="volunteer-map-unavailable">
                             Ubicación del mapa pendiente de configurar.

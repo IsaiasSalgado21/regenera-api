@@ -555,14 +555,6 @@
     font-size: 1.15rem;
 }
 
-.dashboard-place-map-link {
-    align-self: flex-start;
-    margin: 0 0 12px;
-    color: var(--dashboard-green-light);
-    font-size: .82rem;
-    font-weight: 700;
-}
-
 .dashboard-place-no-coordinates {
     margin: 0 0 12px;
     border-radius: 9px;

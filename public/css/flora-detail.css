@@ -51,6 +51,25 @@
     text-underline-offset: 3px;
 }
 
+.flora-map-locations {
+    display: grid;
+    gap: 14px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.flora-map-locations li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+}
+
+.flora-map-locations li > span {
+    font-size: .82rem;
+}
+
 .flora-map-status:empty {
     display: none;
 }

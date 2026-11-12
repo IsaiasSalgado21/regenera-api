@@ -1178,6 +1178,24 @@ html[data-theme="dark"] .volunteer-impact-total {
         border-radius: 0;
     }
 
+    .volunteer-map-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        padding: 12px 14px;
+    }
+
+    .volunteer-map-links a {
+        color: #164f3d;
+        font-size: .82rem;
+        font-weight: 700;
+        text-underline-offset: 3px;
+    }
+
+    html[data-theme="dark"] .volunteer-map-links a {
+        color: #9bd5bb;
+    }
+
     /* CAPACIDAD */
 
     .volunteer-capacity {

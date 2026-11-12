@@ -72,6 +72,7 @@ class FloraPageController extends Controller
             abort(404);
         }
 
+        $zonaAproximada = $this->floraFaunaService->present($especie)['zonaAproximada'];
         $especie->setAttribute('ubicacion', $this->floraFaunaService->ubicacionVisible($especie));
         $especie->setAttribute('imagenes', $this->floraFaunaService->imagenes($especie));
         $ubicacion = $especie->ubicacion;
@@ -103,6 +104,9 @@ class FloraPageController extends Controller
                 'tipo' => 'Distribución registrada',
                 'latitud' => (float) $ubicacion['latitud'],
                 'longitud' => (float) $ubicacion['longitud'],
+                'parametro' => 'especie',
+                'id' => (string) $especie->_id,
+                'aproximada' => $zonaAproximada,
             ];
         }
 
@@ -113,6 +117,9 @@ class FloraPageController extends Controller
                     'tipo' => 'Lugar relacionado',
                     'latitud' => (float) $lugar->latitud,
                     'longitud' => (float) $lugar->longitud,
+                    'parametro' => 'lugar',
+                    'id' => (string) $lugar->_id,
+                    'aproximada' => false,
                 ];
             }
         }

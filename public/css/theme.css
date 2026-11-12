@@ -26,13 +26,87 @@
     box-shadow: 0 1px 8px rgba(20, 32, 27, .45);
 }
 
-html[data-theme="dark"] .ui-symbol:not(.ui-symbol--map),
+#inicio.home-page .volunteer-home-card.volunteer-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    padding: 0;
+}
+
+.volunteer-home-card .volunteer-card-link {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.volunteer-map-edge-actions {
+    display: flex;
+    flex-direction: column;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.volunteer-map-edge-link {
+    display: grid;
+    flex: 1;
+    width: 42px;
+    place-items: center;
+    border-left: 1px solid #e0e8e1;
+    background: #f4f7f3;
+    color: #285d43;
+    text-decoration: none;
+    font-size: 1.35rem;
+    transition: background-color .16s ease, color .16s ease;
+}
+
+.volunteer-google-edge-link {
+    border-top: 1px solid #e0e8e1;
+    font-size: .85rem;
+    font-weight: 800;
+}
+
+.volunteer-map-edge-link:hover,
+.volunteer-map-edge-link:focus-visible {
+    background: #e4eee6;
+    color: #163f2e;
+}
+
 .button-primary .ui-symbol:not(.ui-symbol--map),
 .volunteer-cta .ui-symbol:not(.ui-symbol--map) {
     box-sizing: content-box;
     padding: 2px;
     border-radius: 3px;
     background: #f5f7f3;
+}
+
+html[data-theme="dark"] .ui-symbol,
+html[data-theme="dark"] .ui-symbol:not(.ui-symbol--map) {
+    padding: 0;
+    background: transparent;
+    filter: invert(1);
+}
+
+html[data-theme="dark"] .ui-map-pin {
+    background: #164f3d;
+}
+
+html[data-theme="dark"] .volunteer-detail-status {
+    background: #294536;
+    color: #d7ecdf;
+}
+
+html[data-theme="dark"] .volunteer-detail-status--pendiente {
+    background: #57451e;
+    color: #ffe6a1;
+}
+
+html[data-theme="dark"] .volunteer-detail-status--cancelado,
+html[data-theme="dark"] .volunteer-detail-status--rechazado {
+    background: #512e29;
+    color: #ffd2cb;
+}
+
+html[data-theme="dark"] .volunteer-detail-status--finalizado {
+    background: #353b5c;
+    color: #dfe4ff;
 }
 
 html[data-theme="dark"] {

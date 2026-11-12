@@ -1707,8 +1707,7 @@
     object-fit: cover;
 }
 
-.volunteer-owned-card,
-.volunteer-home-card {
+.volunteer-owned-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 42px;
     padding: 0;
@@ -1728,32 +1727,6 @@
 .volunteer-owned-card-link:focus-visible {
     outline: 3px solid #47745e;
     outline-offset: -3px;
-}
-
-.volunteer-home-card .volunteer-card-link {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-.volunteer-map-edge-link {
-    display: grid;
-    grid-column: 2;
-    grid-row: 1;
-    width: 42px;
-    min-height: 100%;
-    place-items: center;
-    border-left: 1px solid #e0e8e1;
-    background: #f4f7f3;
-    color: #285d43;
-    text-decoration: none;
-    font-size: 1.35rem;
-    transition: background-color .16s ease, color .16s ease;
-}
-
-.volunteer-map-edge-link:hover,
-.volunteer-map-edge-link:focus-visible {
-    background: #e4eee6;
-    color: #163f2e;
 }
 
 .volunteer-owned-card .volunteer-card-content {

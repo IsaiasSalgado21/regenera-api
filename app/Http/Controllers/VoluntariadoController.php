@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inscripcion;
+use App\Models\Lugar;
 use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\GridFsImageService;
@@ -10,6 +11,7 @@ use App\Services\GamificacionService;
 use App\Services\NotificationService;
 use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
+use App\Services\VoluntariadoUbicacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -23,6 +25,7 @@ class VoluntariadoController extends Controller
         private readonly VoluntariadoWorkflow $workflow,
         private readonly VoluntariadoHorario $horario,
         private readonly GamificacionService $gamificacion,
+        private readonly VoluntariadoUbicacion $ubicaciones,
     ) {}
 
     public function index(Request $request)
@@ -126,6 +129,10 @@ class VoluntariadoController extends Controller
         $data['imagen'] = $this->gridFsImages->url($voluntariado->imagen);
         $data['inicioIso'] = $this->horario->inicio($voluntariado)?->toIso8601String();
         $data['finIso'] = $this->horario->fin($voluntariado)?->toIso8601String();
+        $data['ubicacionMapa'] = $this->ubicaciones->resolver($voluntariado, null);
+        if (! $data['ubicacionMapa'] && $voluntariado->lugarId) {
+            $data['ubicacionMapa'] = $this->ubicaciones->resolver($voluntariado, Lugar::find($voluntariado->lugarId));
+        }
 
         return $data;
     }

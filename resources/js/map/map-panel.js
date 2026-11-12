@@ -50,16 +50,26 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
             addText(panel, 'p', 'La ubicación se muestra como una zona aproximada para proteger esta especie.');
         }
 
-        if (item.tipo !== 'voluntariado') return;
-
         const actions = document.createElement('div');
         actions.className = 'map-panel-actions';
-        if (item.id) {
+        if (!item.zona_aproximada) {
+            const googleLink = addText(actions, 'a', 'Abrir en Google Maps', 'map-panel-view-link');
+            googleLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.lat},${item.lng}`)}`;
+            googleLink.target = '_blank';
+            googleLink.rel = 'noopener noreferrer';
+        }
+        if (item.tipo === 'voluntariado' && item.id) {
             const detailLink = addText(actions, 'a', 'Ver voluntariado', 'map-panel-view-link');
             const detailBase = panel.dataset.volunteerDetailBase || '/voluntariados';
             detailLink.href = `${detailBase.replace(/\/$/, '')}/${encodeURIComponent(String(item.id))}`;
+        } else if (['flora', 'fauna'].includes(item.tipo) && item.id) {
+            const detailLink = addText(actions, 'a', 'Ver ficha de especie', 'map-panel-view-link');
+            const detailBase = panel.dataset.speciesDetailBase || '/flora';
+            detailLink.href = `${detailBase.replace(/\/$/, '')}/${encodeURIComponent(String(item.id))}`;
         }
         panel.appendChild(actions);
+
+        if (item.tipo !== 'voluntariado') return;
 
         const user = getUser();
         let reason = '';

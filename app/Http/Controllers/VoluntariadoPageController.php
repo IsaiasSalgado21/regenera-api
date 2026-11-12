@@ -7,11 +7,11 @@ use App\Models\Inscripcion;
 use App\Models\ImpactoVoluntariado;
 use App\Models\User;
 use App\Models\Voluntariado;
-use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
 use App\Services\ImpactoVoluntariadoService;
 use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
+use App\Services\VoluntariadoUbicacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use MongoDB\BSON\ObjectId;
@@ -20,10 +20,10 @@ class VoluntariadoPageController extends Controller
 {
     public function __construct(
         private readonly GridFsImageService $gridFsImages,
-        private readonly BajaCaliforniaSurBoundary $boundary,
         private readonly VoluntariadoHorario $horario,
         private readonly VoluntariadoWorkflow $workflow,
         private readonly ImpactoVoluntariadoService $impactos,
+        private readonly VoluntariadoUbicacion $ubicaciones,
     ) {}
 
     /**
@@ -63,6 +63,7 @@ class VoluntariadoPageController extends Controller
                 'categoria' => $v->categoria ?? null,
                 'lugar_id' => (string) $v->lugarId,
                 'lugar' => $lugar?->nombre,
+                'ubicacion' => $this->ubicaciones->resolver($v, $lugar),
                 'fecha' => $v->fechaInicio?->format('d/m/Y'),
                 'fecha_iso' => $v->fechaInicio?->format('Y-m-d'),
                 'fecha_fin' => $v->fechaFin?->format('d/m/Y'),
@@ -107,13 +108,6 @@ class VoluntariadoPageController extends Controller
             : ($voluntariado->imagen ? [$voluntariado->imagen] : []);
         $voluntariado->setAttribute('imagenes', $this->gridFsImages->urls($images));
         $voluntariado->imagen = $voluntariado->imagenes[0] ?? null;
-        $latitude = $lugar?->latitud;
-        $longitude = $lugar?->longitud;
-        if (! $this->boundary->contains($latitude, $longitude)) {
-            $latitude = $voluntariado->latitud;
-            $longitude = $voluntariado->longitud;
-        }
-        $hasValidLocation = $this->boundary->contains($latitude, $longitude);
         $inicioFechaHora = $this->horario->inicio($voluntariado);
         $finFechaHora = $this->horario->fin($voluntariado);
         $isAdmin = $request->user()?->rol === 'admin';
@@ -143,10 +137,7 @@ class VoluntariadoPageController extends Controller
             'finFechaHora' => $finFechaHora,
             'voluntariadoFinalizado' => $this->workflow->finalizado($voluntariado, $this->horario),
             'voluntariadoCancelado' => $voluntariado->estado === 'cancelado',
-            'ubicacion' => $hasValidLocation ? [
-                'latitud' => (float) $latitude,
-                'longitud' => (float) $longitude,
-            ] : null,
+            'ubicacion' => $this->ubicaciones->resolver($voluntariado, $lugar),
         ]);
     }
 }

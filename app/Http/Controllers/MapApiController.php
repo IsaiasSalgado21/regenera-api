@@ -47,13 +47,20 @@ class MapApiController extends Controller
             $esPropio = $usuario
                 && (string) $voluntariado->organizadorId === (string) $usuario->getAuthIdentifier();
             abort_unless(
-                $voluntariado->estado === 'publicado'
+                in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true)
                     || $usuario?->rol === 'admin'
                     || $esPropio,
                 403,
                 'No tienes permiso para consultar la ubicación de este voluntariado.',
             );
             $query = Voluntariado::query()->where('_id', $voluntariado->getKey());
+
+            if ($voluntariado->lugarId && ! $lugares->has((string) $voluntariado->lugarId)) {
+                $lugar = Lugar::find($voluntariado->lugarId);
+                if ($lugar && $this->hasCoordinates($lugar->latitud, $lugar->longitud)) {
+                    $lugares->put((string) $lugar->_id, $lugar);
+                }
+            }
         }
 
         if (! empty($filters['categoria'])) {

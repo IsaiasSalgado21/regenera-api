@@ -150,7 +150,7 @@
                 <p class="map-boundary-attribution">Límite estatal: INEGI, vía geoBoundaries (CC BY 3.0 IGO).</p>
             </div>
 
-            <aside id="mapInfoPanel" class="map-info-panel" data-volunteer-detail-base="{{ url('/voluntariados') }}" aria-label="Información del elemento seleccionado" tabindex="-1">
+            <aside id="mapInfoPanel" class="map-info-panel" data-volunteer-detail-base="{{ url('/voluntariados') }}" data-species-detail-base="{{ url('/flora') }}" aria-label="Información del elemento seleccionado" tabindex="-1">
                 <p class="map-panel-placeholder">Selecciona un marcador para consultar su información.</p>
             </aside>
         </div>

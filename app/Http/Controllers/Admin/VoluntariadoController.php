@@ -198,6 +198,8 @@ class VoluntariadoController extends Controller
                         'nombre' => $lugar->nombre,
                         'municipio' => $lugar->municipio,
                         'direccion' => $lugar->direccion,
+                        'latitud' => $lugar->latitud,
+                        'longitud' => $lugar->longitud,
                     ] : null,
                     'organizador' => $organizador ? [
                         'id' => $organizadorId,

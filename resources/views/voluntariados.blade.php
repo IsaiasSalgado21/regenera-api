@@ -107,12 +107,20 @@
                                 <span class="volunteer-link">Ver detalle <span aria-hidden="true">→</span></span>
                             </div>
                         </a>
+                        <div class="volunteer-map-edge-actions">
                         <a class="volunteer-map-edge-link"
                             href="{{ url('/mapa?voluntariado=' . urlencode($voluntariado['id'])) }}"
                             aria-label="Ver ubicación en el mapa: {{ $voluntariado['titulo'] }}"
                             title="Ver ubicación en el mapa">
                             <img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt="" aria-hidden="true">
                         </a>
+                        @if (!empty($voluntariado['ubicacion']))
+                            <a class="volunteer-map-edge-link volunteer-google-edge-link"
+                                href="https://www.google.com/maps/search/?api=1&amp;query={{ $voluntariado['ubicacion']['latitud'] }},{{ $voluntariado['ubicacion']['longitud'] }}"
+                                target="_blank" rel="noopener noreferrer"
+                                aria-label="Abrir ubicación de {{ $voluntariado['titulo'] }} en Google Maps" title="Abrir en Google Maps">G<span aria-hidden="true">↗</span></a>
+                        @endif
+                        </div>
                     </article>
                 @endforeach
             </div>

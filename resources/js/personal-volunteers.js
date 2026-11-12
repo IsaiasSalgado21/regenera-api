@@ -153,7 +153,21 @@ function renderGroup(sectionSelector, listSelector, items, type) {
         } else {
             mapLink.textContent = '⌖';
         }
-        card.append(mapLink);
+        const mapActions = document.createElement('div');
+        mapActions.className = 'volunteer-map-edge-actions';
+        mapActions.append(mapLink);
+        if (item.ubicacionMapa) {
+            const googleLink = document.createElement('a');
+            googleLink.className = 'volunteer-map-edge-link volunteer-google-edge-link';
+            googleLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.ubicacionMapa.latitud},${item.ubicacionMapa.longitud}`)}`;
+            googleLink.target = '_blank';
+            googleLink.rel = 'noopener noreferrer';
+            googleLink.setAttribute('aria-label', `Abrir ubicación de ${item.titulo || 'Voluntariado'} en Google Maps`);
+            googleLink.title = 'Abrir en Google Maps';
+            googleLink.textContent = 'G↗';
+            mapActions.append(googleLink);
+        }
+        card.append(mapActions);
         list.append(card);
     });
 }

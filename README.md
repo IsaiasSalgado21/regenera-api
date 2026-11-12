@@ -41,6 +41,17 @@ un subdirectorio. La clase `ui-symbol` mantiene su tamaño y contraste en ambos
 temas; los marcadores del mapa conservan su fondo y leyenda.
 En el detalle de voluntariado se reconocen materiales habituales por su
 nombre; los materiales personalizados sin símbolo conservan una viñeta.
+En modo oscuro los símbolos se muestran en blanco sobre fondo transparente.
+
+## Ubicaciones
+
+Las tarjetas y detalles de voluntariados, las fichas de especies, los lugares del panel y el mapa
+ambiental enlazan a Google Maps cuando hay coordenadas válidas. Las fichas
+también permiten abrir el registro correspondiente en `/mapa` mediante los
+parámetros `voluntariado`, `lugar` o `especie`. Los lugares archivados no
+aparecen en el mapa público. Para proteger especies sensibles, sus zonas
+aproximadas solo se abren en el mapa de Regenera, no en Google Maps; los
+lugares relacionados se enlazan por separado.
 
 ## Registro de impacto ambiental
 

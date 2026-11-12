@@ -368,16 +368,6 @@
                                     {{ $mapMode === 'regional' ? 'Distribución regional' : 'Ubicación y sitios relacionados' }}
                                 </h3>
                             </div>
-                            @if ($mapMode === 'locations')
-                                <a
-                                    class="flora-map-external-link"
-                                    href="https://www.openstreetmap.org/?mlat={{ $mapLocations[0]['latitud'] }}&mlon={{ $mapLocations[0]['longitud'] }}#map=9/{{ $mapLocations[0]['latitud'] }}/{{ $mapLocations[0]['longitud'] }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Abrir mapa
-                                </a>
-                            @endif
                         </div>
 
                         <p class="flora-map-note">
@@ -399,6 +389,20 @@
                         <script type="application/json" data-flora-map-locations>@json($mapLocations)</script>
 
                         <p class="flora-map-status" data-flora-map-status role="status" aria-live="polite"></p>
+                        @if ($mapMode === 'locations')
+                            <ul class="flora-map-locations">
+                                @foreach ($mapLocations as $location)
+                                    <li>
+                                        <strong>{{ $location['nombre'] }}</strong>
+                                        <span>{{ $location['aproximada'] ? 'Zona aproximada protegida' : $location['tipo'] }}</span>
+                                        <a class="flora-map-external-link" href="{{ route('mapa', [$location['parametro'] => $location['id']]) }}">Ver en mapa de Regenera</a>
+                                        @unless ($location['aproximada'])
+                                            <a class="flora-map-external-link" href="https://www.google.com/maps/search/?api=1&amp;query={{ $location['latitud'] }},{{ $location['longitud'] }}" target="_blank" rel="noopener noreferrer">Abrir en Google Maps</a>
+                                        @endunless
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </section>
                 @else
                     <div class="flora-stage-empty">
