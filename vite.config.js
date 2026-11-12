@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/js/flora-detail-map.js',
                 'resources/js/dashboard/dashboard.js',
                 'resources/js/learning.js',
+                'resources/js/personal-volunteers.js',
                 'resources/js/voluntariado-detail.js',
                 'resources/js/asistencia.js',
             ],

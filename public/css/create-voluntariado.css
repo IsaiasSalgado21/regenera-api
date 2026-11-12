@@ -161,8 +161,19 @@
 }
 
 .dashboard-date-control > span,
-.dashboard-time-control > span {
+.dashboard-time-control > span,
+.dashboard-date-control > .ui-symbol,
+.dashboard-time-control > .ui-symbol {
     pointer-events: none;
+}
+
+.create-form .ui-symbol {
+    display: inline-block;
+    width: 1.4em;
+    height: 1.4em;
+    flex: 0 0 auto;
+    object-fit: contain;
+    vertical-align: middle;
 }
 
 .dashboard-capacity-field {

@@ -84,7 +84,7 @@
                 role="img"
                 aria-label="Imagen no disponible de {{ $especie->nombre }}"
             >
-                <span aria-hidden="true">🌿</span>
+                <span aria-hidden="true"><img class="ui-symbol" src="{{ asset('img/simbolos/flora.png') }}" alt=""></span>
             </div>
         @endif
     </header>
@@ -335,7 +335,7 @@
                     </div>
                 @else
                     <div class="flora-stage-empty">
-                        <span aria-hidden="true">⌖</span>
+                        <span aria-hidden="true"><img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt=""></span>
 
                         <h3>Ubicación pendiente de registro</h3>
 
@@ -402,7 +402,7 @@
                     </section>
                 @else
                     <div class="flora-stage-empty">
-                        <span aria-hidden="true">⌖</span>
+                        <span aria-hidden="true"><img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt=""></span>
                         <h3>Mapa pendiente de ubicación</h3>
                         <p>
                             No hay coordenadas válidas registradas para esta especie ni para los lugares relacionados.

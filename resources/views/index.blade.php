@@ -69,15 +69,15 @@
 
                             <div class="volunteer-meta">
                                 @if ($voluntariado['fecha'])
-                                    <span>📅 {{ $voluntariado['fecha'] }}</span>
+                                    <span><img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true"> {{ $voluntariado['fecha'] }}</span>
                                 @endif
 
                                 @if ($voluntariado['lugar'])
-                                    <span>📍 {{ $voluntariado['lugar'] }}</span>
+                                    <span><img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt="" aria-hidden="true"> {{ $voluntariado['lugar'] }}</span>
                                 @endif
 
                                 @if ($voluntariado['cupo'])
-                                    <span>👥 Cupo: {{ $voluntariado['cupo'] }}</span>
+                                    <span><img class="ui-symbol" src="{{ asset('img/simbolos/participantes.png') }}" alt="" aria-hidden="true"> Cupo: {{ $voluntariado['cupo'] }}</span>
                                 @endif
                             </div>
 
@@ -96,7 +96,7 @@
                         href="{{ url('/mapa?voluntariado=' . urlencode($voluntariado['id'])) }}"
                         aria-label="Ver ubicación en el mapa: {{ $voluntariado['titulo'] }}"
                         title="Ver ubicación en el mapa">
-                        <span aria-hidden="true">⌖</span>
+                        <img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt="" aria-hidden="true">
                     </a>
                 </article>
             @empty

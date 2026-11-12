@@ -971,6 +971,21 @@
     font-size: 1.12rem;
 }
 
+.volunteers-board .ui-symbol,
+.volunteer-detail-page .ui-symbol:not(.ui-symbol--map),
+.volunteer-cancel-dialog .ui-symbol {
+    display: inline-block;
+    width: 1.4em;
+    height: 1.4em;
+    flex: 0 0 auto;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.volunteer-detail-list-section h3 > .ui-symbol {
+    margin-right: 7px;
+}
+
 .volunteer-detail-description > p {
     margin: 0;
     color: #59645f;

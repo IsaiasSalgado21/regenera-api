@@ -32,6 +32,14 @@ Las notificaciones internas se conservan en el centro de notificaciones. Para ha
 
 Cada usuario activa las push desde su perfil; el permiso del navegador solo se solicita al pulsar el botón de activación. Los usuarios no administradores pueden elegir no recibir recordatorios, recibirlos un día y una hora antes, o recibir uno diario antes del inicio.
 
+## Símbolos de la interfaz
+
+Los pictogramas personalizados se encuentran en `public/img/simbolos/`. Las
+vistas usan `asset()` y los scripts toman la ruta base del atributo
+`data-symbols-base` del layout, para funcionar también en instalaciones bajo
+un subdirectorio. La clase `ui-symbol` mantiene su tamaño y contraste en ambos
+temas; los marcadores del mapa conservan su fondo y leyenda.
+
 ## Registro de impacto ambiental
 
 Al concluir una actividad, su organizador propietario o un administrador puede

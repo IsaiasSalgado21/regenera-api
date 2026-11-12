@@ -23,6 +23,9 @@ if (page) {
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
     }[character]));
+    const confirmedSymbol = () => document.body.dataset.symbolsBase
+        ? `<img class="ui-symbol" src="${escapeHtml(document.body.dataset.symbolsBase.replace(/\/+$/, ''))}/confirmado.png" alt="" aria-hidden="true" width="20" height="20">`
+        : '✓';
     const formatDate = value => value ? new Intl.DateTimeFormat('es-MX', {
         dateStyle: 'full',
         timeStyle: 'short',
@@ -49,7 +52,7 @@ if (page) {
 
     function renderList(target, visible, emptyMessage) {
         if (!visible.length) {
-            target.innerHTML = `<div class="notification-empty"><span aria-hidden="true">✓</span><p>${escapeHtml(emptyMessage)}</p></div>`;
+            target.innerHTML = `<div class="notification-empty"><span aria-hidden="true">${confirmedSymbol()}</span><p>${escapeHtml(emptyMessage)}</p></div>`;
             return;
         }
 

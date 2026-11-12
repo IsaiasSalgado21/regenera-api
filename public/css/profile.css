@@ -500,7 +500,8 @@
     color: #828a83;
 }
 
-.profile-medal-icon svg {
+.profile-medal-icon svg,
+.profile-medal-icon .ui-symbol {
     width: 23px;
     height: 23px;
 }

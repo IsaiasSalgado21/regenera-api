@@ -53,13 +53,17 @@ function makeIcon(item) {
     const iconElement = document.createElement('span');
     iconElement.className = `map-marker-icon map-marker-icon--${type}`;
     iconElement.setAttribute('aria-hidden', 'true');
-    iconElement.textContent = {
-        voluntariado: '✋',
-        lleno: '×',
-        lugar: '⌖',
-        flora: '✿',
-        fauna: '🐾',
-    }[type];
+    const image = document.createElement('img');
+    image.className = 'ui-symbol ui-symbol--map';
+    image.alt = '';
+    image.src = `${document.body.dataset.symbolsBase}/${{
+        voluntariado: 'voluntariado',
+        lleno: 'cancelado',
+        lugar: 'ubicacion',
+        flora: 'flora',
+        fauna: 'fauna',
+    }[type]}.png`;
+    iconElement.appendChild(image);
 
     const icon = L.divIcon({
         className: '',

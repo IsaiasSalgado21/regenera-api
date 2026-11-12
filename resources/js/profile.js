@@ -61,6 +61,11 @@ if (page) {
     };
 
     const medalSvg = iconName => {
+        const symbols = { 'shield-check': 'proteccion', recycle: 'reciclaje' };
+        if (Object.hasOwn(symbols, iconName) && document.body.dataset.symbolsBase) {
+            const base = escapeHtml(document.body.dataset.symbolsBase.replace(/\/+$/, ''));
+            return `<img class="ui-symbol" src="${base}/${symbols[iconName]}.png" alt="" aria-hidden="true" width="23" height="23">`;
+        }
         const icons = {
             'shield-check': '<path d="M12 3 19 6v5c0 4.5-2.9 8-7 10-4.1-2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/>',
             mangrove: '<path d="M12 20V9"/><path d="M12 13 7 9m5 7 5-5"/><path d="M5 8c0-2 2-3 4-2 0-2 2-3 4-2 2-1 4 1 4 3 2 0 3 2 2 4-1 2-4 2-6 1-2 2-5 2-7 0-2 0-3-2-1-4Z"/><path d="M6 20h12"/>',
@@ -120,7 +125,9 @@ if (page) {
         page.querySelector('[data-gamification-courses]').innerHTML = courses.length
             ? courses.map(course => `<a class="profile-learning-item" href="${appUrl(`/aprendizaje?cuestionario=${encodeURIComponent(course.slug)}`)}">
                 <span><strong>${escapeHtml(course.titulo)}</strong><small>${escapeHtml(course.estado === 'aprobado' ? `Aprobado · ${course.puntuacion ?? 0}%` : course.bloqueo || course.estado)}</small></span>
-                <span aria-hidden="true">${course.estado === 'aprobado' ? '✓' : '→'}</span>
+                <span aria-hidden="true">${course.estado === 'aprobado' && document.body.dataset.symbolsBase
+                    ? `<img class="ui-symbol" src="${escapeHtml(document.body.dataset.symbolsBase.replace(/\/+$/, ''))}/confirmado.png" alt="" aria-hidden="true" width="20" height="20">`
+                    : course.estado === 'aprobado' ? '✓' : '→'}</span>
             </a>`).join('')
             : '<p class="profile-muted">No hay cuestionarios asignados a tu perfil.</p>';
 

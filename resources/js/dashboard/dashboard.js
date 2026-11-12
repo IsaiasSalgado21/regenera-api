@@ -49,21 +49,21 @@ function initializeDashboard() {
     let impactCategoryChart = null;
     const volunteerTokenOptions = {
         requisitos: [
-            ['🧴', 'Usar bloqueador biodegradable'],
-            ['👟', 'Usar calzado cómodo'],
-            ['💧', 'Llevar agua suficiente'],
-            ['🧢', 'Llevar gorra o sombrero'],
-            ['🧤', 'Seguir indicaciones del equipo'],
-            ['♻️', 'Separar y recoger residuos'],
+            ['🧴', 'Usar bloqueador biodegradable', 'bloqueador-solar'],
+            ['👟', 'Usar calzado cómodo', 'calzado'],
+            ['💧', 'Llevar agua suficiente', 'agua'],
+            ['🧢', 'Llevar gorra o sombrero', 'gorra'],
+            ['🧤', 'Seguir indicaciones del equipo', 'proteccion'],
+            ['♻️', 'Separar y recoger residuos', 'reciclaje'],
             ['🪪', 'Ser mayor de edad'],
             ['🤝', 'Participar en equipo'],
         ],
         materiales: [
-            ['🧤', 'Guantes de trabajo'],
-            ['🧴', 'Bloqueador biodegradable'],
-            ['💧', 'Agua potable'],
-            ['🧢', 'Gorra o sombrero'],
-            ['🧹', 'Bolsas para residuos'],
+            ['🧤', 'Guantes de trabajo', 'guantes'],
+            ['🧴', 'Bloqueador biodegradable', 'bloqueador-solar'],
+            ['💧', 'Agua potable', 'agua'],
+            ['🧢', 'Gorra o sombrero', 'gorra'],
+            ['🧹', 'Bolsas para residuos', 'bolsa-residuos'],
             ['🛠️', 'Herramientas de trabajo'],
             ['🦺', 'Chaleco de seguridad'],
             ['🩹', 'Botiquín de primeros auxilios'],
@@ -72,6 +72,9 @@ function initializeDashboard() {
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
     }[character]));
+    const symbol = (name, fallback) => document.body.dataset.symbolsBase && name
+        ? `<img class="ui-symbol" src="${escapeHtml(document.body.dataset.symbolsBase.replace(/\/+$/, ''))}/${name}.png" alt="" aria-hidden="true" width="20" height="20">`
+        : `<span aria-hidden="true">${fallback}</span>`;
 
     function showNotice(message, kind = 'success') {
         const notice = byId('dashboardNotice');
@@ -537,7 +540,7 @@ function initializeDashboard() {
                     <h2>${escapeHtml(voluntariado.titulo)}</h2>
                     <p class="volunteer-author">Organiza: ${escapeHtml(voluntariado.organizador?.nombre || voluntariado.organizadorNombre || 'No disponible')}</p>
                     <p>${escapeHtml(voluntariado.descripcion || 'Sin descripción disponible.')}</p>
-                    <div class="volunteer-hero-meta"><span>◷ ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>⌖ ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
+                    <div class="volunteer-hero-meta"><span>${symbol('calendario', '◷')} ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>${symbol('ubicacion', '⌖')} ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
                 </div>
             </header>
             ${outcomeChart}
@@ -1272,7 +1275,7 @@ function initializeDashboard() {
             const chip = document.createElement('span');
             chip.className = 'dashboard-token-chip';
             const label = document.createElement('span');
-            label.textContent = `${option?.[0] || '✦'} ${value}`;
+            label.innerHTML = `${symbol(option?.[2], option?.[0] || '✦')} ${escapeHtml(value)}`;
             chip.append(label);
             const hidden = document.createElement('input');
             hidden.type = 'hidden';
@@ -1298,11 +1301,11 @@ function initializeDashboard() {
             !selected.includes(label)
             && (!normalizedQuery || label.toLocaleLowerCase().includes(normalizedQuery)),
         );
-        matches.forEach(([icon, label]) => {
+        matches.forEach(([icon, label, name]) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.dataset.addToken = label;
-            button.innerHTML = `<span aria-hidden="true">${icon}</span><span>${escapeHtml(label)}</span>`;
+            button.innerHTML = `${symbol(name, icon)}<span>${escapeHtml(label)}</span>`;
             suggestions.append(button);
         });
 
@@ -1822,7 +1825,7 @@ function initializeDashboard() {
         byId('actionConfirmTitle').textContent = config.title;
         byId('actionConfirmMessage').textContent = config.message;
         byId('actionConfirmSubmit').textContent = config.button;
-        byId('actionConfirmIcon').textContent = config.icon;
+        byId('actionConfirmIcon').innerHTML = symbol(config.icon === '✓' ? 'confirmado' : 'alerta', config.icon);
 
         const submit = byId('actionConfirmSubmit');
         submit.classList.remove('is-danger', 'is-publish');

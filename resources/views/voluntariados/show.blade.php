@@ -74,10 +74,10 @@
 
                 @if (is_array($voluntariado->requisitos) && count($voluntariado->requisitos))
                     <section class="volunteer-detail-list-section">
-                        <h3><span aria-hidden="true">✓</span> Requisitos para participar</h3>
+                        <h3><img class="ui-symbol" src="{{ asset('img/simbolos/confirmado.png') }}" alt="" aria-hidden="true"> Requisitos para participar</h3>
                         <ul class="volunteer-detail-chips">
                             @foreach ($voluntariado->requisitos as $requisito)
-                                <li><span aria-hidden="true">✓</span>{{ $requisito }}</li>
+                                <li><img class="ui-symbol" src="{{ asset('img/simbolos/confirmado.png') }}" alt="" aria-hidden="true">{{ $requisito }}</li>
                             @endforeach
                         </ul>
                     </section>
@@ -85,7 +85,7 @@
 
                 @if (is_array($voluntariado->materiales) && count($voluntariado->materiales))
                     <section class="volunteer-detail-list-section">
-                        <h3><span aria-hidden="true">🎒</span> Qué llevar</h3>
+                        <h3><img class="ui-symbol" src="{{ asset('img/simbolos/mochila.png') }}" alt="" aria-hidden="true"> Qué llevar</h3>
                         <ul class="volunteer-detail-chips volunteer-detail-chips--materials">
                             @foreach ($voluntariado->materiales as $material)
                                 <li><span aria-hidden="true">✦</span>{{ $material }}</li>
@@ -124,7 +124,7 @@
                 {{-- Fecha --}}
                 @if ($voluntariado->fechaInicio)
                     <div class="volunteer-detail-fact">
-                        <span class="volunteer-detail-fact-icon">📅</span>
+                        <span class="volunteer-detail-fact-icon"><img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true"></span>
                         <span>
                             <small>Fecha</small>
                             <strong>
@@ -142,7 +142,7 @@
                 {{-- Horario --}}
                 @if ($voluntariado->horaInicio)
                     <div class="volunteer-detail-fact">
-                        <span class="volunteer-detail-fact-icon">🕒</span>
+                        <span class="volunteer-detail-fact-icon"><img class="ui-symbol" src="{{ asset('img/simbolos/reloj.png') }}" alt="" aria-hidden="true"></span>
                         <span>
                             <small>Horario de la actividad</small>
                             <strong>Inicio · {{ $voluntariado->horaInicio }}</strong>
@@ -156,7 +156,7 @@
                 {{-- Lugar --}}
                 @if ($lugar)
                     <div class="volunteer-detail-fact">
-                        <span class="volunteer-detail-fact-icon">📍</span>
+                        <span class="volunteer-detail-fact-icon"><img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt="" aria-hidden="true"></span>
                         <span>
                             <small>Lugar</small>
                             <strong>{{ $lugar->nombre }}</strong>
@@ -193,7 +193,13 @@
 
                 @if ($voluntariado->estado)
                     <span class="volunteer-detail-status volunteer-detail-status--{{ $voluntariado->estado }}">
-                        <span aria-hidden="true">●</span>
+                        @if ($voluntariado->estado === 'pendiente')
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/pendiente.png') }}" alt="" aria-hidden="true">
+                        @elseif ($voluntariado->estado === 'cancelado')
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/cancelado.png') }}" alt="" aria-hidden="true">
+                        @else
+                            <span aria-hidden="true">●</span>
+                        @endif
                         {{ ucfirst($voluntariado->estado) }}
                     </span>
                 @endif
@@ -212,7 +218,7 @@
                     <a href="{{ route('login', ['redirect' => request()->getPathInfo() . '?participar=1']) }}"
                         class="volunteer-cta"
                         data-voluntariado-id="{{ (string) $voluntariado->_id }}">
-                        <span aria-hidden="true">🙌</span>
+                        <img class="ui-symbol" src="{{ asset('img/simbolos/voluntariado.png') }}" alt="" aria-hidden="true">
                         Quiero participar
                         <span class="volunteer-cta-arrow" aria-hidden="true">→</span>
                     </a>
@@ -281,7 +287,7 @@
             </header>
             <div class="volunteer-capacity" data-volunteer-capacity>
                 <div class="volunteer-capacity-heading">
-                    <span class="volunteer-detail-fact-icon">👥</span>
+                    <span class="volunteer-detail-fact-icon"><img class="ui-symbol" src="{{ asset('img/simbolos/participantes.png') }}" alt="" aria-hidden="true"></span>
                     <span>
                         <small>Disponibilidad de lugares</small>
                         <strong><span data-capacity-available>{{ $disponibles }}</span> espacios disponibles</strong>
@@ -522,7 +528,7 @@
 
 <dialog class="volunteer-cancel-dialog" data-enrollment-cancel-dialog aria-labelledby="cancelEnrollmentTitle" aria-describedby="cancelEnrollmentDescription">
     <div class="volunteer-cancel-dialog-content">
-        <span class="volunteer-cancel-dialog-icon" aria-hidden="true">!</span>
+        <span class="volunteer-cancel-dialog-icon"><img class="ui-symbol" src="{{ asset('img/simbolos/alerta.png') }}" alt="" aria-hidden="true"></span>
         <h2 id="cancelEnrollmentTitle">Cancelar participación</h2>
         <p id="cancelEnrollmentDescription">¿Quieres cancelar tu lugar en este voluntariado? El cupo quedará disponible para otra persona.</p>
         <p class="volunteer-cancel-dialog-status" data-enrollment-cancel-status role="status" aria-live="polite"></p>

@@ -111,7 +111,7 @@
                             href="{{ url('/mapa?voluntariado=' . urlencode($voluntariado['id'])) }}"
                             aria-label="Ver ubicación en el mapa: {{ $voluntariado['titulo'] }}"
                             title="Ver ubicación en el mapa">
-                            <span aria-hidden="true">⌖</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt="" aria-hidden="true">
                         </a>
                     </article>
                 @endforeach

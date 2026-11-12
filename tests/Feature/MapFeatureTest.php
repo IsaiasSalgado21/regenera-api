@@ -17,6 +17,19 @@ class MapFeatureTest extends TestCase
             ->assertDontSee('regeneraMapMarkers');
     }
 
+    public function test_map_legend_uses_custom_symbols_for_each_marker_type(): void
+    {
+        $response = $this->get('/mapa')->assertOk();
+
+        foreach (['voluntariado', 'cancelado', 'ubicacion', 'flora', 'fauna'] as $symbol) {
+            $response->assertSee("img/simbolos/{$symbol}.png");
+        }
+
+        $response->assertSee('data-symbols-base=', false)
+            ->assertSee('Voluntariado lleno')
+            ->assertSee('Voluntariado disponible');
+    }
+
     public function test_user_identity_and_enrollment_require_a_sanctum_token(): void
     {
         $this->getJson('/api/auth/me')->assertUnauthorized();

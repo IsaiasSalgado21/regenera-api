@@ -188,7 +188,7 @@
                         <span class="dashboard-field-label">Fecha de inicio</span>
                         <input type="hidden" name="fechaInicio">
                         <button type="button" class="dashboard-date-trigger" data-date-trigger aria-haspopup="dialog">
-                            <span aria-hidden="true">📅</span><span data-date-label>dd/mm/aaaa</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true" width="20" height="20"><span data-date-label>dd/mm/aaaa</span>
                         </button>
                         <div class="dashboard-date-popover" data-date-popover hidden>
                             <div class="dashboard-date-header">
@@ -206,7 +206,7 @@
                         <span class="dashboard-field-label">Fecha de fin</span>
                         <input type="hidden" name="fechaFin">
                         <button type="button" class="dashboard-date-trigger" data-date-trigger aria-haspopup="dialog">
-                            <span aria-hidden="true">📅</span><span data-date-label>dd/mm/aaaa</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true" width="20" height="20"><span data-date-label>dd/mm/aaaa</span>
                         </button>
                         <div class="dashboard-date-popover" data-date-popover hidden>
                             <div class="dashboard-date-header">
@@ -223,10 +223,10 @@
                 </div>
                 <div class="dashboard-form-row">
                     <label class="dashboard-time-field">Hora de inicio
-                        <span class="dashboard-time-control"><span aria-hidden="true">🕒</span><input name="horaInicio" type="time" required></span>
+                        <span class="dashboard-time-control"><img class="ui-symbol" src="{{ asset('img/simbolos/reloj.png') }}" alt="" aria-hidden="true" width="20" height="20"><input name="horaInicio" type="time" required></span>
                     </label>
                     <label class="dashboard-time-field">Hora de fin
-                        <span class="dashboard-time-control"><span aria-hidden="true">🕒</span><input name="horaFin" type="time" required></span>
+                        <span class="dashboard-time-control"><img class="ui-symbol" src="{{ asset('img/simbolos/reloj.png') }}" alt="" aria-hidden="true" width="20" height="20"><input name="horaFin" type="time" required></span>
                     </label>
                 </div>
                 <input type="hidden" name="latitud">
@@ -235,7 +235,7 @@
                 <div class="dashboard-capacity-field">
                     <span class="dashboard-choice-legend">Cupo de participantes</span>
                     <div class="dashboard-capacity-control">
-                        <span class="dashboard-capacity-icon" aria-hidden="true">👤</span>
+                        <span class="dashboard-capacity-icon" aria-hidden="true"><img class="ui-symbol" src="{{ asset('img/simbolos/participantes.png') }}" alt="" aria-hidden="true" width="26" height="26"></span>
                         <button type="button" class="dashboard-capacity-step" data-capacity-step="-1" aria-label="Disminuir cupo">−</button>
                         <input name="cupo" type="number" min="1" max="10000" value="10" inputmode="numeric" required aria-label="Número de participantes">
                         <button type="button" class="dashboard-capacity-step" data-capacity-step="1" aria-label="Aumentar cupo">+</button>
@@ -246,9 +246,9 @@
                     <span class="dashboard-field-label">Estado</span>
                     <input type="hidden" name="estado" value="pendiente">
                     <div class="dashboard-status-options">
-                        <button type="button" data-status-value="pendiente">⏳ Pendiente</button>
-                        <button type="button" data-status-value="publicado">✅ Publicado</button>
-                        <button type="button" data-status-value="cancelado">✖ Cancelado</button>
+                        <button type="button" data-status-value="pendiente"><img class="ui-symbol" src="{{ asset('img/simbolos/pendiente.png') }}" alt="" aria-hidden="true" width="20" height="20"> Pendiente</button>
+                        <button type="button" data-status-value="publicado"><img class="ui-symbol" src="{{ asset('img/simbolos/confirmado.png') }}" alt="" aria-hidden="true" width="20" height="20"> Publicado</button>
+                        <button type="button" data-status-value="cancelado"><img class="ui-symbol" src="{{ asset('img/simbolos/cancelado.png') }}" alt="" aria-hidden="true" width="20" height="20"> Cancelado</button>
                         <button type="button" data-status-value="finalizado">🏁 Finalizado</button>
                     </div>
                 </div>
@@ -319,20 +319,20 @@
                 <fieldset class="dashboard-choice-field">
                     <legend>Tipo de registro</legend>
                     <div class="dashboard-choice-grid">
-                        <label class="dashboard-choice-card"><input type="radio" name="tipo" value="flora" required><span aria-hidden="true">🌿</span><strong>Flora</strong><small>Plantas y vegetación</small></label>
-                        <label class="dashboard-choice-card"><input type="radio" name="tipo" value="fauna" required><span aria-hidden="true">🐾</span><strong>Fauna</strong><small>Animales y vida silvestre</small></label>
+                        <label class="dashboard-choice-card"><input type="radio" name="tipo" value="flora" required><span aria-hidden="true"><img class="ui-symbol" src="{{ asset('img/simbolos/flora.png') }}" alt="" aria-hidden="true" width="26" height="26"></span><strong>Flora</strong><small>Plantas y vegetación</small></label>
+                        <label class="dashboard-choice-card"><input type="radio" name="tipo" value="fauna" required><span aria-hidden="true"><img class="ui-symbol" src="{{ asset('img/simbolos/fauna.png') }}" alt="" aria-hidden="true" width="26" height="26"></span><strong>Fauna</strong><small>Animales y vida silvestre</small></label>
                     </div>
                 </fieldset>
                 <div class="dashboard-choice-field">
                     <span class="dashboard-choice-legend">Estado de conservación</span>
                     <input type="hidden" name="estadoConservacion">
                     <div class="dashboard-chip-options" data-single-choice="estadoConservacion">
-                        <button type="button" data-option-value="Protección especial">🛡️ Protección especial</button>
-                        <button type="button" data-option-value="en_peligro">🚨 En peligro</button>
-                        <button type="button" data-option-value="en_peligro_critico">🔴 En peligro crítico</button>
-                        <button type="button" data-option-value="vulnerable">⚠️ Vulnerable</button>
-                        <button type="button" data-option-value="Casi amenazada">🟠 Casi amenazada</button>
-                        <button type="button" data-option-value="Preocupación menor">🟢 Preocupación menor</button>
+                        <button type="button" data-option-value="Protección especial"><img class="ui-symbol" src="{{ asset('img/simbolos/proteccion.png') }}" alt="" aria-hidden="true" width="20" height="20"> Protección especial</button>
+                        <button type="button" data-option-value="en_peligro"><img class="ui-symbol" src="{{ asset('img/simbolos/alerta.png') }}" alt="" aria-hidden="true" width="20" height="20"> En peligro</button>
+                        <button type="button" data-option-value="en_peligro_critico"><img class="ui-symbol" src="{{ asset('img/simbolos/alerta.png') }}" alt="" aria-hidden="true" width="20" height="20"> En peligro crítico</button>
+                        <button type="button" data-option-value="vulnerable"><img class="ui-symbol" src="{{ asset('img/simbolos/alerta.png') }}" alt="" aria-hidden="true" width="20" height="20"> Vulnerable</button>
+                        <button type="button" data-option-value="Casi amenazada"><img class="ui-symbol" src="{{ asset('img/simbolos/alerta.png') }}" alt="" aria-hidden="true" width="20" height="20"> Casi amenazada</button>
+                        <button type="button" data-option-value="Preocupación menor"><img class="ui-symbol" src="{{ asset('img/simbolos/confirmado.png') }}" alt="" aria-hidden="true" width="20" height="20"> Preocupación menor</button>
                         <button type="button" data-option-value="No evaluada">❔ No evaluada</button>
                     </div>
                     <label>Otro estado (opcional)<input type="text" data-choice-custom="estadoConservacion" maxlength="100" placeholder="Escribe otro estado"></label>

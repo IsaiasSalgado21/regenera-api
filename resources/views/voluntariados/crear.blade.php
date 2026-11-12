@@ -106,14 +106,14 @@
                 <div class="dashboard-form-row">
                     <label class="dashboard-date-field" for="fechaInicio">Fecha de inicio <span class="required">*</span>
                         <span class="dashboard-date-control">
-                            <span aria-hidden="true">📅</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true">
                             <input type="date" id="fechaInicio" name="fechaInicio" required>
                         </span>
                     </label>
 
                     <label class="dashboard-date-field" for="fechaFin">Fecha de fin <span class="required">*</span>
                         <span class="dashboard-date-control">
-                            <span aria-hidden="true">📅</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true">
                             <input type="date" id="fechaFin" name="fechaFin" required>
                         </span>
                     </label>
@@ -122,14 +122,14 @@
                 <div class="dashboard-form-row">
                     <label class="dashboard-time-field" for="horaInicio">Hora de inicio
                         <span class="dashboard-time-control">
-                            <span aria-hidden="true">🕒</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/reloj.png') }}" alt="" aria-hidden="true">
                             <input type="time" id="horaInicio" name="horaInicio" required>
                         </span>
                     </label>
 
                     <label class="dashboard-time-field" for="horaFin">Hora de fin
                         <span class="dashboard-time-control">
-                            <span aria-hidden="true">🕒</span>
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/reloj.png') }}" alt="" aria-hidden="true">
                             <input type="time" id="horaFin" name="horaFin" required>
                         </span>
                     </label>
@@ -138,7 +138,7 @@
                 <div class="dashboard-capacity-field">
                     <span class="dashboard-choice-legend">Cupo de participantes</span>
                     <div class="dashboard-capacity-control">
-                        <span class="dashboard-capacity-icon" aria-hidden="true">👤</span>
+                        <span class="dashboard-capacity-icon"><img class="ui-symbol" src="{{ asset('img/simbolos/participantes.png') }}" alt="" aria-hidden="true"></span>
                         <button type="button" class="dashboard-capacity-step"
                                 data-capacity-step="-1"
                                 aria-label="Disminuir cupo">−</button>
@@ -212,21 +212,21 @@
             const placeLoadMessage = document.getElementById('placeLoadMessage');
             const suggestionOptions = {
                 requisitos: [
-                    ['🧴', 'Usar bloqueador biodegradable'],
-                    ['👟', 'Usar calzado cómodo'],
-                    ['💧', 'Llevar agua suficiente'],
-                    ['🧢', 'Llevar gorra o sombrero'],
-                    ['🧤', 'Seguir indicaciones del equipo'],
-                    ['♻️', 'Separar y recoger residuos'],
+                    ['bloqueador-solar', 'Usar bloqueador biodegradable', '🧴'],
+                    ['calzado', 'Usar calzado cómodo', '👟'],
+                    ['agua', 'Llevar agua suficiente', '💧'],
+                    ['gorra', 'Llevar gorra o sombrero', '🧢'],
+                    ['proteccion', 'Seguir indicaciones del equipo', '🧤'],
+                    ['reciclaje', 'Separar y recoger residuos', '♻️'],
                     ['🪪', 'Ser mayor de edad'],
                     ['🤝', 'Participar en equipo'],
                 ],
                 materiales: [
-                    ['🧤', 'Guantes de trabajo'],
-                    ['🧴', 'Bloqueador biodegradable'],
-                    ['💧', 'Agua potable'],
-                    ['🧢', 'Gorra o sombrero'],
-                    ['🧹', 'Bolsas para residuos'],
+                    ['guantes', 'Guantes de trabajo', '🧤'],
+                    ['bloqueador-solar', 'Bloqueador biodegradable', '🧴'],
+                    ['agua', 'Agua potable', '💧'],
+                    ['gorra', 'Gorra o sombrero', '🧢'],
+                    ['bolsa-residuos', 'Bolsas para residuos', '🧹'],
                     ['🛠️', 'Herramientas de trabajo'],
                     ['🦺', 'Chaleco de seguridad'],
                     ['🩹', 'Botiquín de primeros auxilios'],
@@ -390,15 +390,23 @@
                     );
 
                     suggestions.replaceChildren();
-                    matches.forEach(([icon, label]) => {
+                    matches.forEach(([icon, label, fallback]) => {
                         const option = document.createElement('button');
                         option.type = 'button';
                         option.setAttribute('role', 'option');
                         option.dataset.addValue = label;
 
-                        const iconElement = document.createElement('span');
+                        const symbolsBase = document.body.dataset.symbolsBase;
+                        const isSymbol = Boolean(fallback && symbolsBase);
+                        const iconElement = document.createElement(isSymbol ? 'img' : 'span');
                         iconElement.setAttribute('aria-hidden', 'true');
-                        iconElement.textContent = icon;
+                        if (isSymbol) {
+                            iconElement.className = 'ui-symbol';
+                            iconElement.alt = '';
+                            iconElement.src = `${symbolsBase.replace(/\/+$/, '')}/${icon}.png`;
+                        } else {
+                            iconElement.textContent = fallback || icon;
+                        }
                         const labelElement = document.createElement('span');
                         labelElement.textContent = label;
                         const addIcon = document.createElement('span');

@@ -36,7 +36,7 @@
         <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
     </head>
 
-    <body>
+    <body data-symbols-base="{{ asset('img/simbolos') }}">
 
         {{-- =========================
              TOPBAR

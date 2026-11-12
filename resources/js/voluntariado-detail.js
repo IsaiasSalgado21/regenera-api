@@ -99,7 +99,26 @@ if (mapElement) {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(map);
 
-        const marker = L.marker([latitude, longitude]).addTo(map);
+        const symbolsBase = document.body.dataset.symbolsBase;
+        const markerOptions = {};
+        if (symbolsBase) {
+            const image = document.createElement('img');
+            image.className = 'ui-symbol ui-symbol--map';
+            image.src = `${symbolsBase.replace(/\/+$/, '')}/ubicacion.png`;
+            image.alt = '';
+            image.setAttribute('aria-hidden', 'true');
+            markerOptions.icon = L.divIcon({
+                className: 'ui-map-pin',
+                html: image,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30],
+            });
+        }
+        const marker = L.marker([latitude, longitude], markerOptions).addTo(map);
+        if (symbolsBase) {
+            marker.getElement().setAttribute('aria-label', mapElement.dataset.locationName || 'Ubicación del voluntariado');
+        }
         const popup = document.createElement('div');
         const title = document.createElement('strong');
         title.textContent = mapElement.dataset.locationName || 'Ubicación del voluntariado';

@@ -33,8 +33,23 @@ if (mapElement && dataElement) {
             },
         }).addTo(map);
 
+        const markerImage = document.createElement('img');
+        markerImage.className = 'ui-symbol ui-symbol--map';
+        markerImage.src = `${document.body.dataset.symbolsBase}/ubicacion.png`;
+        markerImage.alt = '';
+        const markerElement = document.createElement('span');
+        markerElement.className = 'ui-map-pin';
+        markerElement.appendChild(markerImage);
+        const markerIcon = L.divIcon({
+            className: '',
+            html: markerElement.outerHTML,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30],
+        });
+
         const markers = locations.map(location => {
-            const marker = L.marker([location.latitud, location.longitud]).addTo(map);
+            const marker = L.marker([location.latitud, location.longitud], { icon: markerIcon }).addTo(map);
             const popup = document.createElement('div');
             const title = document.createElement('strong');
             const type = document.createElement('span');

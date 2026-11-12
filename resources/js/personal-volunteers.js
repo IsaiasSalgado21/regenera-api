@@ -142,7 +142,17 @@ function renderGroup(sectionSelector, listSelector, items, type) {
         mapLink.href = `/mapa?voluntariado=${encodeURIComponent(item.id || item._id)}`;
         mapLink.setAttribute('aria-label', `Ver ubicación en el mapa: ${item.titulo || 'Voluntariado'}`);
         mapLink.title = 'Ver ubicación en el mapa';
-        mapLink.textContent = '⌖';
+        const symbolsBase = document.body.dataset.symbolsBase;
+        if (symbolsBase) {
+            const mapIcon = document.createElement('img');
+            mapIcon.className = 'ui-symbol';
+            mapIcon.src = `${symbolsBase.replace(/\/+$/, '')}/ubicacion.png`;
+            mapIcon.alt = '';
+            mapIcon.setAttribute('aria-hidden', 'true');
+            mapLink.append(mapIcon);
+        } else {
+            mapLink.textContent = '⌖';
+        }
         card.append(mapLink);
         list.append(card);
     });

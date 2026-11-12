@@ -34,6 +34,13 @@ if (drawer) {
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
     }[character]));
+    const symbols = new Map([
+        ['check', 'confirmado'], ['file-check', 'confirmado'],
+        ['x', 'alerta'], ['file-x', 'alerta'], ['calendar', 'calendario'], ['shield', 'proteccion'],
+    ]);
+    const symbol = (name, fallback) => document.body.dataset.symbolsBase && name
+        ? `<img class="ui-symbol" src="${escapeHtml(document.body.dataset.symbolsBase.replace(/\/+$/, ''))}/${name}.png" alt="" aria-hidden="true" width="20" height="20">`
+        : fallback;
 
     function updateBadge(count) {
         badges.forEach(badge => {
@@ -50,13 +57,13 @@ if (drawer) {
             ? recipientFiltered.filter(item => !item.leida)
             : recipientFiltered;
         if (!visible.length) {
-            list.innerHTML = '<div class="notification-empty"><span aria-hidden="true">✓</span><p>¡Estás al día!<br>No tienes notificaciones pendientes.</p></div>';
+            list.innerHTML = `<div class="notification-empty"><span aria-hidden="true">${symbol('confirmado', '✓')}</span><p>¡Estás al día!<br>No tienes notificaciones pendientes.</p></div>`;
             return;
         }
         list.innerHTML = visible.map(item => `
             <button type="button" class="notification-item ${item.leida ? '' : 'is-unread'} priority-${escapeHtml(item.prioridad)}"
                 data-notification-id="${escapeHtml(item.id)}" ${item.url ? `data-notification-url="${escapeHtml(item.url)}"` : ''}>
-                <span class="notification-item-icon icon-${escapeHtml(item.icono)}" aria-hidden="true">${icon[item.icono] ?? 'i'}</span>
+                <span class="notification-item-icon icon-${escapeHtml(item.icono)}" aria-hidden="true">${symbol(symbols.get(item.icono), Object.hasOwn(icon, item.icono) ? icon[item.icono] : 'i')}</span>
                 <span class="notification-item-content">
                     <strong>${escapeHtml(item.titulo)}</strong>
                     <span>${escapeHtml(item.mensaje)}</span>
