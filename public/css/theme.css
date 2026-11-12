@@ -546,3 +546,69 @@ html[data-theme="dark"] .volunteer-capacity-heading strong,
 html[data-theme="dark"] .volunteer-capacity-stats strong {
     color: #b7e5d1;
 }
+
+html[data-theme="dark"] .article-library-header h1,
+html[data-theme="dark"] .article-library-copy h2,
+html[data-theme="dark"] .article-related-heading h2 {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .article-library-header p,
+html[data-theme="dark"] .article-library-eyebrow,
+html[data-theme="dark"] .article-library-category,
+html[data-theme="dark"] .article-library-copy > p,
+html[data-theme="dark"] .article-library-byline,
+html[data-theme="dark"] .article-library-empty,
+html[data-theme="dark"] .article-library-pagination,
+html[data-theme="dark"] .article-reading-byline,
+html[data-theme="dark"] .article-reading-note small {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .article-library-header,
+html[data-theme="dark"] .article-library-filters {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .article-library-card {
+    border-color: #35473d;
+    background: #1b2822;
+}
+
+html[data-theme="dark"] .article-library-image--empty {
+    background: linear-gradient(135deg, #25382d, #1d2c23);
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .article-library-read-link,
+html[data-theme="dark"] .article-submit-link,
+html[data-theme="dark"] .article-reading-back {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .article-reading-header h1,
+html[data-theme="dark"] .article-reading-body .article-reading-lead {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .article-reading-body {
+    color: #d3ded7;
+}
+
+html[data-theme="dark"] .article-reading-note {
+    border-color: #83c8a7;
+}
+
+html[data-theme="dark"] .article-reading-note span {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .article-reading-note strong {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .article-library-pagination button {
+    border-color: #45594e;
+    background: #1b2822;
+    color: #d7e8dd;
+}

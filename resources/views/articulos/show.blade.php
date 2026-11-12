@@ -10,46 +10,51 @@
 @endpush
 
 @section('content')
-<main class="page">
-
-    {{-- HERO --}}
-    <section class="page-hero">
-        @if ($articulo->imagen)
-            <div class="page-hero-background" style="background-image: url('{{ $articulo->imagen }}')"></div>
-        @else
-            <div class="page-hero-background"
-                 style="background-image: url('https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1800&q=85');">
-            </div>
-        @endif
-        <div class="page-hero-overlay"></div>
-
-        <div class="page-hero-content">
-            <span class="page-label">{{ strtoupper($articulo->categoria ?? 'ARTÍCULO') }}</span>
+<main class="article-reading">
+    <div class="article-reading-shell">
+        <a href="{{ url('/articulos') }}" class="article-reading-back">← Todos los artículos</a>
+        <header class="article-reading-header">
+            <span class="article-reading-category">{{ $articulo->categoria ?: 'Artículo' }}</span>
             <h1>{{ $articulo->titulo }}</h1>
-            @if ($articulo->fechaPublicacion)
-                <p>Publicado el {{ $articulo->fechaPublicacion->format('d/m/Y') }}</p>
-            @endif
-        </div>
-    </section>
-
-    <section class="page-content">
-
-        <article class="articulo-detail">
-            <div class="articulo-body">
-                {!! nl2br(e($articulo->contenido)) !!}
+            <div class="article-reading-byline">
+                <span>Por {{ $autorNombre }}</span>
+                @if ($articulo->fechaPublicacion)
+                    <time datetime="{{ $articulo->fechaPublicacion->toIso8601String() }}">{{ $articulo->fechaPublicacion->timezone('America/Mazatlan')->format('d M Y') }}</time>
+                @endif
+                <span>{{ $minutosLectura }} min de lectura</span>
             </div>
+        </header>
+
+        @if ($articulo->imagen)
+            <figure class="article-reading-cover">
+                <img src="{{ $articulo->imagen }}" alt="Imagen de {{ $articulo->titulo }}" fetchpriority="high">
+            </figure>
+        @endif
+
+        <article class="article-reading-content">
+            <div class="article-reading-body">
+                @foreach ($parrafos as $parrafo)
+                    <p class="{{ $loop->first ? 'article-reading-lead' : '' }}">{!! nl2br(e($parrafo)) !!}</p>
+                @endforeach
+            </div>
+            <aside class="article-reading-note">
+                <span>LECTURA</span>
+                <strong>{{ $articulo->categoria ?: 'Comunidad' }}</strong>
+                <small>Una historia de Baja California Sur</small>
+            </aside>
         </article>
+
         @if (count($articulo->imagenes ?? []) > 1)
             <section class="detail-image-gallery" aria-label="Imágenes del artículo">
-                @foreach ($articulo->imagenes as $index => $image)
-                    <img src="{{ $image }}" alt="Imagen {{ $index + 1 }} de {{ $articulo->titulo }}" loading="lazy">
+                @foreach (array_slice($articulo->imagenes, 1) as $index => $image)
+                    <img src="{{ $image }}" alt="Imagen {{ $index + 2 }} de {{ $articulo->titulo }}" loading="lazy">
                 @endforeach
             </section>
         @endif
 
         {{-- OTROS ARTÍCULOS --}}
         @if ($otros->count())
-            <div class="page-intro" style="margin-top:90px">
+            <div class="article-related-heading">
                 <h2>Te puede interesar.</h2>
             </div>
 
