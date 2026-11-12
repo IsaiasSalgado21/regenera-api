@@ -234,6 +234,9 @@ main#inicio {
     left: 0;
 
     width: 100%;
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 
     padding: 20px;
 
@@ -1022,6 +1025,7 @@ footer {
 
     .mobile-menu {
         top: 64px;
+        max-height: calc(100dvh - 64px);
     }
 
     .logo {
