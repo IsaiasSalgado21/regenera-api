@@ -8,13 +8,10 @@ const gallery = document.querySelector('[data-volunteer-gallery]');
 const lightbox = document.querySelector('[data-gallery-lightbox]');
 
 if (gallery && lightbox) {
-    const images = [...gallery.querySelectorAll('[data-gallery-index]')].map(button => ({
-        src: button.querySelector('img').src,
-        alt: button.querySelector('img').alt,
-    }));
+    const images = [...gallery.querySelectorAll('[data-gallery-index]')].map(button => button.querySelector('img').src);
     if (!images.length) {
         const mainImage = gallery.querySelector('[data-gallery-main]');
-        if (mainImage) images.push({ src: mainImage.src, alt: mainImage.alt });
+        if (mainImage) images.push(mainImage.src);
     }
 
     let activeIndex = 0;
@@ -27,17 +24,15 @@ if (gallery && lightbox) {
         if (!images.length) return;
         activeIndex = (index + images.length) % images.length;
         const image = images[activeIndex];
-        mainImage.src = image.src;
-        mainImage.alt = `Imagen ${activeIndex + 1} del voluntariado`;
+        mainImage.src = image;
         if (count) count.textContent = `${activeIndex + 1} / ${images.length}`;
         gallery.querySelectorAll('[data-gallery-index]').forEach((button, buttonIndex) => {
             const active = buttonIndex === activeIndex;
             button.classList.toggle('is-active', active);
             button.setAttribute('aria-pressed', String(active));
         });
-        if (!lightbox.open) return;
-        lightboxImage.src = image.src;
-        lightboxImage.alt = image.alt || `Imagen ${activeIndex + 1} del voluntariado`;
+        lightboxImage.src = image;
+        lightboxImage.alt = `Imagen ${activeIndex + 1} de ${gallery.dataset.galleryTitle}`;
         lightboxCaption.textContent = `${activeIndex + 1} / ${images.length}`;
     }
 

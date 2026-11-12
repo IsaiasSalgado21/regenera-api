@@ -12,9 +12,11 @@
 
 @section('content')
 <main class="page volunteer-detail-page">
-    <section class="page-hero">
-        @if ($voluntariado->imagen)
-            <div class="page-hero-background" style="background-image: url('{{ $voluntariado->imagen }}')"></div>
+    <section class="page-hero" @if (count($voluntariado->imagenes ?? [])) data-volunteer-gallery data-gallery-title="{{ $voluntariado->titulo }}" @endif>
+        @if (count($voluntariado->imagenes ?? []))
+            <div class="page-hero-background" aria-hidden="true">
+                <img src="{{ $voluntariado->imagenes[0] }}" alt="" data-gallery-main>
+            </div>
         @else
             <div class="page-hero-background volunteer-detail-placeholder"></div>
         @endif
@@ -28,22 +30,14 @@
             <p class="volunteer-author">Organiza: {{ $organizadorNombre ?: 'Organizador' }}</p>
             <p>{{ \Illuminate\Support\Str::limit($voluntariado->descripcion, 180) }}</p>
         </div>
-    </section>
-
-    <section class="page-content volunteer-detail-content">
-        <a href="{{ url('/voluntariados') }}" class="volunteer-detail-back">← Volver a voluntariados</a>
-
         @if (count($voluntariado->imagenes ?? []))
-            <section class="volunteer-gallery" data-volunteer-gallery aria-label="Galería del voluntariado">
-                <div class="volunteer-gallery-main">
-                    <button type="button" class="volunteer-gallery-image" data-gallery-open aria-label="Abrir imagen en grande">
-                        <img src="{{ $voluntariado->imagenes[0] }}" alt="Imagen 1 de {{ $voluntariado->titulo }}" data-gallery-main>
-                        <span class="volunteer-gallery-zoom" aria-hidden="true">⤢ Ver en grande</span>
-                    </button>
+            <div class="volunteer-gallery" role="group" aria-label="Imágenes del voluntariado">
+                <div class="volunteer-gallery-controls">
+                    <button type="button" class="volunteer-gallery-zoom" data-gallery-open>⤢ Ver imagen en grande</button>
                     @if (count($voluntariado->imagenes) > 1)
                         <button type="button" class="volunteer-gallery-arrow is-previous" data-gallery-step="-1" aria-label="Imagen anterior">‹</button>
-                        <button type="button" class="volunteer-gallery-arrow is-next" data-gallery-step="1" aria-label="Imagen siguiente">›</button>
                         <span class="volunteer-gallery-count" data-gallery-count>1 / {{ count($voluntariado->imagenes) }}</span>
+                        <button type="button" class="volunteer-gallery-arrow is-next" data-gallery-step="1" aria-label="Imagen siguiente">›</button>
                     @endif
                 </div>
                 @if (count($voluntariado->imagenes) > 1)
@@ -58,8 +52,12 @@
                         @endforeach
                     </div>
                 @endif
-            </section>
+            </div>
         @endif
+    </section>
+
+    <section class="page-content volunteer-detail-content">
+        <a href="{{ url('/voluntariados') }}" class="volunteer-detail-back">← Volver a voluntariados</a>
 
         <div class="volunteer-detail-grid">
             <article class="volunteer-detail-main">
@@ -88,7 +86,17 @@
                         <h3><img class="ui-symbol" src="{{ asset('img/simbolos/mochila.png') }}" alt="" aria-hidden="true"> Qué llevar</h3>
                         <ul class="volunteer-detail-chips volunteer-detail-chips--materials">
                             @foreach ($voluntariado->materiales as $material)
-                                <li><span aria-hidden="true">✦</span>{{ $material }}</li>
+                                @php
+                                    $symbol = \App\Support\VoluntariadoMaterialSymbol::for($material);
+                                @endphp
+                                <li>
+                                    @if ($symbol)
+                                        <img class="ui-symbol" src="{{ asset('img/simbolos/' . $symbol . '.png') }}" alt="" aria-hidden="true">
+                                    @else
+                                        <span aria-hidden="true">✦</span>
+                                    @endif
+                                    {{ $material }}
+                                </li>
                             @endforeach
                         </ul>
                     </section>
@@ -516,15 +524,21 @@
     </section>
 </main>
 
+@if (count($voluntariado->imagenes ?? []))
 <dialog class="volunteer-lightbox" data-gallery-lightbox aria-label="Visor de imágenes">
     <button type="button" class="volunteer-lightbox-close" data-gallery-close aria-label="Cerrar imagen">×</button>
-    <button type="button" class="volunteer-lightbox-arrow is-previous" data-lightbox-step="-1" aria-label="Imagen anterior">‹</button>
+    @if (count($voluntariado->imagenes) > 1)
+        <button type="button" class="volunteer-lightbox-arrow is-previous" data-lightbox-step="-1" aria-label="Imagen anterior">‹</button>
+    @endif
     <figure>
         <img src="{{ $voluntariado->imagenes[0] ?? '' }}" alt="Imagen del voluntariado" data-lightbox-image>
         <figcaption data-lightbox-caption>1 / {{ count($voluntariado->imagenes ?? []) }}</figcaption>
     </figure>
-    <button type="button" class="volunteer-lightbox-arrow is-next" data-lightbox-step="1" aria-label="Imagen siguiente">›</button>
+    @if (count($voluntariado->imagenes) > 1)
+        <button type="button" class="volunteer-lightbox-arrow is-next" data-lightbox-step="1" aria-label="Imagen siguiente">›</button>
+    @endif
 </dialog>
+@endif
 
 <dialog class="volunteer-cancel-dialog" data-enrollment-cancel-dialog aria-labelledby="cancelEnrollmentTitle" aria-describedby="cancelEnrollmentDescription">
     <div class="volunteer-cancel-dialog-content">

@@ -39,6 +39,8 @@ vistas usan `asset()` y los scripts toman la ruta base del atributo
 `data-symbols-base` del layout, para funcionar también en instalaciones bajo
 un subdirectorio. La clase `ui-symbol` mantiene su tamaño y contraste en ambos
 temas; los marcadores del mapa conservan su fondo y leyenda.
+En el detalle de voluntariado se reconocen materiales habituales por su
+nombre; los materiales personalizados sin símbolo conservan una viñeta.
 
 ## Registro de impacto ambiental
 
