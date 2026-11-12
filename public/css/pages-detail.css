@@ -676,6 +676,212 @@
     gap: 14px;
 }
 
+.volunteer-impact-form {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(120px, .55fr) minmax(180px, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin: 0 0 22px;
+    border: 1px solid rgba(22, 79, 61, .13);
+    border-radius: 12px;
+    padding: 16px;
+    background: rgba(235, 242, 235, .62);
+}
+
+.volunteer-impact-form label {
+    display: grid;
+    gap: 6px;
+    color: #53665b;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.volunteer-impact-form label > span {
+    color: #7a867e;
+    font-weight: 400;
+}
+
+.volunteer-impact-form input,
+.volunteer-impact-form select,
+.volunteer-impact-form textarea {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #cfdcd1;
+    border-radius: 6px;
+    padding: 9px 10px;
+    background: #fff;
+    color: #253e31;
+    font: inherit;
+    font-weight: 400;
+}
+
+.volunteer-impact-form textarea {
+    resize: vertical;
+}
+
+.volunteer-impact-custom-fields {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    align-items: end;
+    gap: 10px;
+}
+
+.volunteer-impact-custom-fields[hidden] {
+    display: none;
+}
+
+.volunteer-impact-form .volunteer-impact-save-type {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 8px;
+}
+
+.volunteer-impact-save-type input[type="checkbox"] {
+    flex: 0 0 18px;
+    width: 18px;
+    min-height: 18px;
+    margin: 0;
+    accent-color: #34785c;
+}
+
+.volunteer-impact-species-field,
+.volunteer-impact-evidence-field,
+.volunteer-impact-form-status {
+    grid-column: 1 / -1;
+}
+
+.volunteer-impact-form input[type="file"] {
+    padding: 7px;
+}
+
+.volunteer-impact-form-status {
+    min-height: 1em;
+    margin: 0;
+    color: #53665b;
+    font-size: .8rem;
+}
+
+.volunteer-impact-optional-actions {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    gap: 8px;
+}
+
+.volunteer-impact-optional-actions .button,
+.volunteer-impact-species-picker .button,
+.volunteer-impact-custom-species .button {
+    min-height: 38px;
+    font-size: .78rem;
+}
+
+.volunteer-impact-optional-panel {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: 12px;
+    border: 1px solid rgba(22, 79, 61, .12);
+    border-radius: 8px;
+    padding: 14px;
+    background: rgba(255, 255, 255, .72);
+}
+
+.volunteer-impact-optional-panel[hidden] {
+    display: none;
+}
+
+.volunteer-impact-species-picker,
+.volunteer-impact-custom-species {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.volunteer-impact-species-picker select,
+.volunteer-impact-custom-species input {
+    min-width: 0;
+    flex: 1;
+}
+
+.volunteer-impact-species-status {
+    margin: -4px 0 0;
+    color: #68756e;
+    font-size: .75rem;
+}
+
+.volunteer-impact-selected-species {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.volunteer-impact-species-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #d5e2d7;
+    border-radius: 999px;
+    padding: 5px 8px 5px 10px;
+    background: #edf4ee;
+    color: #315e49;
+    font-size: .74rem;
+}
+
+.volunteer-impact-species-chip button {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.volunteer-impact-evidence {
+    margin-top: 24px;
+}
+
+.volunteer-impact-evidence h3 {
+    margin: 0 0 12px;
+    color: var(--black, #14201b);
+    font-family: "Playfair Display", serif;
+    font-size: 1.15rem;
+}
+
+.volunteer-impact-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+    gap: 12px;
+}
+
+.volunteer-impact-evidence-grid figure {
+    min-width: 0;
+    overflow: hidden;
+    margin: 0;
+    border: 1px solid rgba(22, 79, 61, .12);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.volunteer-impact-evidence-grid img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: #e7ece7;
+}
+
+.volunteer-impact-evidence-grid figcaption {
+    padding: 8px 10px;
+    color: var(--gray, #68756e);
+    font-size: .72rem;
+    line-height: 1.4;
+}
+
 .volunteer-impact-card {
     min-width: 0;
     padding: 18px;
@@ -852,6 +1058,43 @@ html[data-theme="dark"] .volunteer-impact-card {
     background: rgba(255, 255, 255, .035);
 }
 
+html[data-theme="dark"] .volunteer-impact-form,
+html[data-theme="dark"] .volunteer-impact-evidence-grid figure {
+    border-color: #35473d;
+    background: #142019;
+}
+
+html[data-theme="dark"] .volunteer-impact-form label,
+html[data-theme="dark"] .volunteer-impact-form-status,
+html[data-theme="dark"] .volunteer-impact-evidence-grid figcaption {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .volunteer-impact-form :is(input, select, textarea) {
+    border-color: #45594e;
+    background: #101915;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteer-impact-evidence h3 {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .volunteer-impact-optional-panel {
+    border-color: #35473d;
+    background: #142019;
+}
+
+html[data-theme="dark"] .volunteer-impact-species-status {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .volunteer-impact-species-chip {
+    border-color: #456653;
+    background: #1d3a2b;
+    color: #bce6c9;
+}
+
 html[data-theme="dark"] .volunteer-impact-total {
     color: #83c8a7;
 }
@@ -869,6 +1112,24 @@ html[data-theme="dark"] .volunteer-impact-total {
     .volunteer-impact-history li {
         flex-direction: column;
         gap: 2px;
+    }
+
+    .volunteer-impact-form {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 13px;
+    }
+
+    .volunteer-impact-species-field,
+    .volunteer-impact-evidence-field,
+    .volunteer-impact-optional-actions,
+    .volunteer-impact-form-status {
+        grid-column: auto;
+    }
+
+    .volunteer-impact-species-picker,
+    .volunteer-impact-custom-species {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
 

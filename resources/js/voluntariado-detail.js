@@ -138,6 +138,26 @@ if (detailCard) {
     const capacityCard = document.querySelector('[data-volunteer-capacity]');
     const impactForm = document.querySelector('[data-volunteer-impact-form]');
     const impactStatus = impactForm?.querySelector('[data-impact-status]');
+    const impactTypeSelect = impactForm?.querySelector('[data-impact-type]');
+    const impactCustomFields = impactForm?.querySelector('[data-impact-custom-fields]');
+    const impactSavedTypeWrap = impactForm?.querySelector('[data-impact-saved-type-wrap]');
+    const impactSavedTypeSelect = impactForm?.querySelector('[data-impact-saved-type]');
+    const impactCustomLabel = impactForm?.querySelector('[data-impact-custom-label]');
+    const impactUnitSelect = impactForm?.querySelector('[data-impact-unit-select]');
+    const impactUnitValue = impactForm?.querySelector('[data-impact-unit-value]');
+    const impactOtherUnitWrap = impactForm?.querySelector('[data-impact-other-unit-wrap]');
+    const impactOtherUnit = impactForm?.querySelector('[data-impact-other-unit]');
+    const impactSaveType = impactForm?.querySelector('[data-impact-save-type]');
+    const impactSpeciesPanel = impactForm?.querySelector('[data-impact-panel="species"]');
+    const impactSpeciesSearch = impactForm?.querySelector('[data-impact-species-search]');
+    const impactSpeciesSelect = impactForm?.querySelector('[data-impact-species-select]');
+    const impactSpeciesStatus = impactForm?.querySelector('[data-impact-species-status]');
+    const impactSelectedSpecies = new Set();
+    let impactSpeciesCatalog = [];
+    let impactSpeciesLoaded = false;
+    let impactSpeciesLoading = false;
+    let impactCustomTypesLoaded = false;
+    let impactCustomTypesLoading = false;
     const cancelDialog = document.querySelector('[data-enrollment-cancel-dialog]');
     const cancelDialogConfirm = cancelDialog?.querySelector('[data-enrollment-cancel-confirm]');
     const cancelDialogDismiss = cancelDialog?.querySelector('[data-enrollment-cancel-dismiss]');
@@ -246,8 +266,10 @@ if (detailCard) {
             const started = Date.now() >= startAt.getTime();
             const ended = Date.now() >= endAt.getTime();
             const isCancelled = detailCard.dataset.volunteerState === 'cancelado';
+            const hasRelevantImpactMetrics = Boolean(impactForm?.querySelector('select[name="tipo"] option[value]:not([value=""])'));
             const impactEligible = ended
                 && ['publicado', 'finalizado'].includes(detailCard.dataset.volunteerState)
+                && hasRelevantImpactMetrics
                 && (isAdmin || (isOwner && user.rol === 'organizador'));
             const ownerActions = detailCard.querySelector('[data-volunteer-owner-actions]');
             const editLink = detailCard.querySelector('[data-volunteer-owner-edit]');
@@ -259,6 +281,7 @@ if (detailCard) {
 
             ownerActions.hidden = !mayManage;
             if (impactForm) impactForm.hidden = !impactEligible;
+            if (impactEligible) void loadSavedImpactTypes();
             editLink.hidden = !(isAdmin || (isOwner && !started && user.rol === 'organizador'));
             cancelEventButton.hidden = !mayManage || isCancelled;
             deleteEventButton.hidden = !isAdmin;
@@ -712,6 +735,181 @@ if (detailCard) {
         return Number.isFinite(startAt.getTime()) && Number.isFinite(endAt.getTime()) && now >= startAt && now <= endAt;
     }
 
+    function renderImpactSpeciesOptions() {
+        if (!impactSpeciesSelect) return;
+        const query = impactSpeciesSearch?.value.trim().toLocaleLowerCase() || '';
+        const matches = impactSpeciesCatalog.filter(item => !query
+            || `${item.nombre} ${item.nombreCientifico || ''}`.toLocaleLowerCase().includes(query));
+        impactSpeciesSelect.replaceChildren(new Option('Selecciona una especie', ''));
+        matches.forEach(item => {
+            const label = `${item.nombre}${item.nombreCientifico ? ` (${item.nombreCientifico})` : ''} · ${item.tipo === 'fauna' ? 'Fauna' : 'Flora'}`;
+            impactSpeciesSelect.add(new Option(label, label));
+        });
+        const addButton = impactForm.querySelector('[data-impact-add-catalog-species]');
+        if (addButton) addButton.disabled = matches.length === 0;
+        if (!matches.length && impactSpeciesStatus) {
+            impactSpeciesStatus.textContent = query
+                ? 'No hay especies que coincidan con esa búsqueda.'
+                : 'El catálogo no tiene especies publicadas todavía.';
+        } else if (impactSpeciesStatus) {
+            impactSpeciesStatus.textContent = `${matches.length} especies disponibles en el catálogo.`;
+        }
+    }
+
+    async function loadImpactSpecies() {
+        if (impactSpeciesLoaded || impactSpeciesLoading || !impactSpeciesPanel) return;
+        if (!token) {
+            impactSpeciesStatus.textContent = 'Inicia sesión para consultar el catálogo de especies.';
+            return;
+        }
+        impactSpeciesLoading = true;
+        impactSpeciesStatus.textContent = 'Cargando catálogo de flora y fauna…';
+        try {
+            const { data } = await axios.get('/api/flora-fauna', { headers: attendanceHeaders() });
+            impactSpeciesCatalog = (data.data || [])
+                .filter(item => ['flora', 'fauna'].includes(item.tipo) && item.nombre)
+                .sort((first, second) => first.nombre.localeCompare(second.nombre, 'es'));
+            impactSpeciesLoaded = true;
+            renderImpactSpeciesOptions();
+        } catch (error) {
+            impactSpeciesStatus.textContent = error.response?.data?.message || 'No se pudo cargar el catálogo de especies.';
+        } finally {
+            impactSpeciesLoading = false;
+        }
+    }
+
+    async function loadSavedImpactTypes() {
+        if (impactCustomTypesLoaded || impactCustomTypesLoading || !impactSavedTypeSelect || !token) return;
+        impactCustomTypesLoading = true;
+        try {
+            const { data } = await axios.get(
+                `/api/voluntariados/${encodeURIComponent(volunteerId)}/impactos?soloTipos=1`,
+                { headers: attendanceHeaders() },
+            );
+            const savedTypes = data.data?.tiposPersonalizados || [];
+            impactSavedTypeSelect.replaceChildren(new Option('Crear un tipo nuevo', ''));
+            savedTypes.forEach(savedType => {
+                const option = new Option(`${savedType.etiqueta} · ${savedType.unidad}`, savedType.id);
+                option.dataset.label = savedType.etiqueta;
+                option.dataset.unit = savedType.unidad;
+                impactSavedTypeSelect.add(option);
+            });
+            impactSavedTypeWrap.hidden = savedTypes.length === 0;
+            impactCustomTypesLoaded = true;
+        } catch (error) {
+            console.error('No se pudieron cargar los tipos de impacto guardados.', error);
+        } finally {
+            impactCustomTypesLoading = false;
+        }
+    }
+
+    function syncImpactUnit() {
+        if (!impactUnitSelect || !impactUnitValue) return;
+        const otherUnit = impactUnitSelect.value === 'otra';
+        impactOtherUnitWrap.hidden = !otherUnit;
+        impactOtherUnit.required = otherUnit;
+        impactUnitValue.value = otherUnit ? impactOtherUnit.value.trim() : impactUnitSelect.value;
+    }
+
+    function fillSavedImpactType() {
+        const option = impactSavedTypeSelect?.selectedOptions[0];
+        if (!option?.value) {
+            impactCustomLabel.value = '';
+            impactUnitSelect.value = '';
+            impactOtherUnit.value = '';
+            impactSaveType.checked = true;
+            syncImpactUnit();
+            return;
+        }
+
+        impactCustomLabel.value = option.dataset.label || '';
+        const savedUnit = option.dataset.unit || '';
+        const unitIsListed = [...impactUnitSelect.options].some(unitOption => unitOption.value === savedUnit);
+        impactUnitSelect.value = unitIsListed ? savedUnit : 'otra';
+        impactOtherUnit.value = unitIsListed ? '' : savedUnit;
+        impactSaveType.checked = false;
+        syncImpactUnit();
+    }
+
+    function renderSelectedImpactSpecies() {
+        const selectedContainer = impactForm?.querySelector('[data-impact-selected-species]');
+        if (!selectedContainer) return;
+        selectedContainer.replaceChildren();
+        impactSelectedSpecies.forEach(species => {
+            const item = document.createElement('span');
+            item.className = 'volunteer-impact-species-chip';
+            const label = document.createElement('span');
+            label.textContent = species;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.dataset.removeImpactSpecies = species;
+            remove.setAttribute('aria-label', `Quitar ${species}`);
+            remove.textContent = '×';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'especies[]';
+            input.value = species;
+            item.append(label, remove, input);
+            selectedContainer.append(item);
+        });
+    }
+
+    function addImpactSpecies(value) {
+        const species = String(value || '').trim();
+        if (!species) return;
+        if (impactSelectedSpecies.has(species)) {
+            impactSpeciesStatus.textContent = 'Esa especie ya fue añadida.';
+            return;
+        }
+        impactSelectedSpecies.add(species);
+        renderSelectedImpactSpecies();
+        impactSpeciesStatus.textContent = `${species} añadida al reporte.`;
+    }
+
+    impactTypeSelect?.addEventListener('change', () => {
+        const isCustom = impactTypeSelect.value === 'otro';
+        impactCustomFields.hidden = !isCustom;
+        impactCustomLabel.required = isCustom;
+        impactUnitSelect.required = isCustom;
+        if (!isCustom) {
+            impactCustomLabel.value = '';
+            impactSavedTypeSelect.value = '';
+            impactUnitSelect.value = '';
+            impactOtherUnit.value = '';
+            impactSaveType.checked = true;
+        }
+        syncImpactUnit();
+    });
+
+    impactSavedTypeSelect?.addEventListener('change', fillSavedImpactType);
+    impactUnitSelect?.addEventListener('change', syncImpactUnit);
+    impactOtherUnit?.addEventListener('input', syncImpactUnit);
+
+    impactSpeciesSearch?.addEventListener('input', renderImpactSpeciesOptions);
+    impactForm?.querySelector('[data-impact-add-catalog-species]')?.addEventListener('click', () => {
+        addImpactSpecies(impactSpeciesSelect.value);
+    });
+    impactForm?.querySelector('[data-impact-add-custom-species]')?.addEventListener('click', () => {
+        const input = impactForm.querySelector('[data-impact-custom-species]');
+        addImpactSpecies(input.value);
+        input.value = '';
+    });
+    impactForm?.addEventListener('click', event => {
+        const toggle = event.target.closest('[data-impact-toggle]');
+        if (toggle) {
+            const panel = impactForm.querySelector(`[data-impact-panel="${toggle.dataset.impactToggle}"]`);
+            panel.hidden = !panel.hidden;
+            toggle.setAttribute('aria-expanded', String(!panel.hidden));
+            if (toggle.dataset.impactToggle === 'species' && !panel.hidden) void loadImpactSpecies();
+            return;
+        }
+        const remove = event.target.closest('[data-remove-impact-species]');
+        if (remove) {
+            impactSelectedSpecies.delete(remove.dataset.removeImpactSpecies);
+            renderSelectedImpactSpecies();
+        }
+    });
+
     impactForm?.addEventListener('submit', async event => {
         event.preventDefault();
         const submit = impactForm.querySelector('[data-impact-submit]');
@@ -724,14 +922,24 @@ if (detailCard) {
         impactStatus.textContent = '';
 
         try {
+            const payload = new FormData();
+            payload.append('tipo', String(formData.get('tipo') || ''));
+            payload.append('cantidad', String(formData.get('cantidad') || ''));
+            payload.append('nota', String(formData.get('nota') || '').trim());
+            if (formData.get('tipo') === 'otro') {
+                payload.append('etiquetaPersonalizada', String(formData.get('etiquetaPersonalizada') || '').trim());
+                payload.append('unidadPersonalizada', String(formData.get('unidadPersonalizada') || '').trim());
+                payload.append('guardarTipoPersonalizado', formData.get('guardarTipoPersonalizado') ? '1' : '0');
+            }
+            formData.getAll('especies[]').forEach(species => payload.append('especies[]', String(species)));
+            formData.getAll('imagenes[]')
+                .filter(file => file instanceof File && file.size > 0)
+                .forEach(file => payload.append('imagenes[]', file));
+
             const { data } = await axios.post(
                 `/api/admin/voluntariados/${encodeURIComponent(volunteerId)}/impactos`,
-                {
-                    tipo: formData.get('tipo'),
-                    cantidad: Number(formData.get('cantidad')),
-                    nota: String(formData.get('nota') || '').trim() || null,
-                },
-                { headers: attendanceHeaders() },
+                payload,
+                { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } },
             );
             impactStatus.textContent = data.message || 'Impacto registrado correctamente.';
             window.location.reload();

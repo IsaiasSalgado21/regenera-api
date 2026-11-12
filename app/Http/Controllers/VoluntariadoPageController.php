@@ -127,6 +127,7 @@ class VoluntariadoPageController extends Controller
             ImpactoVoluntariado::query()
                 ->where('voluntariadoId', (string) $voluntariado->_id)
                 ->get(),
+            $voluntariado->categoria ?: $voluntariado->titulo,
         );
 
         return view('voluntariados.show', [
@@ -134,7 +135,7 @@ class VoluntariadoPageController extends Controller
             'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
             'isOwner' => (bool) $isOwner,
             'isAdmin' => $isAdmin,
-            'impactoCatalogo' => $this->impactos->catalog(),
+            'impactoCatalogo' => $this->impactos->catalogForCategory($voluntariado->categoria ?: $voluntariado->titulo),
             'impacto' => $impacto,
             'inscritosCount' => $inscritosCount,
             'lugar' => $lugar,

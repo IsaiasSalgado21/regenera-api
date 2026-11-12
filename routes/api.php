@@ -67,7 +67,7 @@ Route::get('/voluntariados', [VoluntariadoController::class, 'index'])->middlewa
 Route::get('/voluntariados/categorias', [VoluntariadoController::class, 'categorias']);
 Route::post('/voluntariados', [VoluntariadoController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/voluntariados/{id}', [VoluntariadoController::class, 'show'])->middleware('auth.optional');
-Route::get('/voluntariados/{id}/impactos', [ImpactoVoluntariadoController::class, 'index']);
+Route::get('/voluntariados/{id}/impactos', [ImpactoVoluntariadoController::class, 'index'])->middleware('auth.optional');
 Route::get('/impactos/resumen', [ImpactoVoluntariadoController::class, 'resumen']);
 Route::put('/voluntariados/{id}', [VoluntariadoController::class, 'update'])->middleware('auth:sanctum');
 Route::patch('/voluntariados/{id}', [VoluntariadoController::class, 'update'])->middleware('auth:sanctum');

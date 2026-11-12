@@ -302,6 +302,7 @@
             </section>
         </section>
 
+        @if ($voluntariadoFinalizado)
         <section class="volunteer-impact" aria-labelledby="volunteer-impact-title">
             <header class="volunteer-impact-heading">
                 <span>HUELLA POSITIVA</span>
@@ -310,20 +311,83 @@
             </header>
 
                 <form class="volunteer-impact-form" data-volunteer-impact-form hidden>
-                    <label>Tipo de impacto
-                        <select name="tipo" required>
+                    <label>¿Qué resultado quieres registrar?
+                        <select name="tipo" data-impact-type required>
                             <option value="">Selecciona un resultado</option>
                             @foreach ($impactoCatalogo as $tipo => $metric)
-                                <option value="{{ $tipo }}">{{ $metric['etiqueta'] }} ({{ $metric['unidad'] }})</option>
+                                <option value="{{ $tipo }}">{{ $tipo === 'otro' ? 'Otro resultado' : $metric['etiqueta'] . ' · ' . $metric['unidad'] }}</option>
                             @endforeach
                         </select>
                     </label>
+                    <div class="volunteer-impact-custom-fields" data-impact-custom-fields hidden>
+                        <label data-impact-saved-type-wrap hidden>Usar un tipo que guardé antes
+                            <select data-impact-saved-type>
+                                <option value="">Crear un tipo nuevo</option>
+                            </select>
+                        </label>
+                        <label>Nombre del resultado
+                            <input name="etiquetaPersonalizada" data-impact-custom-label type="text" maxlength="100" placeholder="Ej. Material educativo distribuido">
+                        </label>
+                        <label>¿Cómo lo vas a contar?
+                            <select data-impact-unit-select>
+                                <option value="">Elige una unidad</option>
+                                <option value="kg">Kilogramos (kg)</option>
+                                <option value="g">Gramos (g)</option>
+                                <option value="km">Kilómetros (km)</option>
+                                <option value="m">Metros (m)</option>
+                                <option value="m²">Metros cuadrados (m²)</option>
+                                <option value="ha">Hectáreas (ha)</option>
+                                <option value="plantas">Plantas</option>
+                                <option value="árboles">Árboles</option>
+                                <option value="especies">Especies</option>
+                                <option value="espacios">Espacios</option>
+                                <option value="piezas">Piezas</option>
+                                <option value="personas">Personas</option>
+                                <option value="jornadas">Jornadas</option>
+                                <option value="litros">Litros</option>
+                                <option value="otra">Otra unidad…</option>
+                            </select>
+                        </label>
+                        <label data-impact-other-unit-wrap hidden>Escribe la unidad
+                            <input data-impact-other-unit type="text" maxlength="24" placeholder="Ej. nidos revisados">
+                        </label>
+                        <input name="unidadPersonalizada" data-impact-unit-value type="hidden">
+                        <label class="volunteer-impact-save-type"><input name="guardarTipoPersonalizado" data-impact-save-type type="checkbox" value="1" checked> Recordar este tipo para mis próximos voluntariados</label>
+                    </div>
                     <label>Cantidad
                         <input name="cantidad" type="number" min="0.01" max="1000000000" step="0.01" required>
                     </label>
                     <label>Nota <span>Opcional</span>
                         <input name="nota" type="text" maxlength="500" placeholder="Contexto del resultado">
                     </label>
+                    <div class="volunteer-impact-optional-actions">
+                        <button class="button button-secondary" type="button" data-impact-toggle="species" aria-expanded="false">+ Añadir especie protegida o reforestada</button>
+                        <button class="button button-secondary" type="button" data-impact-toggle="images" aria-expanded="false">+ Añadir fotos de evidencia</button>
+                    </div>
+                    <section class="volunteer-impact-optional-panel volunteer-impact-species-field" data-impact-panel="species" hidden>
+                        <label>Buscar especie de flora o fauna
+                            <input type="search" data-impact-species-search placeholder="Nombre común o científico">
+                        </label>
+                        <div class="volunteer-impact-species-picker">
+                            <select data-impact-species-select aria-label="Especie del catálogo">
+                                <option value="">Cargando catálogo…</option>
+                            </select>
+                            <button class="button button-secondary" type="button" data-impact-add-catalog-species disabled>Añadir especie</button>
+                        </div>
+                        <p class="volunteer-impact-species-status" data-impact-species-status role="status" aria-live="polite"></p>
+                        <div class="volunteer-impact-selected-species" data-impact-selected-species></div>
+                        <label>Añadir especie fuera del catálogo <span>Opcional</span>
+                            <div class="volunteer-impact-custom-species">
+                                <input type="text" data-impact-custom-species maxlength="120" placeholder="Nombre de la especie">
+                                <button class="button button-secondary" type="button" data-impact-add-custom-species>Añadir</button>
+                            </div>
+                        </label>
+                    </section>
+                    <section class="volunteer-impact-optional-panel volunteer-impact-evidence-field" data-impact-panel="images" hidden>
+                        <label>Fotografías de evidencia <span>Opcional · máximo 6 imágenes de 5 MB</span>
+                            <input name="imagenes[]" type="file" accept="image/*" multiple>
+                        </label>
+                    </section>
                     <button class="button button-primary" type="submit" data-impact-submit>Registrar impacto</button>
                     <p class="volunteer-impact-form-status" data-impact-status role="status" aria-live="polite"></p>
                 </form>
@@ -383,6 +447,28 @@
                     @endforeach
                 </div>
 
+                @php
+                    $registrosConEvidencia = array_values(array_filter(
+                        $impacto['registros'],
+                        fn ($record) => count($record['imagenes'] ?? []) > 0,
+                    ));
+                @endphp
+                @if (count($registrosConEvidencia))
+                    <section class="volunteer-impact-evidence" aria-labelledby="volunteer-impact-evidence-title">
+                        <h3 id="volunteer-impact-evidence-title">Evidencia de la actividad</h3>
+                        <div class="volunteer-impact-evidence-grid">
+                            @foreach ($registrosConEvidencia as $record)
+                                @foreach ($record['imagenes'] as $image)
+                                    <figure>
+                                        <img src="{{ $image }}" alt="Evidencia de {{ $record['etiqueta'] }} para {{ $voluntariado->titulo }}" loading="lazy">
+                                        <figcaption>{{ $record['etiqueta'] }} · {{ number_format($record['cantidad'], 2, '.', ',') }} {{ $record['unidad'] }}</figcaption>
+                                    </figure>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
                 @if (count($impacto['registros']))
                     <details class="volunteer-impact-history">
                         <summary>Ver registros recientes ({{ min(8, count($impacto['registros'])) }})</summary>
@@ -394,6 +480,9 @@
                                         · {{ number_format($record['cantidad'], 2, '.', ',') }} {{ $record['unidad'] }}
                                         @if ($record['nota'])
                                             <small>{{ $record['nota'] }}</small>
+                                        @endif
+                                        @if (count($record['especies'] ?? []))
+                                            <small>Especies: {{ implode(', ', $record['especies']) }}</small>
                                         @endif
                                     </span>
                                     @if ($record['registradoEn'])
@@ -413,6 +502,7 @@
                 </div>
             @endif
         </section>
+        @endif
 
         <div class="detail-back">
             <a href="{{ url('/voluntariados') }}" class="section-link">← Volver a voluntariados</a>

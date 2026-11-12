@@ -13,9 +13,13 @@ class ImpactoVoluntariado extends Model
     protected $fillable = [
         'voluntariadoId',
         'tipo',
+        'etiquetaPersonalizada',
+        'unidadPersonalizada',
         'cantidad',
         'unidad',
         'nota',
+        'especies',
+        'imagenes',
         'registradoPor',
     ];
 
