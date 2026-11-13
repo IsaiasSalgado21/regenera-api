@@ -53,6 +53,19 @@ aparecen en el mapa público. Para proteger especies sensibles, sus zonas
 aproximadas solo se abren en el mapa de Regenera, no en Google Maps; los
 lugares relacionados se enlazan por separado.
 
+## Progreso de medallas
+
+`GET /api/gamificacion/progreso` requiere autenticación y conserva `medallas`.
+También devuelve `medallasObtenidas`, `medallasBloqueadas` y `siguienteMedalla`.
+La siguiente medalla respeta el rol y prioriza seguridad, manglar, economía
+circular y liderazgo; las demás siguen el orden del catálogo por cuestionario.
+`siguienteMedalla.progreso` mide únicamente la aprobación binaria del
+cuestionario (0/1), sin usar su puntuación. `requisitos` indica por separado
+la asistencia o verificación necesarias. Si un intento tiene un estado inválido
+y no hay otro aprobado, el progreso es `null` y `observacion` explica el dato
+faltante. Cuando no hay medallas pendientes para el rol, `siguienteMedalla` es
+`null`.
+
 ## Registro de impacto ambiental
 
 Al concluir una actividad, su organizador propietario o un administrador puede

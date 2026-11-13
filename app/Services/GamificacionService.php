@@ -10,6 +10,7 @@ use App\Models\Inscripcion;
 use App\Models\User;
 use App\Models\Voluntariado;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Throwable;
@@ -248,6 +249,9 @@ class GamificacionService
             'puntos' => $pointsTotal,
             'nivel' => 1 + intdiv($pointsTotal, max(1, (int) config('gamificacion.nivel_por_puntos', 100))),
             'medallas' => $medals->all(),
+            'medallasObtenidas' => $medals->where('desbloqueada', true)->values()->all(),
+            'medallasBloqueadas' => $medals->where('desbloqueada', false)->values()->all(),
+            'siguienteMedalla' => $this->siguienteMedalla($usuario, $catalog, $quizProgress, $attempts, $medalEvents),
             'cuestionarios' => $quizProgress->all(),
             'cuestionariosAsignados' => $quizProgress->count(),
             'historialCuestionarios' => $attempts->map(fn ($attempt) => [
@@ -280,6 +284,83 @@ class GamificacionService
                 'referenciaTipo' => $event->referenciaTipo,
                 'referenciaId' => $event->referenciaId,
             ])->values()->all(),
+        ];
+    }
+
+    private function siguienteMedalla(
+        User $usuario,
+        Collection $catalog,
+        Collection $quizProgress,
+        Collection $attempts,
+        Collection $medalEvents,
+    ): ?array {
+        $order = array_flip(['voluntario-seguro', 'guardian-manglar', 'agente-circular', 'lider-responsable']);
+        $quiz = $catalog
+            ->sortByDesc('version')
+            ->unique('slug')
+            ->filter(fn ($item) => ! empty($item->medalla['slug'])
+                && in_array($usuario->rol, $item->audiencia ?? [], true)
+                && ! $medalEvents->has((string) $item->medalla['slug']))
+            ->sortBy(fn ($item) => sprintf(
+                '%03d:%s:%s',
+                $order[(string) $item->medalla['slug']] ?? count($order),
+                (string) $item->slug,
+                (string) $item->medalla['slug'],
+            ))
+            ->first();
+
+        if (! $quiz) {
+            return null;
+        }
+
+        $quizAttempts = $attempts->where('cuestionarioSlug', $quiz->slug);
+        $approved = $quizAttempts->contains(fn ($attempt) => $attempt->estado === 'aprobado');
+        if (! $approved && $quizAttempts->contains(fn ($attempt) => ! in_array(
+            $attempt->estado,
+            ['aprobado', 'no_aprobado', 'en_progreso'],
+            true,
+        ))) {
+            $approved = null;
+        }
+        $requirements = [];
+        if ($quiz->requiereOrganizadorVerificado ?? false) {
+            $requirements[] = [
+                'clave' => 'organizador_verificado',
+                'descripcion' => 'Tener una cuenta de organizador verificada.',
+                'cumplido' => $usuario->rol === 'organizador' && (bool) $usuario->organizadorVerificado,
+            ];
+        }
+        if ($quiz->slug === 'restauracion-entorno') {
+            $progress = $quizProgress->firstWhere('slug', $quiz->slug);
+            $eligibleActivities = $progress !== null
+                ? $progress['actividadesElegibles']
+                : $this->cuestionarios->actividadesElegibles($usuario);
+            $requirements[] = [
+                'clave' => 'asistencia_confirmada',
+                'descripcion' => 'Tener una asistencia confirmada en una actividad finalizada con inscripción válida.',
+                'cumplido' => count($eligibleActivities) > 0,
+            ];
+        }
+        $requirements[] = [
+            'clave' => 'cuestionario_aprobado',
+            'descripcion' => 'Aprobar: '.$quiz->titulo,
+            'cumplido' => $approved,
+        ];
+        return [
+            'slug' => (string) $quiz->medalla['slug'],
+            'nombre' => (string) $quiz->medalla['nombre'],
+            'descripcion' => (string) $quiz->medalla['descripcion'],
+            'cuestionarioSlug' => (string) $quiz->slug,
+            'progreso' => $approved === null ? null : [
+                'actual' => (int) $approved,
+                'objetivo' => 1,
+                'porcentaje' => $approved ? 100 : 0,
+                'unidad' => 'cuestionario_aprobado',
+            ],
+            'requisitos' => $requirements,
+            'observacion' => $approved === null
+                ? 'Falta un estado válido en un intento de este cuestionario.'
+                : ($approved ? 'El cuestionario está aprobado, pero no se encontró el evento de la medalla.' : null),
         ];
     }
 
