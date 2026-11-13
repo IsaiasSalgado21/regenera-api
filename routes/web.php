@@ -22,6 +22,7 @@ Route::get('/organizador/dashboard', fn () => view('dashboard.index', ['dashboar
     ->name('dashboard.organizador');
 Route::get('/notificaciones', fn () => view('notifications.index'))->name('notifications.index');
 Route::get('/perfil', fn () => view('profile.show'))->name('profile.show');
+Route::view('/perfil/{id}', 'profile.public')->name('profile.public');
 Route::get('/aprendizaje', fn () => view('learning.index'))->name('learning.index');
 
 // Voluntariados

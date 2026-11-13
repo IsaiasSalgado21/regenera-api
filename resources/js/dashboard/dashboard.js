@@ -510,6 +510,9 @@ function initializeDashboard() {
             const avatar = typeof participante.foto === 'string' && participante.foto
                 ? `<img src="${escapeHtml(participante.foto)}" alt="" loading="lazy">`
                 : inicial;
+            const participantName = participante.perfilUrl
+                ? `<a href="${escapeHtml(participante.perfilUrl)}">${escapeHtml(nombre)}</a>`
+                : escapeHtml(nombre);
             const fechaAsistencia = participante.asistencia
                 ? (participante.asistencia.fecha
                     ? formatDateTime(participante.asistencia.fecha)
@@ -524,7 +527,7 @@ function initializeDashboard() {
                         ? `<span>Solicitud rechazada${solicitud.motivoRespuesta ? `: ${escapeHtml(solicitud.motivoRespuesta)}` : ''}</span>`
                         : '';
             return `<tr data-participant-row data-name="${escapeHtml(nombre.toLocaleLowerCase())}" data-email="${escapeHtml(participante.correo || '').toLocaleLowerCase()}" data-inscription="${escapeHtml(estadoInscripcion)}" data-attendance="${estadoAsistencia}">
-                <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${escapeHtml(nombre)}</strong><small>${escapeHtml(participante.correo || 'Sin correo')}</small></span></div></td>
+                <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${participantName}</strong><small>${escapeHtml(participante.correo || 'Sin correo')}</small></span></div></td>
                 <td>${formatDateTime(participante.fechaInscripcion)}</td>
                 <td><span class="volunteer-state volunteer-state-${escapeHtml(estadoInscripcion)}">${escapeHtml(estadoInscripcion)}</span></td>
                 <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${etiquetaAsistencia}</span></td>

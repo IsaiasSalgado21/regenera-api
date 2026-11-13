@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { initializeAvatarCreator, renderAvatarMarkup, selectAvatarReward } from './avatar-creator';
 
 const page = document.querySelector('[data-personal-profile]');
 
@@ -16,7 +17,9 @@ if (page) {
     const accessMessage = page.querySelector('[data-profile-access]');
     const profileError = page.querySelector('[data-profile-error]');
     const gamificationSection = page.querySelector('[data-gamification-profile]');
+    const avatarDialog = page.querySelector('[data-avatar-dialog]');
     let gamificationHistory = [];
+    let pendingAvatarReward = null;
     const api = (path) => axios.get(apiUrl(path), { headers: headers() });
     const appUrl = path => `${appBaseUrl}${path}`;
 
@@ -58,6 +61,89 @@ if (page) {
     const setCount = (selector, value) => {
         const element = page.querySelector(selector);
         if (element) element.textContent = value;
+    };
+
+    const renderProfileAvatar = usuario => {
+        const avatar = page.querySelector('[data-profile-avatar]');
+        if (usuario.foto) {
+            avatar.innerHTML = `<img src="${escapeHtml(usuario.foto)}" alt="Avatar de ${escapeHtml(usuario.nombre)}">`;
+            avatar.setAttribute('aria-hidden', 'false');
+            avatar.querySelector('img').addEventListener('error', () => {
+                avatar.innerHTML = renderAvatarMarkup(usuario.avatarConfig || {});
+            }, { once: true });
+            return;
+        }
+
+        avatar.innerHTML = renderAvatarMarkup(usuario.avatarConfig || {});
+        avatar.setAttribute('aria-hidden', 'false');
+    };
+
+    const initializeProfileAvatar = (usuario, progress) => {
+        const earnedMedals = (progress?.medallasObtenidas || [])
+            .filter(medal => medal.desbloqueada)
+            .map(medal => medal.slug);
+
+        initializeAvatarCreator({
+            root: avatarDialog,
+            container: avatarDialog.querySelector('#avatar-container'),
+            configuration: usuario.avatarConfig || {},
+            earnedMedals,
+            onSave: async ({ configuration, image }) => {
+                const formData = new FormData();
+                formData.append('avatarConfig', JSON.stringify(configuration));
+                formData.append('avatar', image, 'avatar.png');
+                const response = await axios.patch(apiUrl('/api/auth/avatar'), formData, { headers: headers() });
+                usuario.avatarConfig = response.data.usuario.avatarConfig;
+                usuario.foto = response.data.usuario.foto;
+                renderProfileAvatar(usuario);
+                if (pendingAvatarReward && configuration.accessory === pendingAvatarReward.item) {
+                    markAvatarRewardSeen(pendingAvatarReward.medal, usuario.id);
+                    pendingAvatarReward = null;
+                }
+            },
+        });
+
+        const rewardCatalog = [
+            { medal: 'voluntario-seguro', item: 'hat', name: 'Gorra de explorador' },
+            { medal: 'guardian-manglar', item: 'mangrove-leaf', name: 'Insignia de manglar' },
+            { medal: 'agente-circular', item: 'recycling-badge', name: 'Insignia circular' },
+            { medal: 'lider-responsable', item: 'organizer-vest', name: 'Chaleco de organizador' },
+        ];
+        const earned = new Set(earnedMedals);
+        const availableReward = rewardCatalog.find(reward => earned.has(reward.medal)
+            && usuario.avatarConfig?.accessory !== reward.item
+            && !hasSeenAvatarReward(reward.medal, usuario.id));
+        const rewardPanel = avatarDialog.querySelector('[data-avatar-reward]');
+        rewardPanel.hidden = !availableReward;
+        if (availableReward) {
+            rewardPanel.dataset.rewardItem = availableReward.item;
+            rewardPanel.dataset.rewardMedal = availableReward.medal;
+            rewardPanel.dataset.userId = usuario.id;
+            avatarDialog.querySelector('[data-avatar-reward-title]').textContent = `Nueva recompensa: ${availableReward.name}`;
+            avatarDialog.querySelector('[data-avatar-reward-copy]').textContent = 'La desbloqueaste con una medalla. Puedes probarla ahora y guardar el cambio, o volver después.';
+        }
+
+        const publicLink = page.querySelector('[data-profile-public-link]');
+        publicLink.href = appUrl(`/perfil/${encodeURIComponent(usuario.id)}`);
+        publicLink.hidden = false;
+    };
+
+    const avatarRewardSeenKey = userId => `regenera_avatar_rewards_seen_${userId}`;
+    const hasSeenAvatarReward = (medal, userId) => {
+        try {
+            return JSON.parse(localStorage.getItem(avatarRewardSeenKey(userId)) || '[]').includes(medal);
+        } catch {
+            return false;
+        }
+    };
+    const markAvatarRewardSeen = (medal, userId) => {
+        const key = avatarRewardSeenKey(userId);
+        try {
+            const seen = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!seen.includes(medal)) localStorage.setItem(key, JSON.stringify([...seen, medal]));
+        } catch {
+            return;
+        }
     };
 
     const medalSvg = iconName => {
@@ -121,6 +207,28 @@ if (page) {
             ${medal.fechaObtencion ? `<time datetime="${escapeHtml(medal.fechaObtencion)}">${escapeHtml(formatDate(medal.fechaObtencion))}</time>` : ''}
         </article>`).join('');
 
+        const nextMedal = progress.siguienteMedalla;
+        const nextMedalCard = page.querySelector('[data-next-medal]');
+        const completeNote = page.querySelector('[data-next-medal-complete]');
+        nextMedalCard.hidden = !nextMedal;
+        completeNote.hidden = Boolean(nextMedal);
+        if (nextMedal) {
+            page.querySelector('[data-next-medal-name]').textContent = nextMedal.nombre;
+            page.querySelector('[data-next-medal-description]').textContent = nextMedal.descripcion;
+            const percentage = nextMedal.progreso?.porcentaje;
+            const safePercentage = Number.isFinite(percentage) ? Math.min(100, Math.max(0, percentage)) : 0;
+            page.querySelector('[data-next-medal-bar]').style.width = `${safePercentage}%`;
+            page.querySelector('[data-next-medal-progress]').textContent = nextMedal.progreso
+                ? `Cuestionario: ${safePercentage}%`
+                : (nextMedal.observacion || 'Progreso no disponible.');
+            page.querySelector('[data-next-medal-requirements]').innerHTML = (nextMedal.requisitos || []).map(requirement => `
+                <li class="${requirement.cumplido === true ? 'is-complete' : ''}">
+                    <span aria-hidden="true">${requirement.cumplido === true ? '✓' : requirement.cumplido === false ? '○' : '—'}</span>
+                    ${escapeHtml(requirement.descripcion)}
+                </li>`).join('');
+            page.querySelector('[data-next-medal-link]').href = appUrl(`/aprendizaje?cuestionario=${encodeURIComponent(nextMedal.cuestionarioSlug)}`);
+        }
+
         const courses = progress.cuestionarios || [];
         page.querySelector('[data-gamification-courses]').innerHTML = courses.length
             ? courses.map(course => `<a class="profile-learning-item" href="${appUrl(`/aprendizaje?cuestionario=${encodeURIComponent(course.slug)}`)}">
@@ -147,11 +255,13 @@ if (page) {
         try {
             const response = await api('/api/gamificacion/progreso');
             renderGamification(response.data.data, usuario);
+            return response.data.data;
         } catch (error) {
             gamificationSection.hidden = false;
             page.querySelector('[data-gamification-error]').hidden = false;
             page.querySelector('[data-gamification-error]').textContent = error.response?.data?.message
                 || 'No se pudo cargar tu progreso guardado.';
+            return null;
         }
     };
 
@@ -389,22 +499,12 @@ if (page) {
                 organizador: 'Organizador',
                 admin: 'Administrador',
             };
-            const avatar = page.querySelector('[data-profile-avatar]');
             page.querySelector('[data-profile-name]').textContent = usuario.nombre || 'Usuario';
             page.querySelector('[data-profile-email]').textContent = usuario.correo || '';
             page.querySelector('[data-profile-role]').textContent = roleLabels[usuario.rol] || usuario.rol || 'Cuenta';
             page.querySelector('[data-profile-state]').textContent = usuario.estado === 'activo' ? 'Cuenta activa' : (usuario.estado || 'Estado no disponible');
             page.querySelector('[data-profile-joined]').textContent = formatDate(usuario.fechaRegistro);
-            if (usuario.foto) {
-                avatar.innerHTML = `<img src="${escapeHtml(usuario.foto)}" alt="Foto de perfil de ${escapeHtml(usuario.nombre)}">`;
-                avatar.setAttribute('aria-hidden', 'false');
-                avatar.querySelector('img').addEventListener('error', () => {
-                    avatar.textContent = (usuario.nombre || 'R').trim().charAt(0).toLocaleUpperCase('es-MX');
-                    avatar.setAttribute('aria-hidden', 'true');
-                }, { once: true });
-            } else {
-                avatar.textContent = (usuario.nombre || 'R').trim().charAt(0).toLocaleUpperCase('es-MX');
-            }
+            renderProfileAvatar(usuario);
             const verification = page.querySelector('[data-profile-verification]');
             const isVerifiedOrganizer = usuario.rol === 'organizador' && Boolean(usuario.organizadorVerificado);
             verification.hidden = usuario.rol !== 'organizador';
@@ -414,7 +514,8 @@ if (page) {
                 section.hidden = section.dataset.profileSection !== usuario.rol;
             });
 
-            await loadGamification(usuario);
+            const progress = await loadGamification(usuario);
+            initializeProfileAvatar(usuario, progress);
             if (usuario.rol === 'usuario') await loadUserActivity(usuario);
             if (usuario.rol === 'organizador') await loadOrganizerActivity();
         } catch (error) {
@@ -424,6 +525,27 @@ if (page) {
                 : 'No se pudo cargar tu perfil. Intenta de nuevo más tarde.';
         }
     };
+
+    page.addEventListener('click', event => {
+        if (event.target.closest('[data-avatar-open]')) avatarDialog.showModal();
+        if (event.target.closest('[data-avatar-close]')) avatarDialog.close();
+        if (event.target.closest('[data-avatar-reward-equip]')) {
+            const reward = avatarDialog.querySelector('[data-avatar-reward]');
+            pendingAvatarReward = { item: reward.dataset.rewardItem, medal: reward.dataset.rewardMedal };
+            if (selectAvatarReward(reward.dataset.rewardItem)) {
+                reward.hidden = true;
+                avatarDialog.querySelector('[data-avatar-status]').textContent = 'Cosmético equipado. Guarda el avatar para conservar el cambio.';
+            }
+        }
+        if (event.target.closest('[data-avatar-reward-dismiss]')) {
+            const reward = avatarDialog.querySelector('[data-avatar-reward]');
+            markAvatarRewardSeen(reward.dataset.rewardMedal, reward.dataset.userId);
+            reward.hidden = true;
+        }
+    });
+    avatarDialog.addEventListener('click', event => {
+        if (event.target === avatarDialog) avatarDialog.close();
+    });
 
     showProfile();
     document.addEventListener('regenera:auth-changed', showProfile);

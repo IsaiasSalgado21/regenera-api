@@ -30,6 +30,7 @@ class User extends Authenticatable
         'correo',
         'password',
         'foto',
+        'avatarConfig',
         'rol',
         'organizadorVerificado',
         'fechaRegistro',
@@ -56,6 +57,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'avatarConfig' => 'array',
             'organizadorVerificado' => 'boolean',
             'fechaRegistro' => 'datetime',
         ];

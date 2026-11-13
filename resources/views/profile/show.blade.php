@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pages.css') }}">
     <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/avatar-editor.css') }}">
 @endpush
 
 @section('content')
@@ -24,7 +25,10 @@
         <div class="profile-load-error" data-profile-error hidden role="alert"></div>
 
         <section class="profile-identity" data-profile-identity aria-live="polite">
-            <div class="profile-avatar" data-profile-avatar aria-hidden="true">R</div>
+            <div class="profile-avatar-column">
+                <div class="profile-avatar" data-profile-avatar aria-hidden="true">R</div>
+                <button class="profile-avatar-edit-button" type="button" data-avatar-open>Editar avatar</button>
+            </div>
             <div class="profile-identity-main">
                 <span class="profile-eyebrow">PERFIL PERSONAL</span>
                 <h2 data-profile-name>Cargando perfil…</h2>
@@ -35,8 +39,10 @@
                     <span class="profile-badge profile-badge-verification" data-profile-verification hidden></span>
                 </div>
             </div>
-            <p class="profile-joined"><span>Miembro desde</span><strong data-profile-joined>—</strong></p>
+            <p class="profile-joined"><span>Miembro desde</span><strong data-profile-joined>—</strong><a data-profile-public-link hidden>Ver perfil público <span aria-hidden="true">↗</span></a></p>
         </section>
+
+        @include('profile.avatar-editor')
 
         <section class="profile-gamification" data-gamification-profile hidden aria-labelledby="gamificationHeading">
             <div class="profile-section-heading">
@@ -56,6 +62,21 @@
             <p class="profile-inline-note" data-gamification-hours-note>Estimación con el horario programado de actividades finalizadas, asistencia confirmada e inscripción no cancelada; el sistema no registra la hora de salida individual.</p>
             <p class="profile-inline-note">El porcentaje de economía circular mide el resultado del cuestionario; no representa la conducta ambiental.</p>
             <p class="profile-organizer-certification" data-organizer-certification hidden></p>
+            <section class="profile-next-medal" data-next-medal hidden aria-labelledby="nextMedalHeading">
+                <div class="profile-next-medal-mark" aria-hidden="true">✦</div>
+                <div class="profile-next-medal-content">
+                    <span class="profile-eyebrow">PRÓXIMO LOGRO</span>
+                    <h3 id="nextMedalHeading" data-next-medal-name></h3>
+                    <p data-next-medal-description></p>
+                    <div class="profile-next-medal-track" role="img" aria-label="Progreso del siguiente cuestionario">
+                        <span data-next-medal-bar></span>
+                    </div>
+                    <p class="profile-next-medal-progress" data-next-medal-progress></p>
+                    <ul data-next-medal-requirements></ul>
+                    <a data-next-medal-link href="{{ route('learning.index') }}">Continuar aprendizaje <span aria-hidden="true">↗</span></a>
+                </div>
+            </section>
+            <p class="profile-next-medal-complete" data-next-medal-complete hidden>Ya obtuviste todas las medallas disponibles para tu perfil.</p>
             <div class="profile-gamification-grid">
                 <section class="profile-panel">
                     <div class="profile-panel-heading"><h3>Medallas</h3><span data-gamification-medal-count>—</span></div>

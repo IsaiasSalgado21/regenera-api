@@ -18,6 +18,7 @@ use App\Http\Controllers\ImpactoVoluntariadoController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\MapApiController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoluntariadoController;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/imagen/{path}', [GridFsImageController::class, 'mostrarImagen'])
     ->where('path', '.*')
     ->name('imagenes.mostrar');
+
+Route::get('/perfiles/{id}', [PublicProfileController::class, 'show']);
 
 Route::get('/ping', function () {
 
@@ -52,6 +55,7 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']);
+Route::middleware('auth:sanctum')->patch('/auth/avatar', [AuthController::class, 'updateAvatar']);
 
 Route::middleware('auth:sanctum')->post('/auth/logout', [AuthController::class, 'logout']);
 

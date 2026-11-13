@@ -121,4 +121,14 @@ class GridFsImageService
             }
         }
     }
+
+    public function storeUploaded(UploadedFile $upload, string $directory): string
+    {
+        $path = Storage::disk('gridfs')->putFile($directory, $upload);
+        if (! is_string($path)) {
+            throw new \RuntimeException('No se pudo guardar una imagen en GridFS.');
+        }
+
+        return $path;
+    }
 }

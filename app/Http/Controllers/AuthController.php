@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\EventoGamificacion;
+use App\Services\AvatarService;
 use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +14,7 @@ class AuthController extends Controller
 {
     public function __construct(
         private readonly GridFsImageService $gridFsImages,
+        private readonly AvatarService $avatars,
     ) {}
 
     /**
@@ -143,10 +146,61 @@ class AuthController extends Controller
                 'nombre' => $usuario->nombre,
                 'correo' => $usuario->correo,
                 'foto' => $this->gridFsImages->url($usuario->foto),
+                'avatarConfig' => $usuario->avatarConfig,
                 'rol' => $usuario->rol,
                 'organizadorVerificado' => $usuario->organizadorVerificado,
                 'fechaRegistro' => $usuario->fechaRegistro?->toISOString(),
                 'estado' => $usuario->estado,
+            ],
+        ]);
+    }
+
+    public function updateAvatar(Request $request)
+    {
+        $validated = $request->validate([
+            'avatarConfig' => ['required', 'json', 'max:2048'],
+            'avatar' => ['required', 'image', 'mimes:png', 'max:1024'],
+        ]);
+        $configuration = json_decode($validated['avatarConfig'], true);
+        if (! is_array($configuration)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La configuración del avatar no es válida.',
+            ], 422);
+        }
+
+        $user = $request->user();
+        $earnedMedals = EventoGamificacion::query()
+            ->where('usuarioId', (string) $user->getAuthIdentifier())
+            ->where('tipo', 'medalla')
+            ->pluck('referenciaId')
+            ->map(fn ($slug) => (string) $slug)
+            ->all();
+        $configuration = $this->avatars->validateConfiguration($configuration, $earnedMedals);
+        $newPhoto = $this->gridFsImages->storeUploaded($request->file('avatar'), 'usuarios/avatares');
+        $oldPhoto = $user->foto;
+
+        try {
+            $user->forceFill([
+                'avatarConfig' => $configuration,
+                'foto' => $newPhoto,
+            ])->save();
+        } catch (\Throwable $exception) {
+            $this->gridFsImages->deleteStored([$newPhoto]);
+            throw $exception;
+        }
+
+        if ($oldPhoto && $oldPhoto !== $newPhoto) {
+            $this->gridFsImages->deleteStored([$oldPhoto]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Avatar guardado correctamente.',
+            'usuario' => [
+                'id' => (string) $user->getAuthIdentifier(),
+                'avatarConfig' => $configuration,
+                'foto' => $this->gridFsImages->url($newPhoto),
             ],
         ]);
     }
