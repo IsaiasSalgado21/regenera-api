@@ -131,13 +131,16 @@
     border: 1px solid #dfe7dc;
     border-radius: 12px;
     color: #14201b;
-    display: flex;
-    flex-direction: column;
     max-height: calc(100dvh - 2rem);
     max-width: 1040px;
     overflow: hidden;
     padding: 0;
     width: calc(100vw - 2rem);
+}
+
+.avatar-editor-dialog[open] {
+    display: flex;
+    flex-direction: column;
 }
 
 .avatar-editor-dialog::backdrop {

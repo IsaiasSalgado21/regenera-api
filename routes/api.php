@@ -55,7 +55,7 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']);
-Route::middleware('auth:sanctum')->patch('/auth/avatar', [AuthController::class, 'updateAvatar']);
+Route::middleware('auth:sanctum')->post('/auth/avatar', [AuthController::class, 'updateAvatar']);
 
 Route::middleware('auth:sanctum')->post('/auth/logout', [AuthController::class, 'logout']);
 

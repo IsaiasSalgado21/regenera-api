@@ -92,7 +92,13 @@ if (page) {
                 const formData = new FormData();
                 formData.append('avatarConfig', JSON.stringify(configuration));
                 formData.append('avatar', image, 'avatar.png');
-                const response = await axios.patch(apiUrl('/api/auth/avatar'), formData, { headers: headers() });
+                let response;
+                try {
+                    response = await axios.post(apiUrl('/api/auth/avatar'), formData, { headers: headers() });
+                } catch (error) {
+                    const validationMessage = Object.values(error.response?.data?.errors || {}).flat()[0];
+                    throw new Error(validationMessage || error.response?.data?.message || error.message);
+                }
                 usuario.avatarConfig = response.data.usuario.avatarConfig;
                 usuario.foto = response.data.usuario.foto;
                 renderProfileAvatar(usuario);
@@ -545,6 +551,16 @@ if (page) {
     });
     avatarDialog.addEventListener('click', event => {
         if (event.target === avatarDialog) avatarDialog.close();
+    });
+    avatarDialog.addEventListener('cancel', event => {
+        event.preventDefault();
+        avatarDialog.close();
+    });
+    avatarDialog.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            avatarDialog.close();
+        }
     });
 
     showProfile();
