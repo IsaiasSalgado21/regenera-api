@@ -788,3 +788,161 @@ html[data-theme="dark"] .article-library-pagination button {
     background: #1b2822;
     color: #d7e8dd;
 }
+
+:root {
+    --profile-surface: #fffefa;
+    --profile-text: #14201b;
+    --profile-forest: #164f3d;
+    --profile-muted: #66716c;
+    --profile-border: #dce3dd;
+}
+
+html[data-theme="dark"] {
+    --profile-surface: #1b2822;
+    --profile-text: #e7eee9;
+    --profile-forest: #b7e5d1;
+    --profile-muted: #aab8b0;
+    --profile-border: #35473d;
+}
+
+html[data-theme="dark"] .logo {
+    color: #f2f7f3;
+}
+
+html[data-theme="dark"] .logo-mark img {
+    filter: brightness(0) invert(1);
+}
+
+html[data-theme="dark"] :is(
+    .profile-identity,
+    .profile-stat-card,
+    .profile-panel,
+    .profile-setting-card,
+    .profile-info-note,
+    .profile-next-medal,
+    .profile-next-medal-complete,
+    .learning-course,
+    .learning-option,
+    .notification-center-item,
+    .notification-admin-column,
+    .impact-kpi,
+    .impact-chart-panel,
+    .impact-history-scroll,
+    .volunteer-impact-card
+) {
+    border-color: #35473d;
+    background-color: #1b2822;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(.profile-page, .learning-page, .notification-center-page) {
+    background: #101915;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(
+    .profile-heading h1,
+    .profile-section-heading h2,
+    .profile-identity-main h2,
+    .profile-panel h3,
+    .profile-setting-card h3,
+    .profile-stat-card > strong,
+    .profile-joined strong,
+    .profile-info-note,
+    .learning-heading h1,
+    .learning-section-heading h2,
+    .learning-player h2,
+    .learning-course h3,
+    .learning-question,
+    .learning-option,
+    .learning-feedback p,
+    .notification-center-header h1,
+    .notification-admin-column h2,
+    .notification-center-item-heading h2,
+    .notification-center-item-content p,
+    .impact-history td
+) {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(
+    .profile-heading p,
+    .profile-identity-main > p,
+    .profile-joined span,
+    .profile-inline-note,
+    .profile-list-item p,
+    .profile-article-item p,
+    .profile-muted,
+    .profile-setting-card p,
+    .profile-stat-card > span,
+    .learning-heading p,
+    .learning-course-description,
+    .learning-course-meta,
+    .learning-course-medal,
+    .learning-course-guide,
+    .learning-summary span,
+    .learning-section-heading > span,
+    .learning-player legend,
+    .notification-center-header p,
+    .notification-center-item-content time,
+    .notification-center-item-content small,
+    .notification-read-state,
+    .notification-admin-column > p,
+    .impact-kpi span,
+    .impact-history th
+) {
+    color: #aab8b0;
+}
+
+html[data-theme="dark"] .notification-center-item.is-unread {
+    border-color: #456653;
+    background: #22362b;
+}
+
+html[data-theme="dark"] .notification-admin-column > header > span {
+    background: #294536;
+    color: #c5ead4;
+}
+
+html[data-theme="dark"] .learning-feedback,
+html[data-theme="dark"] .learning-access {
+    background: #1d3a2b;
+    color: #c7ecd5;
+}
+
+html[data-theme="dark"] .learning-error {
+    background: #3a2521;
+    color: #ffd1c6;
+}
+
+html[data-theme="dark"] .learning-feedback strong {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .impact-history th {
+    background: #22332a;
+}
+
+html[data-theme="dark"] .profile-list-item,
+html[data-theme="dark"] .profile-article-item,
+html[data-theme="dark"] .profile-notification-section {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .profile-list-item h4 a,
+html[data-theme="dark"] .profile-article-item h4 a,
+html[data-theme="dark"] .profile-notifications-link,
+html[data-theme="dark"] .profile-section-heading > a,
+html[data-theme="dark"] .profile-panel-heading > a,
+html[data-theme="dark"] .profile-next-medal a {
+    color: #b7e5d1;
+}
+
+html[data-theme="light"] #dashboardRoot .impact-kpi,
+html[data-theme="light"] #dashboardRoot .impact-chart-panel,
+html[data-theme="light"] #dashboardRoot .impact-history-scroll,
+html[data-theme="light"] #voluntariadoDetailContent .volunteer-impact-card {
+    border-color: #dce3dd;
+    background: #fffefa;
+    color: #14201b;
+}

@@ -1,0 +1,159 @@
+.flora-create-button {
+    margin-top: 1.25rem;
+}
+
+.flora-admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin: 1rem 0;
+}
+
+.flora-admin-dialog {
+    border: 1px solid #dfe7dc;
+    border-radius: 10px;
+    color: #14201b;
+    max-height: calc(100dvh - 2rem);
+    max-width: 760px;
+    overflow: auto;
+    padding: 1.25rem;
+    width: calc(100vw - 2rem);
+}
+
+.flora-admin-dialog::backdrop {
+    background: rgb(15 31 24 / 68%);
+    backdrop-filter: blur(3px);
+}
+
+.flora-admin-dialog[open] {
+    display: block;
+}
+
+.flora-admin-dialog-heading,
+.flora-admin-form-actions {
+    align-items: center;
+    display: flex;
+    gap: .75rem;
+    justify-content: space-between;
+}
+
+.flora-admin-dialog-heading {
+    border-bottom: 1px solid #e6e9df;
+    margin-bottom: 1rem;
+    padding-bottom: .8rem;
+}
+
+.flora-admin-dialog-heading h2 {
+    color: #164f3d;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    margin: .25rem 0 0;
+}
+
+.flora-admin-close {
+    background: transparent;
+    border: 0;
+    color: #164f3d;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+.flora-admin-form {
+    display: grid;
+    gap: .85rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.flora-admin-form label {
+    color: #334b3d;
+    display: grid;
+    font-size: .82rem;
+    font-weight: 700;
+    gap: .35rem;
+}
+
+.flora-admin-form input:not([type="checkbox"]),
+.flora-admin-form textarea,
+.flora-admin-form select {
+    background: #fff;
+    border: 1px solid #cbd8cf;
+    border-radius: 6px;
+    color: #14201b;
+    font: inherit;
+    font-size: .9rem;
+    min-height: 42px;
+    padding: .6rem .7rem;
+    width: 100%;
+}
+
+.flora-admin-wide {
+    grid-column: 1 / -1;
+}
+
+.flora-admin-existing-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+}
+
+.flora-admin-image-remove {
+    align-items: center;
+    background: #f3f6f2;
+    border: 1px solid #dce3dd;
+    border-radius: 6px;
+    display: flex !important;
+    gap: .4rem !important;
+    padding: .4rem;
+}
+
+.flora-admin-image-remove img {
+    height: 56px;
+    object-fit: cover;
+    width: 72px;
+}
+
+.flora-admin-status {
+    color: #a14338;
+    font-size: .84rem;
+    margin: 0;
+    min-height: 1.2em;
+}
+
+.flora-admin-form-actions {
+    justify-content: flex-end;
+}
+
+html[data-theme="dark"] .flora-admin-dialog {
+    background: #1b2822;
+    border-color: #35473d;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .flora-admin-dialog-heading {
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .flora-admin-dialog-heading h2,
+html[data-theme="dark"] .flora-admin-close,
+html[data-theme="dark"] .flora-admin-form label {
+    color: #b7e5d1;
+}
+
+html[data-theme="dark"] .flora-admin-form input:not([type="checkbox"]),
+html[data-theme="dark"] .flora-admin-form textarea,
+html[data-theme="dark"] .flora-admin-form select {
+    background: #142019;
+    border-color: #45594e;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .flora-admin-image-remove {
+    background: #142019;
+    border-color: #35473d;
+}
+
+@media (max-width: 600px) {
+    .flora-admin-form { grid-template-columns: minmax(0, 1fr); }
+    .flora-admin-wide { grid-column: auto; }
+    .flora-admin-form-actions { flex-wrap: wrap; }
+}

@@ -156,6 +156,17 @@ function initializeQuizAdmin() {
         try {
             activeQuizzes = await request('/admin/cuestionarios');
             renderList();
+            const params = new URLSearchParams(location.search);
+            const requestedSlug = params.get('editar');
+            if (requestedSlug) {
+                const quiz = activeQuizzes.find(item => item.slug === requestedSlug);
+                if (quiz) {
+                    openEditor(quiz);
+                    params.delete('editar');
+                    const query = params.toString();
+                    history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}`);
+                }
+            }
         } catch (error) {
             errorBox.hidden = false;
             errorBox.textContent = error.message;

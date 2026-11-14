@@ -59,7 +59,9 @@ class VoluntariadoPageController extends Controller
                 'titulo' => $v->titulo,
                 'organizadorNombre' => $organizadores->get((string) $v->organizadorId)?->nombre,
                 'descripcion' => Str::limit(strip_tags($v->descripcion), 160),
-                'imagen' => $this->gridFsImages->url($v->imagen),
+                'imagen' => $this->gridFsImages->url(
+                    $this->gridFsImages->paths($v->imagenes, $v->imagen)[0] ?? null,
+                ),
                 'categoria' => $v->categoria ?? null,
                 'lugar_id' => (string) $v->lugarId,
                 'lugar' => $lugar?->nombre,

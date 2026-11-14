@@ -49,6 +49,47 @@
     text-decoration: none;
 }
 
+.learning-admin-link,
+.learning-admin-edit {
+    color: var(--profile-forest, #164f3d);
+    font-size: .84rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.learning-admin-edit {
+    justify-self: start;
+}
+
+.learning-admin-tools {
+    border-top: 1px solid var(--profile-border, #dce3dd);
+    margin-top: 34px;
+    padding-top: 22px;
+}
+
+.learning-admin-quiz-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.learning-admin-quiz-links a {
+    border: 1px solid var(--profile-border, #dce3dd);
+    border-radius: 6px;
+    color: var(--profile-forest, #164f3d);
+    font-size: .82rem;
+    font-weight: 700;
+    padding: 8px 10px;
+    text-decoration: none;
+}
+
+.learning-admin-quiz-links a:hover,
+.learning-admin-quiz-links a:focus-visible {
+    background: var(--profile-surface, #fff);
+    text-decoration: underline;
+}
+
 .learning-summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

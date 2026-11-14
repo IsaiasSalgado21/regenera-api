@@ -112,6 +112,7 @@ Route::prefix('admin')
         Route::patch('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'update']);
         Route::delete('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'destroy']);
         Route::get('/gamificacion/estadisticas', [GamificacionController::class, 'estadisticas']);
+        Route::get('/gamification/intentos/{attemptId}', [GamificacionController::class, 'detalleIntento']);
         Route::get('/bitacora-impacto', [BitacoraImpactoController::class, 'index']);
         Route::get('/usuarios', [UserController::class, 'index']);
         Route::post('/usuarios', [UserController::class, 'store']);

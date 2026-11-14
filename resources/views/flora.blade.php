@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="{{ asset('css/pages.css') }}">
     <link rel="stylesheet" href="{{ asset('css/contenido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pages-detail.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/flora-admin.css') }}">
 @endpush
 
 @section('content')
-<main class="page">
+<main class="page flora-admin-page" data-flora-admin>
 
     {{-- HERO --}}
     <section class="page-hero">
@@ -39,6 +40,7 @@
                 costeros y marinos. Conocerlos permite comprender mejor su importancia y las
                 acciones necesarias para conservarlos.
             </p>
+            <button class="button button-primary flora-create-button" type="button" data-flora-create hidden>Crear registro de flora/fauna</button>
         </div>
 
         {{-- FILTROS (GET, server-side) --}}
@@ -110,6 +112,7 @@
         </section>
 
     </section>
+    @include('flora.admin-form')
 </main>
 
 <footer class="page-footer">
@@ -118,3 +121,7 @@
 </footer>
 
 @endsection
+
+@push('scripts')
+    @vite('resources/js/flora-admin.js')
+@endpush

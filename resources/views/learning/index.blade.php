@@ -17,6 +17,7 @@
                 <p>Seguridad, conservación y prácticas regenerativas para actuar en Baja California Sur.</p>
             </div>
             <a class="learning-profile-link" href="{{ route('profile.show') }}">Mi progreso <span aria-hidden="true">↗</span></a>
+            <a class="learning-admin-link" data-learning-admin href="{{ route('dashboard.quizzes') }}" hidden>Administrar cuestionarios <span aria-hidden="true">↗</span></a>
         </header>
 
         <div class="learning-access" data-learning-access hidden role="status" aria-live="polite"></div>
@@ -36,6 +37,14 @@
                 <span data-learning-catalog-status role="status" aria-live="polite">Cargando cuestionarios…</span>
             </div>
             <div class="learning-course-grid" data-learning-catalog></div>
+        </section>
+
+        <section class="learning-admin-tools" data-learning-admin-tools hidden aria-labelledby="learningAdminTitle">
+            <div class="learning-section-heading">
+                <div><span class="profile-eyebrow">ADMINISTRACIÓN</span><h2 id="learningAdminTitle">Gestionar cuestionarios</h2></div>
+                <a class="learning-admin-link" href="{{ route('dashboard.quizzes') }}">Abrir CRUD completo <span aria-hidden="true">↗</span></a>
+            </div>
+            <div class="learning-admin-quiz-links" data-learning-admin-quiz-links></div>
         </section>
 
         <section class="learning-player" data-learning-player hidden aria-live="polite">

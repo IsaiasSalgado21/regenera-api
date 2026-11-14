@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cuestionario;
 use App\Models\EventoGamificacion;
 use App\Models\IntentoCuestionario;
+use App\Models\RespuestaCuestionario;
 use App\Models\User;
 use App\Services\CuestionarioService;
 use App\Services\GamificacionService;
@@ -111,6 +112,50 @@ class GamificacionController extends Controller
                         'fechaUltimoIntento' => $attempt->fechaUltimoIntento?->toISOString(),
                         'fechaAprobacion' => $attempt->fechaAprobacion?->toISOString(),
                     ])
+                    ->values(),
+            ],
+        ]);
+    }
+
+    public function detalleIntento(string $attemptId)
+    {
+        $attempt = IntentoCuestionario::findOrFail($attemptId);
+        $quiz = Cuestionario::query()
+            ->where('slug', $attempt->cuestionarioSlug)
+            ->where('version', $attempt->cuestionarioVersion)
+            ->firstOrFail();
+        $answers = RespuestaCuestionario::query()
+            ->where('intentoId', (string) $attempt->getKey())
+            ->where('usuarioId', (string) $attempt->usuarioId)
+            ->get()
+            ->keyBy(fn (RespuestaCuestionario $answer) => (string) $answer->preguntaId);
+        $user = User::find((string) $attempt->usuarioId);
+
+        return response()->json([
+            'data' => [
+                'id' => (string) $attempt->getKey(),
+                'usuarioNombre' => $user?->nombre ?? 'Cuenta no disponible',
+                'cuestionarioTitulo' => (string) $quiz->titulo,
+                'cuestionarioVersion' => (int) $quiz->version,
+                'estado' => (string) $attempt->estado,
+                'puntuacion' => $attempt->puntuacion === null ? null : (float) $attempt->puntuacion,
+                'preguntas' => collect($quiz->preguntas ?? [])
+                    ->map(function (array $question) use ($answers): array {
+                        $answer = $answers->get((string) $question['id']);
+                        $options = array_values($question['opciones'] ?? []);
+                        $selectedIndex = $answer?->opcion;
+                        $correctIndex = $question['respuestaCorrecta'] ?? null;
+
+                        return [
+                            'id' => (string) $question['id'],
+                            'texto' => (string) $question['texto'],
+                            'respuestaElegida' => $selectedIndex !== null ? ($options[(int) $selectedIndex] ?? null) : null,
+                            'respuestaCorrecta' => $correctIndex !== null ? ($options[(int) $correctIndex] ?? null) : null,
+                            'correcta' => $answer ? (bool) $answer->correcta : null,
+                            'explicacion' => (string) ($answer?->explicacion ?? $question['explicacion'] ?? ''),
+                            'respondidaEn' => $answer?->respondidaEn?->toISOString(),
+                        ];
+                    })
                     ->values(),
             ],
         ]);

@@ -14,6 +14,7 @@ function initializeLearning() {
     const formatNumber = value => new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(value) || 0);
     let activeAttempt = null;
     let allCourses = [];
+    let isAdmin = false;
 
     const token = () => sessionStorage.getItem('regenera_access_token');
 
@@ -34,7 +35,7 @@ function initializeLearning() {
             failure.data = body;
             throw failure;
         }
-        return body.data;
+        return body.data ?? body;
     }
 
     function showError(message) {
@@ -80,6 +81,13 @@ function initializeLearning() {
 
             if (course.medalla) {
                 appendText(card, 'p', 'learning-course-medal', `Medalla: ${course.medalla.nombre}`);
+            }
+            if (isAdmin) {
+                const edit = document.createElement('a');
+                edit.className = 'learning-admin-edit';
+                edit.href = `/admin/cuestionarios?editar=${encodeURIComponent(course.slug)}`;
+                edit.textContent = 'Editar cuestionario';
+                card.append(edit);
             }
             if (course.bloqueo) {
                 appendText(card, 'p', 'learning-course-lock', course.bloqueo);
@@ -136,6 +144,29 @@ function initializeLearning() {
             }
             showError(error.message);
             status.textContent = 'No se pudieron cargar los cuestionarios.';
+        }
+    }
+
+    async function loadAdminControls() {
+        try {
+            const response = await request('/auth/me');
+            isAdmin = response.usuario?.rol === 'admin';
+            page.querySelector('[data-learning-admin]').hidden = !isAdmin;
+            const adminTools = page.querySelector('[data-learning-admin-tools]');
+            adminTools.hidden = !isAdmin;
+            if (!isAdmin) return;
+
+            const quizzes = await request('/admin/cuestionarios');
+            const links = page.querySelector('[data-learning-admin-quiz-links]');
+            links.replaceChildren();
+            quizzes.forEach(quiz => {
+                const link = document.createElement('a');
+                link.href = `/admin/cuestionarios?editar=${encodeURIComponent(quiz.slug)}`;
+                link.textContent = `${quiz.titulo} · v${quiz.version}`;
+                links.append(link);
+            });
+        } catch {
+            isAdmin = false;
         }
     }
 
@@ -275,5 +306,8 @@ function initializeLearning() {
     }
 
     void loadProgress();
-    void loadCatalog();
+    void (async () => {
+        await loadAdminControls();
+        await loadCatalog();
+    })();
 }

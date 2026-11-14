@@ -65,6 +65,7 @@ export const dashboardApi = {
         return request('get', `/api/admin/bitacora-impacto${query ? `?${query}` : ''}`);
     },
     gamificationStats: () => request('get', '/api/admin/gamificacion/estadisticas'),
+    gamificationAttempt: attemptId => request('get', `/api/admin/gamification/intentos/${encodeURIComponent(attemptId)}`),
     saveUser: (id, data) => request(id ? 'put' : 'post', id ? `/api/admin/usuarios/${id}` : '/api/admin/usuarios', data),
     deleteUser: id => request('delete', `/api/admin/usuarios/${id}`),
     listArticles: () => request('get', '/api/articulos'),

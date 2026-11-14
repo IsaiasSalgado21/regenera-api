@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ asset('css/contenido.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pages-detail.css') }}">
     <link rel="stylesheet" href="{{ asset('css/flora-detail.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/flora-admin.css') }}">
 @endpush
 @section('content')
 @php
@@ -34,7 +35,7 @@
     };
 @endphp
 
-<main class="page flora-species-detail">
+<main class="page flora-species-detail" data-flora-admin data-flora-id="{{ (string) $especie->_id }}">
 
     <header class="flora-detail-header">
         <a href="{{ url('/flora') }}" class="flora-detail-back">
@@ -69,6 +70,11 @@
                     </div>
                 @endif
             </div>
+        </div>
+
+        <div class="flora-admin-actions" data-flora-admin-actions hidden>
+            <button class="button button-secondary" type="button" data-flora-edit>Editar registro</button>
+            <button class="button button-danger" type="button" data-flora-archive>Retirar del catálogo</button>
         </div>
 
         @if (!empty($imagenes))
@@ -521,10 +527,12 @@
         </div>
 
     </section>
+    @include('flora.admin-form')
 </main>
 @endsection
 @push('scripts')
 @vite('resources/js/flora-detail-map.js')
+@vite('resources/js/flora-admin.js')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const navigation = document.querySelector('[data-flora-navigation]');

@@ -472,7 +472,7 @@
                 <section class="impact-history gamification-admin-attempts">
                     <div class="dashboard-section-heading"><h3>Intentos recientes</h3><span>Máximo 100 registros</span></div>
                     <div class="impact-history-scroll"><table>
-                        <thead><tr><th>Participante</th><th>Cuestionario</th><th>Estado</th><th>Puntuación</th><th>Último intento</th></tr></thead>
+                        <thead><tr><th>Participante</th><th>Cuestionario</th><th>Estado</th><th>Puntuación</th><th>Último intento</th><th>Respuestas</th></tr></thead>
                         <tbody data-gamification-admin-attempts></tbody>
                     </table></div>
                 </section>
@@ -516,6 +516,16 @@
         </section>
     </div>
 </section>
+
+<dialog class="dashboard-dialog" data-gamification-attempt-dialog aria-labelledby="gamificationAttemptTitle">
+    <header class="dashboard-dialog-header">
+        <div><span class="dashboard-eyebrow">REVISIÓN ADMINISTRATIVA</span><h2 id="gamificationAttemptTitle" data-gamification-attempt-title>Respuestas del intento</h2></div>
+        <button class="icon-button" type="button" data-gamification-attempt-close aria-label="Cerrar detalle">×</button>
+    </header>
+    <p class="dashboard-dialog-status" data-gamification-attempt-status role="status" aria-live="polite"></p>
+    <div class="gamification-attempt-answers" data-gamification-attempt-answers></div>
+    <footer class="dashboard-form-actions"><button class="button button-secondary" type="button" data-gamification-attempt-close>Cerrar</button></footer>
+</dialog>
 
 <dialog class="dashboard-dialog" id="rejectDialog">
     <form id="rejectForm">

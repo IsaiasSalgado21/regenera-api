@@ -8,6 +8,17 @@ const placeFilter = document.querySelector('[data-volunteer-place]');
 const resetFilters = document.querySelector('[data-volunteer-reset]');
 const filterStatus = document.querySelector('[data-volunteer-filter-status]');
 
+document.querySelectorAll('[data-volunteer-preview]').forEach(image => {
+    image.addEventListener('error', () => {
+        const frame = image.closest('[data-volunteer-image-frame]');
+        if (!frame) return;
+        const fallback = document.createElement('span');
+        fallback.className = 'volunteer-image-fallback';
+        fallback.textContent = 'Imagen no disponible';
+        frame.replaceChildren(fallback);
+    }, { once: true });
+});
+
 if (sections) {
     initializeVolunteerFilters();
     sortPublicVolunteers();

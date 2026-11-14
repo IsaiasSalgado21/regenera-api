@@ -86,9 +86,9 @@
                         data-place-id="{{ $voluntariado['lugar_id'] }}"
                         data-search="{{ $voluntariado['titulo'] }} {{ $voluntariado['descripcion'] }} {{ $voluntariado['organizadorNombre'] }} {{ $voluntariado['lugar'] }} {{ $voluntariado['categoria'] }}">
                         <a class="volunteer-card-link" href="{{ url('/voluntariados/' . $voluntariado['id']) }}" aria-label="Ver voluntariado: {{ $voluntariado['titulo'] }}">
-                            <div class="volunteer-board-image">
+                            <div class="volunteer-board-image" data-volunteer-image-frame>
                                 @if ($voluntariado['imagen'])
-                                    <img src="{{ $voluntariado['imagen'] }}" alt="Imagen de {{ $voluntariado['titulo'] }}" loading="lazy" decoding="async">
+                                    <img data-volunteer-preview src="{{ $voluntariado['imagen'] }}" alt="Imagen de {{ $voluntariado['titulo'] }}" loading="lazy" decoding="async">
                                 @else
                                     <span aria-hidden="true">✦</span>
                                 @endif

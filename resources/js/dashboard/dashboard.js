@@ -891,8 +891,41 @@ function initializeDashboard() {
                 <td>${escapeHtml(attempt.estado)}</td>
                 <td>${attempt.puntuacion === null ? '—' : `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(attempt.puntuacion) || 0)}%`}</td>
                 <td>${escapeHtml(formatDate(attempt.fechaUltimoIntento || attempt.fechaAprobacion))}</td>
+                <td><button class="button button-secondary" type="button" data-gamification-attempt="${escapeHtml(attempt.id)}">Ver respuestas</button></td>
             </tr>`).join('')
-            : '<tr><td class="impact-history-empty" colspan="5">No hay intentos registrados.</td></tr>';
+            : '<tr><td class="impact-history-empty" colspan="6">No hay intentos registrados.</td></tr>';
+
+        recent.querySelectorAll('[data-gamification-attempt]').forEach(button => {
+            button.addEventListener('click', () => void showGamificationAttempt(button.dataset.gamificationAttempt));
+        });
+    }
+
+    async function showGamificationAttempt(attemptId) {
+        const dialog = document.querySelector('[data-gamification-attempt-dialog]');
+        const status = dialog.querySelector('[data-gamification-attempt-status]');
+        const answers = dialog.querySelector('[data-gamification-attempt-answers]');
+        dialog.querySelector('[data-gamification-attempt-title]').textContent = 'Respuestas del intento';
+        status.textContent = 'Cargando respuestas…';
+        answers.replaceChildren();
+        dialog.showModal();
+
+        try {
+            const response = await dashboardApi.gamificationAttempt(attemptId);
+            const attempt = response.data;
+            dialog.querySelector('[data-gamification-attempt-title]').textContent = `${attempt.cuestionarioTitulo} · ${attempt.usuarioNombre}`;
+            status.textContent = `Versión ${attempt.cuestionarioVersion} · ${attempt.estado}${attempt.puntuacion === null ? '' : ` · ${Number(attempt.puntuacion).toLocaleString('es-MX')}%`}`;
+            answers.innerHTML = (attempt.preguntas || []).map((question, index) => `
+                <article class="gamification-attempt-answer ${question.correcta === true ? 'is-correct' : question.correcta === false ? 'is-incorrect' : 'is-unanswered'}">
+                    <span class="dashboard-eyebrow">PREGUNTA ${index + 1}</span>
+                    <h3>${escapeHtml(question.texto)}</h3>
+                    <p><strong>Respuesta elegida:</strong> ${escapeHtml(question.respuestaElegida || 'Sin respuesta')}</p>
+                    <p><strong>Respuesta correcta:</strong> ${escapeHtml(question.respuestaCorrecta || 'No disponible')}</p>
+                    <p>${escapeHtml(question.explicacion)}</p>
+                </article>`).join('');
+            status.textContent = `${attempt.cuestionarioTitulo} · versión ${attempt.cuestionarioVersion} · ${attempt.estado}${attempt.puntuacion === null ? '' : ` · ${Number(attempt.puntuacion).toLocaleString('es-MX')}%`}`;
+        } catch (error) {
+            status.textContent = error.message || 'No se pudieron cargar las respuestas.';
+        }
     }
 
     async function loadGamificationAdmin() {
@@ -909,6 +942,10 @@ function initializeDashboard() {
             console.error('No se pudieron cargar las estadísticas de gamificación.', error);
         }
     }
+
+    document.querySelectorAll('[data-gamification-attempt-close]').forEach(button => {
+        button.addEventListener('click', () => document.querySelector('[data-gamification-attempt-dialog]').close());
+    });
 
     async function loadResource(resource) {
         if (resource === 'impact-log') {

@@ -78,6 +78,27 @@
     box-shadow: 0 12px 35px rgba(20, 32, 27, .04);
 }
 
+.volunteer-board-image {
+    position: relative;
+    display: grid;
+    min-height: 190px;
+    place-items: center;
+    overflow: hidden;
+    background: #e8eee8;
+}
+
+.volunteer-board-image img {
+    display: block;
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+}
+
+.volunteer-image-fallback {
+    color: #64746a;
+    font-size: .82rem;
+}
+
 .volunteer-card-link {
     display: block;
     color: inherit;
