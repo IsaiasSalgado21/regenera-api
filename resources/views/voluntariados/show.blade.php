@@ -14,8 +14,8 @@
 <main class="page volunteer-detail-page">
     <section class="page-hero" @if (count($voluntariado->imagenes ?? [])) data-volunteer-gallery data-gallery-title="{{ $voluntariado->titulo }}" @endif>
         @if (count($voluntariado->imagenes ?? []))
-            <div class="page-hero-background" aria-hidden="true">
-                <img src="{{ $voluntariado->imagenes[0] }}" alt="" data-gallery-main>
+            <div class="page-hero-background volunteer-detail-image-frame" data-volunteer-hero-frame data-image-state="loading" aria-hidden="true">
+                <img src="{{ $voluntariado->imagenes[0] }}" alt="" data-gallery-main data-volunteer-hero-image decoding="async" fetchpriority="high">
             </div>
         @else
             <div class="page-hero-background volunteer-detail-placeholder"></div>
@@ -27,8 +27,24 @@
             @endif
             <span class="page-label">PARTICIPA</span>
             <h1>{{ $voluntariado->titulo }}</h1>
+            @if ($voluntariado->fechaInicio || $lugar)
+                <div class="volunteer-detail-hero-meta" aria-label="Fecha y ubicación">
+                    @if ($voluntariado->fechaInicio)
+                        <span class="volunteer-detail-hero-meta-item">
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/calendario.png') }}" alt="" aria-hidden="true">
+                            <span><small>Fecha</small><strong><time datetime="{{ $inicioFechaHora?->toIso8601String() ?? '' }}">{{ $voluntariado->fechaInicio->format('d/m/Y') }}</time>@if ($voluntariado->horaInicio) · {{ $voluntariado->horaInicio }}@endif</strong></span>
+                        </span>
+                    @endif
+                    @if ($lugar)
+                        <span class="volunteer-detail-hero-meta-item">
+                            <img class="ui-symbol" src="{{ asset('img/simbolos/ubicacion.png') }}" alt="" aria-hidden="true">
+                            <span><small>Lugar</small><strong>{{ $lugar->nombre }}@if ($lugar->municipio) · {{ $lugar->municipio }}@endif</strong></span>
+                        </span>
+                    @endif
+                </div>
+            @endif
             <p class="volunteer-author">Organiza: {{ $organizadorNombre ?: 'Organizador' }}</p>
-            <p>{{ \Illuminate\Support\Str::limit($voluntariado->descripcion, 180) }}</p>
+            <p class="volunteer-detail-hero-description">{{ \Illuminate\Support\Str::limit($voluntariado->descripcion, 180) }}</p>
         </div>
         @if (count($voluntariado->imagenes ?? []))
             <div class="volunteer-gallery" role="group" aria-label="Imágenes del voluntariado">
@@ -185,6 +201,7 @@
                     @if ($ubicacion)
                         <div id="volunteerDetailMap"
                             class="volunteer-detail-map"
+                            data-map-state="loading"
                             data-latitude="{{ $ubicacion['latitud'] }}"
                             data-longitude="{{ $ubicacion['longitud'] }}"
                             data-location-name="{{ $lugar?->nombre ?? $voluntariado->titulo }}"
@@ -227,6 +244,9 @@
             @else
                 {{-- Acciones de inscripción --}}
                 <div class="volunteer-enrollment-actions" data-enrollment-actions>
+                    <p class="volunteer-enrollment-skeleton" data-enrollment-loading hidden role="status" aria-live="polite">
+                        <span aria-hidden="true"></span> Consultando tu inscripción…
+                    </p>
                     <a href="{{ route('login', ['redirect' => request()->getPathInfo() . '?participar=1']) }}"
                         class="volunteer-cta"
                         data-voluntariado-id="{{ (string) $voluntariado->_id }}">

@@ -777,11 +777,74 @@
     padding: 88px 7% 48px;
 }
 
+.volunteer-detail-page .page-hero-content h1 {
+    max-width: 20ch;
+    margin: 8px 0 14px;
+    font-size: 3.2rem;
+    line-height: 1.04;
+}
+
+.volunteer-detail-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin: 18px 0 14px;
+}
+
+.volunteer-detail-hero-meta-item {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+}
+
+.volunteer-detail-hero-meta-item > span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.volunteer-detail-hero-meta-item small {
+    color: #c8d8ce;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.volunteer-detail-hero-meta-item strong {
+    color: #fff;
+    font-size: .9rem;
+    line-height: 1.35;
+}
+
+.volunteer-detail-hero-description {
+    max-width: 68ch;
+    margin-top: 10px;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
 .volunteer-detail-page .page-hero-background img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.volunteer-detail-image-frame {
+    overflow: hidden;
+    background-color: #244b3b;
+}
+
+.volunteer-detail-image-frame[data-image-state="loading"]::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: linear-gradient(105deg, #1d4335 20%, #315d49 40%, #1d4335 60%);
+    background-size: 200% 100%;
+    content: "";
+    animation: volunteer-detail-shimmer 1.5s linear infinite;
+    pointer-events: none;
 }
 
 .volunteer-detail-page .page-hero-overlay {
@@ -917,9 +980,12 @@
     display: flex;
     min-width: 0;
     max-width: 100%;
+    flex: 0 1 auto;
     gap: 10px;
     overflow-x: auto;
     padding: 2px;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
 }
 
 .volunteer-gallery-thumb {
@@ -949,6 +1015,16 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.volunteer-gallery-thumb.is-loading img {
+    opacity: 0;
+}
+
+.volunteer-gallery-thumb.is-loading {
+    background: linear-gradient(105deg, #dce5dc 20%, #f0f3ed 40%, #dce5dc 60%);
+    background-size: 200% 100%;
+    animation: volunteer-detail-shimmer 1.5s linear infinite;
 }
 
 .volunteer-detail-grid {
@@ -1071,11 +1147,43 @@
 }
 
 .volunteer-detail-card {
+    display: flex;
+    flex-direction: column;
     border: 1px solid #dfe8df;
     border-radius: 20px;
     padding: clamp(20px, 3vw, 28px);
     background: #fff;
     box-shadow: 0 14px 36px rgb(20 32 27 / 8%);
+}
+
+.volunteer-detail-card > .volunteer-owner-actions,
+.volunteer-detail-card > [data-volunteer-management-status] {
+    order: 1;
+}
+
+.volunteer-detail-card > .volunteer-enrollment-actions {
+    order: 2;
+}
+
+.volunteer-detail-card > [data-owner-enrollment-note],
+.volunteer-detail-card > [data-enrollment-note],
+.volunteer-detail-card > #enrollmentMessage {
+    order: 3;
+}
+
+.volunteer-detail-card > .volunteer-attendance-tools,
+.volunteer-detail-card > .volunteer-attendance-result {
+    order: 4;
+}
+
+.volunteer-detail-card > .volunteer-detail-facts {
+    order: 5;
+    margin-top: 20px;
+}
+
+.volunteer-detail-card > [data-volunteer-management-status]:empty,
+.volunteer-detail-card > #enrollmentMessage:empty {
+    display: none;
 }
 
 .volunteer-detail-card-kicker {
@@ -1168,8 +1276,8 @@
     justify-content: center;
     gap: 11px;
     width: 100%;
-    min-height: 58px;
-    margin-top: 24px;
+    min-height: 62px;
+    margin-top: 8px;
     border: 0;
     border-radius: 14px;
     padding: 14px 18px;
@@ -1178,7 +1286,7 @@
     box-shadow: 0 10px 22px rgb(22 79 61 / 25%);
     cursor: pointer;
     font: inherit;
-    font-size: 1.04rem;
+    font-size: 1.08rem;
     font-weight: 800;
     text-align: center;
     text-decoration: none;
@@ -1209,6 +1317,39 @@
 .volunteer-enrollment-actions {
     display: grid;
     gap: 10px;
+}
+
+.volunteer-enrollment-skeleton {
+    display: flex;
+    min-height: 58px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0 0;
+    border: 1px solid #dfe8df;
+    border-radius: 14px;
+    background: linear-gradient(105deg, #edf2ed 20%, #f8faf7 40%, #edf2ed 60%);
+    background-size: 200% 100%;
+    color: #617168;
+    font-size: .84rem;
+    font-weight: 700;
+    animation: volunteer-detail-shimmer 1.5s linear infinite;
+}
+
+.volunteer-enrollment-skeleton[hidden] {
+    display: none;
+}
+
+.volunteer-enrollment-skeleton > span {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border-radius: 50%;
+    background: #c8d8ce;
+}
+
+.volunteer-enrollment-actions.is-loading > :not([data-enrollment-loading]) {
+    display: none;
 }
 
 .volunteer-cancel-cta {
@@ -1372,12 +1513,29 @@
 }
 
 .volunteer-detail-map {
+    position: relative;
     z-index: 0;
     height: clamp(300px, 42vw, 480px);
     overflow: hidden;
     border: 1px solid #dfe8df;
     border-radius: 14px;
     background: #e6ece5;
+}
+
+.volunteer-detail-map[data-map-state="loading"]::after {
+    position: absolute;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(105deg, #e1e9e1 20%, #f2f5ef 40%, #e1e9e1 60%);
+    background-size: 200% 100%;
+    color: #53665b;
+    content: "Cargando ubicación…";
+    font-size: .84rem;
+    font-weight: 700;
+    animation: volunteer-detail-shimmer 1.5s linear infinite;
+    pointer-events: none;
 }
 
 .volunteer-detail-map .leaflet-popup-content p {
@@ -1492,6 +1650,62 @@
         padding: 72px 24px 36px;
     }
 
+    .volunteer-detail-page .page-hero-content h1 {
+        font-size: 2.15rem;
+        line-height: 1.08;
+    }
+
+    .volunteer-detail-hero-meta {
+        display: grid;
+        gap: 10px;
+        margin: 14px 0 12px;
+    }
+
+    .volunteer-detail-hero-meta-item strong {
+        font-size: .84rem;
+        overflow-wrap: anywhere;
+    }
+
+    .volunteer-detail-hero-description {
+        font-size: .9rem;
+        line-height: 1.5;
+    }
+
+    .volunteer-gallery {
+        width: 100%;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .volunteer-gallery-controls {
+        max-width: 100%;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .volunteer-gallery-zoom,
+    .volunteer-gallery-count {
+        padding: 8px 10px;
+        font-size: .74rem;
+    }
+
+    .volunteer-gallery-thumbnails {
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+        gap: 8px;
+        scroll-snap-type: x proximity;
+        touch-action: pan-x;
+    }
+
+    .volunteer-gallery-thumb {
+        flex: 0 0 60px;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        scroll-snap-align: start;
+        border-radius: 8px;
+    }
+
     .volunteer-lightbox {
         width: calc(100vw - 16px);
         height: calc(100dvh - 16px);
@@ -1512,6 +1726,19 @@
 
     .volunteer-lightbox-arrow.is-next {
         right: 4px;
+    }
+}
+
+@keyframes volunteer-detail-shimmer {
+    to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .volunteer-detail-image-frame[data-image-state="loading"]::after,
+    .volunteer-gallery-thumb.is-loading,
+    .volunteer-enrollment-skeleton,
+    .volunteer-detail-map[data-map-state="loading"]::after {
+        animation: none;
     }
 }
 

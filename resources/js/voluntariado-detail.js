@@ -6,9 +6,32 @@ import { bajaCaliforniaSurBounds } from './geo/baja-california-sur';
 
 const gallery = document.querySelector('[data-volunteer-gallery]');
 const lightbox = document.querySelector('[data-gallery-lightbox]');
+const heroImageFrame = document.querySelector('[data-volunteer-hero-frame]');
+const heroImage = heroImageFrame?.querySelector('[data-volunteer-hero-image]');
+
+function setHeroImageState(state) {
+    if (!heroImageFrame) return;
+    heroImageFrame.dataset.imageState = state;
+    heroImageFrame.classList.toggle('volunteer-detail-placeholder', state === 'error');
+    if (heroImage) heroImage.hidden = state === 'error';
+}
+
+if (heroImage) {
+    heroImage.addEventListener('load', () => setHeroImageState('loaded'));
+    heroImage.addEventListener('error', () => setHeroImageState('error'));
+    if (heroImage.complete) setHeroImageState(heroImage.naturalWidth > 0 ? 'loaded' : 'error');
+}
 
 if (gallery && lightbox) {
     const images = [...gallery.querySelectorAll('[data-gallery-index]')].map(button => button.querySelector('img').src);
+    gallery.querySelectorAll('.volunteer-gallery-thumb img').forEach(image => {
+        const thumbnail = image.closest('.volunteer-gallery-thumb');
+        const finishLoading = () => thumbnail?.classList.remove('is-loading');
+        thumbnail?.classList.add('is-loading');
+        image.addEventListener('load', finishLoading, { once: true });
+        image.addEventListener('error', finishLoading, { once: true });
+        if (image.complete) finishLoading();
+    });
     if (!images.length) {
         const mainImage = gallery.querySelector('[data-gallery-main]');
         if (mainImage) images.push(mainImage.src);
@@ -24,7 +47,9 @@ if (gallery && lightbox) {
         if (!images.length) return;
         activeIndex = (index + images.length) % images.length;
         const image = images[activeIndex];
+        setHeroImageState('loading');
         mainImage.src = image;
+        if (mainImage.complete) setHeroImageState(mainImage.naturalWidth > 0 ? 'loaded' : 'error');
         if (count) count.textContent = `${activeIndex + 1} / ${images.length}`;
         gallery.querySelectorAll('[data-gallery-index]').forEach((button, buttonIndex) => {
             const active = buttonIndex === activeIndex;
@@ -89,10 +114,17 @@ if (mapElement) {
             scrollWheelZoom: false,
         }).setView([latitude, longitude], 14);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(map);
+        const mapLoadTimeout = window.setTimeout(() => {
+            if (mapElement.dataset.mapState === 'loading') mapElement.dataset.mapState = 'loaded';
+        }, 8000);
+        tileLayer.once('load', () => {
+            mapElement.dataset.mapState = 'loaded';
+            window.clearTimeout(mapLoadTimeout);
+        });
 
         const symbolsBase = document.body.dataset.symbolsBase;
         const markerOptions = {};
@@ -185,6 +217,16 @@ if (detailCard) {
     let cameraControls = null;
     const qrReader = new BrowserQRCodeReader();
     const getJoinControl = () => detailCard.querySelector('[data-voluntariado-id]');
+    const enrollmentActionWrap = detailCard.querySelector('[data-enrollment-actions]');
+    const enrollmentLoading = detailCard.querySelector('[data-enrollment-loading]');
+
+    function setEnrollmentLoading(isLoading) {
+        if (enrollmentLoading) enrollmentLoading.hidden = !isLoading;
+        if (enrollmentActionWrap) {
+            enrollmentActionWrap.classList.toggle('is-loading', isLoading);
+            enrollmentActionWrap.setAttribute('aria-busy', String(isLoading));
+        }
+    }
 
     function formatRemaining(milliseconds) {
         const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
@@ -729,9 +771,17 @@ if (detailCard) {
 
     async function refreshAfterAuthentication() {
         token = sessionStorage.getItem('regenera_access_token');
-        if (!token) return;
-        await Promise.all([loadVolunteerPermissions(), loadEnrollmentStatus()]);
-        startOwnerActivityPolling();
+        if (!token) {
+            setEnrollmentLoading(false);
+            return;
+        }
+        setEnrollmentLoading(true);
+        try {
+            await Promise.all([loadVolunteerPermissions(), loadEnrollmentStatus()]);
+            startOwnerActivityPolling();
+        } finally {
+            setEnrollmentLoading(false);
+        }
     }
 
     document.addEventListener('regenera:auth-changed', event => {
@@ -739,9 +789,11 @@ if (detailCard) {
     });
 
     if (token) {
+        setEnrollmentLoading(true);
         Promise.all([loadVolunteerPermissions(), loadEnrollmentStatus()])
             .then(startOwnerActivityPolling)
-            .catch(error => console.error('No se pudo inicializar la actividad del voluntariado.', error));
+            .catch(error => console.error('No se pudo inicializar la actividad del voluntariado.', error))
+            .finally(() => setEnrollmentLoading(false));
     }
 
     function nowWithinEvent() {
