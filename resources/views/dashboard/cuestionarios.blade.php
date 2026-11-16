@@ -27,8 +27,10 @@
         <button class="button button-primary" type="button" data-quiz-create>Crear cuestionario</button>
     </section>
     <div class="dashboard-loading" data-quiz-admin-loading hidden>Cargando cuestionarios…</div>
+    <div data-quiz-admin-search></div>
     <div class="dashboard-card-grid" data-quiz-admin-list></div>
     <p class="dashboard-empty" data-quiz-admin-empty hidden>No hay cuestionarios registrados.</p>
+    <div data-quiz-admin-pagination></div>
 
     <form class="dashboard-form quiz-admin-form" data-quiz-admin-form hidden>
         <div class="dashboard-form-heading">
@@ -36,13 +38,14 @@
             <button class="icon-button" type="button" data-quiz-cancel aria-label="Cerrar formulario">×</button>
         </div>
         <input type="hidden" name="slugOriginal">
+        <label>Título<input name="titulo" required maxlength="150"></label>
         <label>Identificador del cuestionario
             <input name="slug" list="quiz-identifiers" required maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ej. seguridad-limpieza" aria-describedby="quiz-identifier-help quiz-identifier-status" autocomplete="off">
         </label>
         <datalist id="quiz-identifiers" data-quiz-identifiers></datalist>
-        <p class="quiz-admin-help" id="quiz-identifier-help">Selecciona un identificador existente o escribe uno nuevo con letras minúsculas, números y guiones.</p>
+        <p class="quiz-admin-help" id="quiz-identifier-help">Se genera desde el título. También puedes escribir uno nuevo o seleccionar uno existente para crear una versión.</p>
+        <button class="button button-secondary" type="button" data-quiz-regenerate-slug>Generar desde el título</button>
         <p class="quiz-admin-identifier-status" id="quiz-identifier-status" data-quiz-identifier-status hidden role="status"></p>
-        <label>Título<input name="titulo" required maxlength="150"></label>
         <label>Descripción<textarea name="descripcion" rows="2" required maxlength="500"></textarea></label>
         <label>Guía de estudio<textarea name="guia" rows="4" required maxlength="2000"></textarea></label>
         <fieldset class="quiz-admin-audience">
@@ -70,16 +73,12 @@
                 <label>Nombre visible<input name="medallaNombre" required maxlength="100" placeholder="ej. Voluntario Seguro"><small>Así aparecerá en el perfil.</small></label>
             </div>
             <label>Descripción de la medalla<textarea name="medallaDescripcion" rows="2" required maxlength="300" placeholder="Describe qué reconoce este logro"></textarea></label>
-            <label>Icono
-                <input name="medallaIcono" list="quiz-medal-icons" required maxlength="40" pattern="[a-z0-9\-]+" placeholder="Selecciona o escribe un icono">
-                <small>Elige un icono compatible; otros identificadores pueden mostrarse con el símbolo predeterminado.</small>
+            <label>Icono de la medalla
+                <input name="medallaIcono" required maxlength="40" pattern="[a-z0-9\-]+" placeholder="Selecciona un icono o escribe uno existente">
+                <small>Selecciona un icono visualmente. Los identificadores anteriores siguen siendo compatibles.</small>
             </label>
-            <datalist id="quiz-medal-icons">
-                <option value="shield-check">Protección</option>
-                <option value="mangrove">Manglar</option>
-                <option value="recycle">Reciclaje</option>
-                <option value="leader">Liderazgo</option>
-            </datalist>
+            <div class="quiz-medal-icons" data-quiz-medal-icons aria-label="Iconos disponibles"></div>
+            <p class="quiz-medal-preview" data-quiz-medal-preview aria-live="polite"></p>
         </fieldset>
         <div class="quiz-admin-questions-heading">
             <div><span class="dashboard-eyebrow">EVALUACIÓN</span><h3>Preguntas</h3></div>

@@ -1,4 +1,7 @@
 import '../../css/dashboard.css';
+import '../../css/quiz-list.css';
+import { createQuizPager } from '../quiz-list';
+import { medalIconMarkup, medalIcons } from '../medal-icons';
 
 const root = document.querySelector('[data-quiz-admin]');
 
@@ -16,6 +19,13 @@ function initializeQuizAdmin() {
     const submitButton = root.querySelector('[data-quiz-submit]');
     const formError = root.querySelector('[data-quiz-form-error]');
     let activeQuizzes = [];
+    let identifierEdited = false;
+    const pager = createQuizPager(
+        root.querySelector('[data-quiz-admin-search]'),
+        root.querySelector('[data-quiz-admin-pagination]'),
+        'Buscar cuestionarios por nombre',
+        renderList,
+    );
 
     const token = () => sessionStorage.getItem('regenera_access_token');
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -51,75 +61,120 @@ function initializeQuizAdmin() {
         const article = document.createElement('article');
         article.className = 'quiz-admin-question';
         article.dataset.quizQuestion = '';
-        const heading = document.createElement('div');
-        heading.className = 'quiz-admin-question-heading';
-        const title = document.createElement('h4');
-        title.textContent = question.id ? `Pregunta · ${question.id}` : 'Pregunta nueva';
-        const remove = document.createElement('button');
-        remove.className = 'button button-secondary';
-        remove.type = 'button';
-        remove.dataset.quizRemoveQuestion = '';
-        remove.textContent = 'Quitar';
-        heading.append(title, remove);
+        article.dataset.questionId = question.id || `pregunta-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        article.innerHTML = `
+            <div class="quiz-admin-question-heading">
+                <h4>Pregunta</h4>
+                <div class="quiz-question-actions">
+                    <button class="button button-secondary" type="button" data-move-up aria-label="Mover pregunta hacia arriba">↑</button>
+                    <button class="button button-secondary" type="button" data-move-down aria-label="Mover pregunta hacia abajo">↓</button>
+                    <button class="button button-secondary" type="button" data-remove-question>Quitar</button>
+                </div>
+            </div>
+            <label>Pregunta<textarea data-question-text required maxlength="500" rows="2"></textarea></label>
+            <div class="dashboard-form-row">
+                <label>Tipo de pregunta<select data-question-type>
+                    <option value="unica">◉ Una respuesta</option>
+                    <option value="multiple">☑ Varias respuestas</option>
+                    <option value="verdadero_falso">◐ Verdadero o falso</option>
+                    <option value="corta">✎ Respuesta corta</option>
+                </select></label>
+                <label>Importancia<select data-question-weight>
+                    <option value="1">1 · Normal</option><option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5 · Mayor importancia</option>
+                </select></label>
+            </div>
+            <p class="quiz-admin-help" data-options-help></p>
+            <div class="quiz-answer-list" data-answer-list></div>
+            <button class="button button-secondary" type="button" data-add-answer>Añadir opción</button>
+            <label>Explicación después de responder<textarea data-question-explanation required rows="3" maxlength="1200"></textarea></label>`;
+        article.querySelector('[data-question-text]').value = question.texto || '';
+        article.querySelector('[data-question-explanation]').value = question.explicacion || '';
+        const typeSelect = article.querySelector('[data-question-type]');
+        const weightSelect = article.querySelector('[data-question-weight]');
+        const answers = article.querySelector('[data-answer-list]');
+        const addButton = article.querySelector('[data-add-answer]');
+        const cache = {};
+        typeSelect.value = question.tipo || 'unica';
+        weightSelect.value = String(question.peso || 1);
+        let currentType = typeSelect.value;
 
-        const idLabel = document.createElement('label');
-        idLabel.textContent = 'Identificador de la pregunta';
-        const idInput = document.createElement('input');
-        idInput.dataset.questionId = '';
-        idInput.required = true;
-        idInput.maxLength = 80;
-        idInput.value = question.id || '';
-        idLabel.append(idInput);
+        function addAnswer(text = '', checked = false) {
+            const row = document.createElement('div');
+            row.className = 'quiz-answer-row';
+            const choice = document.createElement('input');
+            choice.type = currentType === 'multiple' ? 'checkbox' : 'radio';
+            choice.name = `correct-${article.dataset.questionId}`;
+            choice.checked = checked;
+            choice.hidden = currentType === 'corta';
+            choice.setAttribute('aria-label', 'Marcar como respuesta correcta');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = text;
+            input.required = true;
+            input.maxLength = 300;
+            input.readOnly = currentType === 'verdadero_falso';
+            input.setAttribute('aria-label', currentType === 'corta' ? 'Respuesta aceptada' : 'Opción de respuesta');
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'button button-secondary';
+            remove.textContent = 'Quitar';
+            remove.setAttribute('aria-label', 'Quitar respuesta');
+            remove.hidden = currentType === 'verdadero_falso';
+            remove.addEventListener('click', () => row.remove());
+            row.append(choice, input, remove);
+            answers.append(row);
+        }
 
-        const textLabel = document.createElement('label');
-        textLabel.textContent = 'Pregunta';
-        const textInput = document.createElement('textarea');
-        textInput.dataset.questionText = '';
-        textInput.required = true;
-        textInput.maxLength = 500;
-        textInput.rows = 2;
-        textInput.value = question.texto || '';
-        textLabel.append(textInput);
-
-        const optionsLabel = document.createElement('label');
-        optionsLabel.textContent = 'Opciones (una por línea)';
-        const optionsInput = document.createElement('textarea');
-        optionsInput.dataset.questionOptions = '';
-        optionsInput.required = true;
-        optionsInput.rows = 4;
-        optionsInput.maxLength = 6000;
-        optionsInput.value = (question.opciones || []).join('\n');
-        optionsLabel.append(optionsInput);
-
-        const correctLabel = document.createElement('label');
-        correctLabel.textContent = 'Índice de respuesta correcta (empieza en 0)';
-        const correctInput = document.createElement('input');
-        correctInput.dataset.questionCorrect = '';
-        correctInput.type = 'number';
-        correctInput.required = true;
-        correctInput.min = 0;
-        correctInput.step = 1;
-        correctInput.value = question.respuestaCorrecta ?? 0;
-        correctLabel.append(correctInput);
-
-        const explanationLabel = document.createElement('label');
-        explanationLabel.textContent = 'Explicación educativa';
-        const explanationInput = document.createElement('textarea');
-        explanationInput.dataset.questionExplanation = '';
-        explanationInput.required = true;
-        explanationInput.rows = 3;
-        explanationInput.maxLength = 1200;
-        explanationInput.value = question.explicacion || '';
-        explanationLabel.append(explanationInput);
-
-        article.append(heading, idLabel, textLabel, optionsLabel, correctLabel, explanationLabel);
-        remove.addEventListener('click', () => article.remove());
+        function values() {
+            return [...answers.children].map(row => ({
+                text: row.querySelector('input[type="text"]').value,
+                checked: row.querySelector('input[type="radio"], input[type="checkbox"]').checked,
+            }));
+        }
+        function renderAnswers(saved) {
+            answers.replaceChildren();
+            article.querySelector('[data-options-help]').textContent = currentType === 'corta'
+                ? 'Agrega las respuestas que se aceptarán. Se ignorarán mayúsculas, acentos y espacios adicionales.'
+                : 'Escribe las opciones y marca las respuestas correctas.';
+            addButton.hidden = currentType === 'verdadero_falso';
+            addButton.textContent = currentType === 'corta' ? 'Añadir respuesta aceptada' : 'Añadir opción';
+            const initial = saved || (currentType === 'verdadero_falso'
+                ? [{ text: 'Verdadero', checked: false }, { text: 'Falso', checked: false }]
+                : currentType === 'corta' ? [{ text: '', checked: false }]
+                    : [{ text: '', checked: false }, { text: '', checked: false }]);
+            initial.forEach(item => addAnswer(item.text, item.checked));
+        }
+        const initialAnswers = currentType === 'corta'
+            ? (question.respuestasAceptadas || []).map(text => ({ text, checked: false }))
+            : (question.opciones || []).map((text, index) => ({
+                text,
+                checked: currentType === 'multiple'
+                    ? (question.respuestasCorrectas || []).includes(index)
+                    : question.respuestaCorrecta === index,
+            }));
+        renderAnswers(initialAnswers.length ? initialAnswers : null);
+        typeSelect.addEventListener('change', () => {
+            cache[currentType] = values();
+            currentType = typeSelect.value;
+            renderAnswers(cache[currentType]);
+        });
+        addButton.addEventListener('click', () => {
+            if (answers.children.length < 20) addAnswer();
+        });
+        article.querySelector('[data-remove-question]').addEventListener('click', () => article.remove());
+        article.querySelector('[data-move-up]').addEventListener('click', () => {
+            if (article.previousElementSibling) questions.insertBefore(article, article.previousElementSibling);
+        });
+        article.querySelector('[data-move-down]').addEventListener('click', () => {
+            if (article.nextElementSibling) questions.insertBefore(article.nextElementSibling, article);
+        });
         return article;
     }
 
-    function renderList() {
+    function renderList(result) {
         list.replaceChildren();
-        activeQuizzes.forEach(quiz => {
+        result.items.forEach(quiz => {
             const card = document.createElement('article');
             card.className = 'dashboard-card';
             const meta = document.createElement('div');
@@ -151,7 +206,9 @@ function initializeQuizAdmin() {
             card.append(meta, body, actions);
             list.append(card);
         });
-        root.querySelector('[data-quiz-admin-empty]').hidden = activeQuizzes.length > 0;
+        const empty = root.querySelector('[data-quiz-admin-empty]');
+        empty.hidden = result.total > 0;
+        empty.textContent = activeQuizzes.length ? 'No se encontraron cuestionarios con ese nombre.' : 'No hay cuestionarios registrados.';
     }
 
     async function loadQuizzes() {
@@ -166,7 +223,7 @@ function initializeQuizAdmin() {
                     option.value = slug;
                     return option;
                 }));
-            renderList();
+            pager.setItems(activeQuizzes);
             const params = new URLSearchParams(location.search);
             const requestedSlug = params.get('editar');
             if (requestedSlug) {
@@ -210,6 +267,7 @@ function initializeQuizAdmin() {
 
     function openEditor(quiz = null) {
         form.reset();
+        identifierEdited = Boolean(quiz);
         formError.hidden = true;
         questions.replaceChildren();
         form.elements.slugOriginal.value = quiz?.slug || '';
@@ -225,12 +283,17 @@ function initializeQuizAdmin() {
         form.elements.medallaNombre.value = quiz?.medalla?.nombre || '';
         form.elements.medallaDescripcion.value = quiz?.medalla?.descripcion || '';
         form.elements.medallaIcono.value = quiz?.medalla?.icono || '';
+        updateMedalIcon();
         form.querySelectorAll('input[name="audiencia"]').forEach(input => {
             input.checked = (quiz?.audiencia || []).includes(input.value);
         });
         (quiz?.preguntas || []).forEach(question => questions.append(questionRow(question)));
         if (!quiz) questions.append(questionRow());
         updateIdentifierState();
+        root.querySelector('[data-quiz-regenerate-slug]').hidden = Boolean(quiz);
+        root.querySelector('#quiz-identifier-help').textContent = quiz
+            ? 'El identificador permanece fijo para conservar las versiones y los intentos anteriores.'
+            : 'Se genera desde el título. También puedes escribir uno nuevo o seleccionar uno existente para crear una versión.';
         root.querySelector('[data-quiz-form-heading]').textContent = quiz
             ? `Nueva versión de ${quiz.titulo}`
             : 'Nuevo cuestionario';
@@ -252,29 +315,103 @@ function initializeQuizAdmin() {
     root.querySelector('[data-quiz-create]').addEventListener('click', () => openEditor());
     root.querySelector('[data-quiz-add-question]').addEventListener('click', () => questions.append(questionRow()));
     root.querySelectorAll('[data-quiz-cancel]').forEach(button => button.addEventListener('click', () => { form.hidden = true; }));
-    form.elements.slug.addEventListener('input', updateIdentifierState);
+    const normalizeIdentifier = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80).replace(/-+$/g, '');
+    function availableIdentifier(value) {
+        const base = normalizeIdentifier(value);
+        if (!base) return '';
+        const existing = new Set(activeQuizzes.map(quiz => quiz.slug));
+        let candidate = base;
+        let suffix = 2;
+        while (existing.has(candidate)) {
+            const ending = `-${suffix++}`;
+            candidate = `${base.slice(0, 80 - ending.length).replace(/-+$/g, '')}${ending}`;
+        }
+        return candidate;
+    }
+    form.elements.titulo.addEventListener('input', () => {
+        if (!identifierEdited) {
+            form.elements.slug.value = availableIdentifier(form.elements.titulo.value);
+            updateIdentifierState();
+        }
+    });
+    form.elements.slug.addEventListener('input', () => {
+        identifierEdited = form.elements.slug.value.trim() !== '';
+        if (!identifierEdited) form.elements.slug.value = availableIdentifier(form.elements.titulo.value);
+        updateIdentifierState();
+    });
+    root.querySelector('[data-quiz-regenerate-slug]').addEventListener('click', () => {
+        identifierEdited = false;
+        form.elements.slug.value = availableIdentifier(form.elements.titulo.value);
+        updateIdentifierState();
+    });
+    form.elements.slug.addEventListener('blur', () => {
+        if (!activeQuizzes.some(quiz => quiz.slug === form.elements.slug.value.trim())) {
+            form.elements.slug.value = normalizeIdentifier(form.elements.slug.value);
+        }
+        updateIdentifierState();
+    });
     form.elements.requiereOrganizadorVerificado.addEventListener('change', updateIdentifierState);
+
+    const iconList = root.querySelector('[data-quiz-medal-icons]');
+    const iconPreview = root.querySelector('[data-quiz-medal-preview]');
+    medalIcons.forEach(icon => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'quiz-medal-icon-choice';
+        button.dataset.icon = icon.id;
+        button.innerHTML = `${medalIconMarkup(icon.id)}<span>${escapeHtml(icon.label)}</span>`;
+        button.addEventListener('click', () => {
+            form.elements.medallaIcono.value = icon.id;
+            updateMedalIcon();
+        });
+        iconList.append(button);
+    });
+    function updateMedalIcon() {
+        const value = form.elements.medallaIcono.value.trim();
+        const icon = medalIcons.find(item => item.id === value);
+        iconList.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.icon === value)));
+        iconPreview.replaceChildren();
+        if (!value) {
+            iconPreview.textContent = 'Selecciona un icono.';
+            return;
+        }
+        const symbol = document.createElement('span');
+        symbol.className = 'quiz-medal-preview-icon';
+        symbol.innerHTML = medalIconMarkup(value);
+        iconPreview.append(symbol, document.createTextNode(icon ? `Seleccionado: ${icon.label}` : 'Icono anterior: se mostrará el símbolo predeterminado.'));
+    }
+    form.elements.medallaIcono.addEventListener('input', updateMedalIcon);
 
     form.addEventListener('submit', async event => {
         event.preventDefault();
         errorBox.hidden = true;
         formError.hidden = true;
-        const quizQuestions = [...questions.querySelectorAll('[data-question-id]')].map(idInput => {
-            const row = idInput.closest('[data-quiz-question]');
-            const options = row.querySelector('[data-question-options]').value
-                .split('\n')
-                .map(option => option.trim())
-                .filter(Boolean);
-            return {
-                id: idInput.value.trim(),
+        const quizQuestions = [...questions.querySelectorAll('[data-quiz-question]')].map(row => {
+            const type = row.querySelector('[data-question-type]').value;
+            const answerRows = [...row.querySelector('[data-answer-list]').children];
+            const options = answerRows.map(answer => answer.querySelector('input[type="text"]').value.trim());
+            const correct = answerRows.flatMap((answer, index) => answer.querySelector('input[type="radio"], input[type="checkbox"]').checked ? [index] : []);
+            const result = {
+                id: row.dataset.questionId,
                 texto: row.querySelector('[data-question-text]').value.trim(),
-                opciones: options,
-                respuestaCorrecta: Number(row.querySelector('[data-question-correct]').value),
+                tipo: type,
+                peso: Number(row.querySelector('[data-question-weight]').value),
                 explicacion: row.querySelector('[data-question-explanation]').value.trim(),
             };
+            if (type === 'corta') result.respuestasAceptadas = options;
+            else {
+                result.opciones = options;
+                if (type === 'multiple') result.respuestasCorrectas = correct;
+                else result.respuestaCorrecta = correct[0] ?? null;
+            }
+            return result;
         });
-        if (!quizQuestions.length || quizQuestions.some(question => question.opciones.length < 2 || question.respuestaCorrecta >= question.opciones.length)) {
-            formError.textContent = 'Cada pregunta necesita dos opciones y un índice correcto válido.';
+        if (!quizQuestions.length || quizQuestions.some(question => question.tipo === 'corta'
+            ? !question.respuestasAceptadas.length || question.respuestasAceptadas.some(answer => !answer)
+            : question.opciones.length < 2 || question.opciones.some(option => !option)
+                || (question.tipo === 'multiple' ? !question.respuestasCorrectas.length : question.respuestaCorrecta === null))) {
+            formError.textContent = 'Completa cada pregunta y sus respuestas, y marca al menos una respuesta correcta.';
             formError.hidden = false;
             return;
         }

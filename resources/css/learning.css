@@ -276,6 +276,15 @@
     gap: 9px;
 }
 
+.learning-options input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+}
+
 .learning-option {
     display: flex;
     align-items: flex-start;

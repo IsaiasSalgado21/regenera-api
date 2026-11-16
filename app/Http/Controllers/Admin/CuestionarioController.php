@@ -86,9 +86,15 @@ class CuestionarioController extends Controller
             'preguntas' => ['required', 'array', 'min:1', 'max:30'],
             'preguntas.*.id' => ['required', 'string', 'max:80', 'distinct'],
             'preguntas.*.texto' => ['required', 'string', 'max:500'],
-            'preguntas.*.opciones' => ['required', 'array', 'min:2', 'max:20'],
+            'preguntas.*.tipo' => ['sometimes', Rule::in(['unica', 'multiple', 'verdadero_falso', 'corta'])],
+            'preguntas.*.peso' => ['sometimes', 'integer', 'min:1', 'max:5'],
+            'preguntas.*.opciones' => ['nullable', 'array', 'max:20'],
             'preguntas.*.opciones.*' => ['required', 'string', 'max:300'],
-            'preguntas.*.respuestaCorrecta' => ['required', 'integer', 'min:0'],
+            'preguntas.*.respuestaCorrecta' => ['nullable', 'integer', 'min:0'],
+            'preguntas.*.respuestasCorrectas' => ['nullable', 'array', 'max:20'],
+            'preguntas.*.respuestasCorrectas.*' => ['integer', 'min:0'],
+            'preguntas.*.respuestasAceptadas' => ['nullable', 'array', 'max:20'],
+            'preguntas.*.respuestasAceptadas.*' => ['required', 'string', 'max:300'],
             'preguntas.*.explicacion' => ['required', 'string', 'max:1200'],
             'medalla.slug' => ['required', 'string', 'max:80', 'alpha_dash'],
             'medalla.nombre' => ['required', 'string', 'max:100'],
@@ -102,10 +108,27 @@ class CuestionarioController extends Controller
         $validator = Validator::make($request->all(), $rules);
         $validator->after(function ($validator) use ($request): void {
             foreach ((array) $request->input('preguntas', []) as $index => $question) {
+                if (! is_array($question)) {
+                    $validator->errors()->add("preguntas.$index", 'La pregunta no es válida.');
+                    continue;
+                }
+                $type = $question['tipo'] ?? 'unica';
                 $options = $question['opciones'] ?? [];
-                $correct = $question['respuestaCorrecta'] ?? null;
-                if (is_numeric($correct) && (int) $correct >= count($options)) {
-                    $validator->errors()->add("preguntas.$index.respuestaCorrecta", 'La respuesta correcta debe coincidir con una opción existente.');
+                if ($type === 'corta') {
+                    if (! is_array($question['respuestasAceptadas'] ?? null) || count($question['respuestasAceptadas']) < 1) {
+                        $validator->errors()->add("preguntas.$index.respuestasAceptadas", 'Agrega al menos una respuesta aceptada.');
+                    }
+                    continue;
+                }
+                if (! is_array($options) || count($options) < 2 || ($type === 'verdadero_falso' && count($options) !== 2)) {
+                    $validator->errors()->add("preguntas.$index.opciones", 'La pregunta necesita opciones válidas.');
+                    continue;
+                }
+                $correct = $type === 'multiple' ? ($question['respuestasCorrectas'] ?? []) : [$question['respuestaCorrecta'] ?? null];
+                if (! is_array($correct) || ! count($correct)
+                    || count($correct) !== count(array_unique($correct, SORT_REGULAR))
+                    || collect($correct)->contains(fn ($answer) => ! is_numeric($answer) || (int) $answer < 0 || (int) $answer >= count($options))) {
+                    $validator->errors()->add("preguntas.$index.respuestaCorrecta", 'Selecciona al menos una respuesta correcta válida.');
                 }
             }
             if ($request->boolean('requiereOrganizadorVerificado')
@@ -114,6 +137,14 @@ class CuestionarioController extends Controller
             }
         });
 
-        return $validator->validate();
+        $data = $validator->validate();
+        foreach ($data['preguntas'] as &$question) {
+            if (isset($question['respuestasCorrectas'])) {
+                $question['respuestasCorrectas'] = array_map('intval', $question['respuestasCorrectas']);
+            }
+        }
+        unset($question);
+
+        return $data;
     }
 }

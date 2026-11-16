@@ -56,10 +56,26 @@ lugares relacionados se enlazan por separado.
 ## Progreso de medallas
 
 En el editor administrativo de cuestionarios, el identificador puede ser nuevo
-o elegirse del catálogo existente. Elegir uno existente y confirmar el guardado
+o elegirse del catálogo existente. El título genera una sugerencia normalizada
+con un sufijo libre si ya existe. Elegir uno existente y confirmar el guardado
 crea una nueva versión y desactiva la anterior; no crea un cuestionario duplicado.
+El identificador de una versión existente permanece fijo; al crear se puede
+volver a generar desde el título. El selector muestra los iconos compatibles
+con el perfil y conserva los identificadores antiguos.
 La medalla se otorga al aprobar el cuestionario, además de los requisitos de
 asistencia o verificación que correspondan.
+
+Las listas de cuestionarios del editor, la sección de gamificación y aprendizaje
+permiten buscar por nombre y navegar los resultados de seis en seis. El resumen
+administrativo incluye la configuración y los estados de intentos por
+cuestionario; los títulos de intentos históricos corresponden a su versión.
+
+Las preguntas admiten una respuesta, varias respuestas, verdadero o falso y
+respuesta corta. Cada pregunta tiene un peso de 1 a 5; las versiones anteriores
+sin peso conservan peso 1. Para varias respuestas se aplica el crédito parcial
+`max(0, (aciertos - errores) / respuestas correctas)`. En respuestas cortas se
+ignoran mayúsculas, acentos y espacios adicionales. Los intentos abiertos se
+reanudan con la versión con la que se iniciaron.
 
 `GET /api/gamificacion/progreso` requiere autenticación y conserva `medallas`.
 También devuelve `medallasObtenidas`, `medallasBloqueadas` y `siguienteMedalla`.

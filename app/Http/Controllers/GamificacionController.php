@@ -44,13 +44,14 @@ class GamificacionController extends Controller
     {
         $validated = $request->validate([
             'preguntaId' => ['required', 'string', 'max:80'],
-            'opcion' => ['required', 'integer', 'min:0', 'max:20'],
+            'opcion' => ['required_without:respuesta', 'integer', 'min:0', 'max:19'],
+            'respuesta' => ['required_without:opcion'],
         ]);
         $result = $this->cuestionarios->responder(
             $request->user(),
             $attemptId,
             $validated['preguntaId'],
-            (int) $validated['opcion'],
+            isset($validated['opcion']) ? (int) $validated['opcion'] : $validated['respuesta'],
         );
 
         if ($result['estado'] === 'aprobado') {
@@ -80,7 +81,10 @@ class GamificacionController extends Controller
     {
         $attempts = IntentoCuestionario::query()->get();
         $events = EventoGamificacion::query()->get();
-        $quizzes = Cuestionario::query()->where('activo', true)->get();
+        $versions = Cuestionario::query()->orderByDesc('version')->get();
+        $quizzes = $versions->unique('slug')->filter(fn ($quiz) => $quiz->activo)->sortBy('titulo');
+        $versionsByKey = $versions->keyBy(fn ($quiz) => $quiz->slug.':'.$quiz->version);
+        $attemptsByQuiz = $attempts->groupBy('cuestionarioSlug');
         $users = User::query()->get(['_id', 'nombre', 'correo'])->keyBy(fn ($user) => (string) $user->_id);
         $certifications = $events->where('tipo', 'certificacion')->pluck('usuarioId')->unique()->count();
 
@@ -89,12 +93,18 @@ class GamificacionController extends Controller
                 'cuestionarios' => $quizzes->map(fn ($quiz) => [
                     'slug' => (string) $quiz->slug,
                     'titulo' => (string) $quiz->titulo,
-                    'intentos' => $attempts->where('cuestionarioSlug', $quiz->slug)->count(),
-                    'aprobados' => $attempts
-                        ->where('cuestionarioSlug', $quiz->slug)
-                        ->where('estado', 'aprobado')
-                        ->count(),
+                    'version' => (int) $quiz->version,
+                    'totalPreguntas' => count($quiz->preguntas ?? []),
+                    'minimoAprobacion' => (float) $quiz->minimoAprobacion,
+                    'puntosAprobacion' => (int) $quiz->puntosAprobacion,
+                    'medalla' => $quiz->medalla['nombre'] ?? null,
+                    'intentos' => $attemptsByQuiz->get($quiz->slug, collect())->count(),
+                    'aprobados' => $attemptsByQuiz->get($quiz->slug, collect())->where('estado', 'aprobado')->count(),
+                    'noAprobados' => $attemptsByQuiz->get($quiz->slug, collect())->where('estado', 'no_aprobado')->count(),
+                    'enCurso' => $attemptsByQuiz->get($quiz->slug, collect())->where('estado', 'en_progreso')->count(),
                 ])->values(),
+                'totalIntentos' => $attempts->count(),
+                'totalAprobados' => $attempts->where('estado', 'aprobado')->count(),
                 'puntosOtorgados' => (int) $events->where('tipo', 'puntos')->sum('cantidad'),
                 'medallasDesbloqueadas' => $events->where('tipo', 'medalla')->count(),
                 'organizadoresCertificados' => $certifications,
@@ -107,6 +117,7 @@ class GamificacionController extends Controller
                         'usuarioNombre' => $users->get((string) $attempt->usuarioId)?->nombre ?? 'Cuenta no disponible',
                         'usuarioCorreo' => $users->get((string) $attempt->usuarioId)?->correo,
                         'cuestionarioSlug' => (string) $attempt->cuestionarioSlug,
+                        'cuestionarioTitulo' => (string) ($versionsByKey->get($attempt->cuestionarioSlug.':'.$attempt->cuestionarioVersion)?->titulo ?? $attempt->cuestionarioSlug),
                         'estado' => (string) $attempt->estado,
                         'puntuacion' => $attempt->puntuacion === null ? null : (float) $attempt->puntuacion,
                         'fechaUltimoIntento' => $attempt->fechaUltimoIntento?->toISOString(),
@@ -145,12 +156,19 @@ class GamificacionController extends Controller
                         $options = array_values($question['opciones'] ?? []);
                         $selectedIndex = $answer?->opcion;
                         $correctIndex = $question['respuestaCorrecta'] ?? null;
+                        $type = $question['tipo'] ?? 'unica';
+                        $selected = $type === 'corta' ? $answer?->textoRespuesta : ($type === 'multiple'
+                            ? implode(' / ', array_map(fn ($index) => $options[$index] ?? '', $answer?->opcionesElegidas ?? []))
+                            : ($selectedIndex !== null ? ($options[(int) $selectedIndex] ?? null) : null));
+                        $correct = $type === 'corta' ? implode(' / ', $question['respuestasAceptadas'] ?? []) : ($type === 'multiple'
+                            ? implode(' / ', array_map(fn ($index) => $options[$index] ?? '', $question['respuestasCorrectas'] ?? []))
+                            : ($correctIndex !== null ? ($options[(int) $correctIndex] ?? null) : null));
 
                         return [
                             'id' => (string) $question['id'],
                             'texto' => (string) $question['texto'],
-                            'respuestaElegida' => $selectedIndex !== null ? ($options[(int) $selectedIndex] ?? null) : null,
-                            'respuestaCorrecta' => $correctIndex !== null ? ($options[(int) $correctIndex] ?? null) : null,
+                            'respuestaElegida' => $answer ? $selected : null,
+                            'respuestaCorrecta' => $correct,
                             'correcta' => $answer ? (bool) $answer->correcta : null,
                             'explicacion' => (string) ($answer?->explicacion ?? $question['explicacion'] ?? ''),
                             'respondidaEn' => $answer?->respondidaEn?->toISOString(),

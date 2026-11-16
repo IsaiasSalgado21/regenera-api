@@ -18,6 +18,9 @@ class RespuestaCuestionario extends Model
         'cuestionarioSlug',
         'preguntaId',
         'opcion',
+        'opcionesElegidas',
+        'textoRespuesta',
+        'credito',
         'correcta',
         'respuestaCorrecta',
         'explicacion',
@@ -29,6 +32,8 @@ class RespuestaCuestionario extends Model
     {
         return [
             'opcion' => 'integer',
+            'opcionesElegidas' => 'array',
+            'credito' => 'float',
             'correcta' => 'boolean',
             'respondidaEn' => 'datetime',
         ];

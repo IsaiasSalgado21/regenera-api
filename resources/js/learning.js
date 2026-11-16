@@ -1,4 +1,6 @@
 import '../css/learning.css';
+import '../css/quiz-list.css';
+import { createQuizPager } from './quiz-list';
 
 const page = document.querySelector('[data-learning-page]');
 
@@ -15,6 +17,18 @@ function initializeLearning() {
     let activeAttempt = null;
     let allCourses = [];
     let isAdmin = false;
+    const catalogPager = createQuizPager(
+        page.querySelector('[data-learning-catalog-search]'),
+        page.querySelector('[data-learning-catalog-pagination]'),
+        'Buscar cuestionarios por nombre',
+        renderCatalog,
+    );
+    const adminPager = createQuizPager(
+        page.querySelector('[data-learning-admin-search]'),
+        page.querySelector('[data-learning-admin-pagination]'),
+        'Buscar cuestionarios para gestionar',
+        renderAdminLinks,
+    );
 
     const token = () => sessionStorage.getItem('regenera_access_token');
 
@@ -56,9 +70,9 @@ function initializeLearning() {
         return element;
     }
 
-    function renderCatalog() {
+    function renderCatalog(result) {
         catalog.replaceChildren();
-        allCourses.forEach(course => {
+        result.items.forEach(course => {
             const card = document.createElement('article');
             card.className = `learning-course${course.estado === 'aprobado' ? ' is-approved' : ''}`;
             appendText(card, 'span', 'learning-course-state', course.estado === 'aprobado'
@@ -120,14 +134,28 @@ function initializeLearning() {
             card.append(start);
             catalog.append(card);
         });
-        status.textContent = allCourses.length ? `${allCourses.length} cuestionarios disponibles según tu perfil.` : 'No hay cuestionarios disponibles para tu rol.';
+        status.textContent = result.total
+            ? `${result.total} ${result.total === 1 ? 'cuestionario encontrado' : 'cuestionarios encontrados'}.`
+            : allCourses.length ? 'No se encontraron cuestionarios con ese nombre.' : 'No hay cuestionarios disponibles para tu rol.';
+    }
+
+    function renderAdminLinks(result) {
+        const links = page.querySelector('[data-learning-admin-quiz-links]');
+        links.replaceChildren();
+        result.items.forEach(quiz => {
+            const link = document.createElement('a');
+            link.href = `/admin/cuestionarios?editar=${encodeURIComponent(quiz.slug)}`;
+            link.textContent = `${quiz.titulo} · v${quiz.version}`;
+            links.append(link);
+        });
+        page.querySelector('[data-learning-admin-empty]').hidden = result.total > 0;
     }
 
     async function loadCatalog(autoLaunch = true) {
         status.textContent = 'Cargando cuestionarios…';
         try {
             allCourses = await request('/cuestionarios');
-            renderCatalog();
+            catalogPager.setItems(allCourses);
             const target = new URLSearchParams(location.search).get('cuestionario');
             if (autoLaunch && target) {
                 const course = allCourses.find(item => item.slug === target && item.disponible);
@@ -157,14 +185,7 @@ function initializeLearning() {
             if (!isAdmin) return;
 
             const quizzes = await request('/admin/cuestionarios');
-            const links = page.querySelector('[data-learning-admin-quiz-links]');
-            links.replaceChildren();
-            quizzes.forEach(quiz => {
-                const link = document.createElement('a');
-                link.href = `/admin/cuestionarios?editar=${encodeURIComponent(quiz.slug)}`;
-                link.textContent = `${quiz.titulo} · v${quiz.version}`;
-                links.append(link);
-            });
+            adminPager.setItems(quizzes);
         } catch {
             isAdmin = false;
         }
@@ -222,14 +243,28 @@ function initializeLearning() {
 
         const options = page.querySelector('[data-learning-options]');
         options.replaceChildren();
+        const type = question.tipo || 'unica';
+        page.querySelector('[data-learning-answer-form] legend').textContent = type === 'multiple'
+            ? 'Elige todas las respuestas correctas'
+            : type === 'corta' ? 'Escribe tu respuesta' : 'Elige una respuesta';
+        if (type === 'corta') {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'respuesta';
+            input.maxLength = 300;
+            input.required = true;
+            input.setAttribute('aria-label', 'Tu respuesta');
+            options.append(input);
+            return;
+        }
         question.opciones.forEach((text, index) => {
             const label = document.createElement('label');
             label.className = 'learning-option';
             const input = document.createElement('input');
-            input.type = 'radio';
+            input.type = type === 'multiple' ? 'checkbox' : 'radio';
             input.name = 'opcion';
             input.value = String(index);
-            input.required = true;
+            input.required = type !== 'multiple';
             const option = document.createElement('span');
             option.textContent = text;
             label.append(input, option);
@@ -241,22 +276,32 @@ function initializeLearning() {
         event.preventDefault();
         const form = event.currentTarget;
         if (!activeAttempt) return;
-        const selected = form.querySelector('input[name="opcion"]:checked');
-        if (!selected) return;
+        const question = activeAttempt.preguntas.find(item => item.id === activeAttempt.currentQuestionId);
+        const type = question.tipo || 'unica';
+        const selected = [...form.querySelectorAll('input[name="opcion"]:checked')];
+        if (type !== 'corta' && !selected.length) {
+            showError('Selecciona al menos una respuesta.');
+            return;
+        }
+        clearError();
+        const answer = type === 'corta'
+            ? { respuesta: form.elements.respuesta.value.trim() }
+            : type === 'multiple' ? { respuesta: selected.map(input => Number(input.value)) }
+                : { opcion: Number(selected[0].value) };
         const submit = form.querySelector('[type="submit"]');
         submit.disabled = true;
         try {
             const result = await request(`/cuestionarios/intentos/${encodeURIComponent(activeAttempt.intentoId)}/respuestas`, {
                 method: 'POST',
-                body: JSON.stringify({ preguntaId: activeAttempt.currentQuestionId, opcion: Number(selected.value) }),
+                body: JSON.stringify({ preguntaId: activeAttempt.currentQuestionId, ...answer }),
             });
             activeAttempt.respondidas.add(result.preguntaId);
             form.hidden = true;
             const feedback = page.querySelector('[data-learning-feedback]');
             feedback.hidden = false;
+            const credit = result.retroalimentacion.credito;
             page.querySelector('[data-learning-feedback-title]').textContent = result.retroalimentacion.correcta
-                ? 'Respuesta correcta'
-                : 'Respuesta incorrecta';
+                ? 'Respuesta correcta' : credit > 0 ? `Respuesta parcialmente correcta (${formatNumber(credit * 100)}%)` : 'Respuesta incorrecta';
             page.querySelector('[data-learning-correct-answer]').textContent = `Respuesta correcta: ${result.retroalimentacion.respuestaCorrecta}`;
             page.querySelector('[data-learning-explanation]').textContent = result.retroalimentacion.explicacion;
 

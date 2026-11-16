@@ -36,7 +36,9 @@
                 <div><span class="profile-eyebrow">RUTAS DE APRENDIZAJE</span><h2 id="learningCatalogTitle">Cuestionarios</h2></div>
                 <span data-learning-catalog-status role="status" aria-live="polite">Cargando cuestionarios…</span>
             </div>
+            <div data-learning-catalog-search></div>
             <div class="learning-course-grid" data-learning-catalog></div>
+            <div data-learning-catalog-pagination></div>
         </section>
 
         <section class="learning-admin-tools" data-learning-admin-tools hidden aria-labelledby="learningAdminTitle">
@@ -44,7 +46,10 @@
                 <div><span class="profile-eyebrow">ADMINISTRACIÓN</span><h2 id="learningAdminTitle">Gestionar cuestionarios</h2></div>
                 <a class="learning-admin-link" href="{{ route('dashboard.quizzes') }}">Abrir CRUD completo <span aria-hidden="true">↗</span></a>
             </div>
+            <div data-learning-admin-search></div>
             <div class="learning-admin-quiz-links" data-learning-admin-quiz-links></div>
+            <p data-learning-admin-empty hidden>No se encontraron cuestionarios.</p>
+            <div data-learning-admin-pagination></div>
         </section>
 
         <section class="learning-player" data-learning-player hidden aria-live="polite">

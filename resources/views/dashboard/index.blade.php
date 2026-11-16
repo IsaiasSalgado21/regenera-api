@@ -464,10 +464,12 @@
                 </div>
                 <section class="impact-history gamification-admin-summary">
                     <h3>Resumen por cuestionario</h3>
+                    <div data-gamification-quiz-search></div>
                     <div class="impact-history-scroll"><table>
-                        <thead><tr><th>Cuestionario</th><th>Intentos</th><th>Aprobados</th></tr></thead>
+                        <thead><tr><th>Cuestionario</th><th>Configuración</th><th>Intentos</th><th>Aprobados</th><th>No aprobados</th><th>En curso</th></tr></thead>
                         <tbody data-gamification-admin-summary></tbody>
                     </table></div>
+                    <div data-gamification-quiz-pagination></div>
                 </section>
                 <section class="impact-history gamification-admin-attempts">
                     <div class="dashboard-section-heading"><h3>Intentos recientes</h3><span>Máximo 100 registros</span></div>

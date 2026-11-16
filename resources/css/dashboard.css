@@ -806,6 +806,58 @@
     display: block;
 }
 
+.quiz-admin-form [data-quiz-regenerate-slug][hidden] {
+    display: none;
+}
+
+.quiz-medal-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.quiz-medal-icon-choice {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    min-width: 90px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 9px;
+    padding: 10px;
+    background: transparent;
+    color: var(--dashboard-green);
+    cursor: pointer;
+    font: inherit;
+    font-size: .75rem;
+}
+
+.quiz-medal-icon-choice[aria-pressed="true"] {
+    border-color: var(--dashboard-green-light);
+    box-shadow: 0 0 0 2px var(--dashboard-green-light);
+}
+
+.quiz-medal-icon-choice svg,
+.quiz-medal-icon-choice img,
+.quiz-medal-preview-icon svg,
+.quiz-medal-preview-icon img {
+    width: 28px;
+    height: 28px;
+}
+
+.quiz-medal-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dashboard-text);
+    font-size: .82rem;
+}
+
+html[data-theme="dark"] .quiz-medal-icon-choice {
+    border-color: #53675b;
+    color: #e5f1e7;
+}
+
 .quiz-admin-audience label {
     display: inline-flex;
     align-items: center;
@@ -839,6 +891,10 @@
     background: #fffefa;
 }
 
+.quiz-admin-question [hidden] {
+    display: none;
+}
+
 .quiz-admin-question-heading {
     display: flex;
     align-items: center;
@@ -849,6 +905,38 @@
 .quiz-admin-question-heading h4 {
     margin: 0;
     color: var(--dashboard-green);
+}
+
+.quiz-question-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.quiz-answer-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.quiz-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dashboard-form .quiz-answer-row input[type="text"] {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+}
+
+.dashboard-form .quiz-answer-row input[type="radio"],
+.dashboard-form .quiz-answer-row input[type="checkbox"] {
+    flex: none;
+    width: auto;
+    padding: 0;
+    accent-color: var(--dashboard-green-light);
 }
 
 .quiz-admin-question label {

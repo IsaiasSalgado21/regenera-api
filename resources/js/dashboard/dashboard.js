@@ -1,4 +1,5 @@
 import '../../css/dashboard.css';
+import '../../css/quiz-list.css';
 import QRCode from 'qrcode';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,6 +22,7 @@ import {
 } from '../geo/baja-california-sur';
 import { dashboardApi } from './dashboard-api';
 import { initializeLocationSelector } from '../map-selector';
+import { createQuizPager } from '../quiz-list';
 
 const root = document.getElementById('dashboardRoot');
 if (root) initializeDashboard();
@@ -852,14 +854,30 @@ function initializeDashboard() {
         }
     }
 
+    const gamificationQuizPager = createQuizPager(
+        root.querySelector('[data-gamification-quiz-search]'),
+        root.querySelector('[data-gamification-quiz-pagination]'),
+        'Buscar cuestionarios por nombre',
+        result => {
+            const summary = root.querySelector('[data-gamification-admin-summary]');
+            summary.innerHTML = result.total
+                ? result.items.map(course => `<tr>
+                    <td><strong>${escapeHtml(course.titulo)}</strong><small>Versión ${Number(course.version)} · ${escapeHtml(course.medalla || 'Sin medalla')}</small>
+                        <a href="${escapeHtml(appBasePath)}/admin/cuestionarios?editar=${encodeURIComponent(course.slug)}">Editar cuestionario</a></td>
+                    <td>${Number(course.totalPreguntas)} preguntas<br>Mínimo ${Number(course.minimoAprobacion)}% · ${Number(course.puntosAprobacion)} puntos</td>
+                    <td>${Number(course.intentos)}</td><td>${Number(course.aprobados)}</td>
+                    <td>${Number(course.noAprobados)}</td><td>${Number(course.enCurso)}</td>
+                </tr>`).join('')
+                : '<tr><td class="impact-history-empty" colspan="6">No se encontraron cuestionarios activos.</td></tr>';
+        },
+    );
+
     function renderGamificationAdmin(data) {
         const courses = data.cuestionarios || [];
         const attempts = data.intentosRecientes || [];
-        const totalAttempts = courses.reduce((sum, course) => sum + Number(course.intentos || 0), 0);
-        const totalApproved = courses.reduce((sum, course) => sum + Number(course.aprobados || 0), 0);
         const values = {
-            intentos: totalAttempts,
-            aprobados: totalApproved,
+            intentos: data.totalIntentos,
+            aprobados: data.totalAprobados,
             puntos: data.puntosOtorgados || 0,
             certificaciones: data.organizadoresCertificados || 0,
         };
@@ -867,17 +885,7 @@ function initializeDashboard() {
             element.textContent = new Intl.NumberFormat('es-MX').format(values[element.dataset.gamificationAdminKpi] || 0);
         });
 
-        const summary = root.querySelector('[data-gamification-admin-summary]');
-        summary.innerHTML = courses.length
-            ? courses.map(course => `<tr><td><strong>${escapeHtml(course.titulo)}</strong></td><td>${Number(course.intentos) || 0}</td><td>${Number(course.aprobados) || 0}</td></tr>`).join('')
-            : '<tr><td class="impact-history-empty" colspan="3">No hay cuestionarios activos.</td></tr>';
-
-        const names = {
-            'seguridad-limpieza': 'Seguridad y precauciones en limpieza',
-            'restauracion-entorno': 'Restauración y conocimiento del entorno',
-            'economia-circular': 'Economía circular y conducta regenerativa',
-            'organizacion-responsable': 'Verificación para organizadores',
-        };
+        gamificationQuizPager.setItems(courses);
         const formatDate = value => {
             if (!value) return 'Sin fecha';
             const date = new Date(value);
@@ -887,7 +895,7 @@ function initializeDashboard() {
         recent.innerHTML = attempts.length
             ? attempts.map(attempt => `<tr>
                 <td><strong>${escapeHtml(attempt.usuarioNombre)}</strong><small>${escapeHtml(attempt.usuarioCorreo || '')}</small></td>
-                <td>${escapeHtml(names[attempt.cuestionarioSlug] || attempt.cuestionarioSlug)}</td>
+                <td>${escapeHtml(attempt.cuestionarioTitulo)}</td>
                 <td>${escapeHtml(attempt.estado)}</td>
                 <td>${attempt.puntuacion === null ? '—' : `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(attempt.puntuacion) || 0)}%`}</td>
                 <td>${escapeHtml(formatDate(attempt.fechaUltimoIntento || attempt.fechaAprobacion))}</td>
@@ -936,7 +944,7 @@ function initializeDashboard() {
             const response = await dashboardApi.gamificationStats();
             renderGamificationAdmin(response.data);
             content.hidden = false;
-            showResourceState('gamification', response.data.intentosRecientes?.length ? 'ready' : 'empty');
+            showResourceState('gamification', response.data.cuestionarios?.length || response.data.intentosRecientes?.length ? 'ready' : 'empty');
         } catch (error) {
             showResourceState('gamification', 'error');
             console.error('No se pudieron cargar las estadísticas de gamificación.', error);

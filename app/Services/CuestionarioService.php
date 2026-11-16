@@ -112,12 +112,13 @@ class CuestionarioService
         $openAttempt = $attempts->first(fn (IntentoCuestionario $attempt) => $attempt->estado === 'en_progreso'
             && (string) ($attempt->actividadId ?? '') === (string) ($actividadId ?? ''));
         if ($openAttempt) {
-            return $this->presentAttempt($cuestionario, $openAttempt);
+            return $this->presentAttempt($this->versionDelIntento($openAttempt), $openAttempt);
         }
 
         $opcionesOrden = [];
         foreach ($cuestionario->preguntas ?? [] as $pregunta) {
-            $order = range(0, count($pregunta['opciones']) - 1);
+            $options = $pregunta['opciones'] ?? [];
+            $order = $options ? range(0, count($options) - 1) : [];
             shuffle($order);
             $opcionesOrden[$pregunta['id']] = $order;
         }
@@ -146,19 +147,16 @@ class CuestionarioService
             }
         }
 
-        return $this->presentAttempt($cuestionario, $attempt);
+        return $this->presentAttempt($this->versionDelIntento($attempt), $attempt);
     }
 
-    public function responder(User $usuario, string $attemptId, string $questionId, int $optionIndex): array
+    public function responder(User $usuario, string $attemptId, string $questionId, mixed $respuesta): array
     {
         $attempt = IntentoCuestionario::query()
             ->where('_id', $this->mongoId($attemptId))
             ->where('usuarioId', (string) $usuario->getAuthIdentifier())
             ->firstOrFail();
-        $cuestionario = Cuestionario::query()
-            ->where('slug', $attempt->cuestionarioSlug)
-            ->where('version', $attempt->cuestionarioVersion)
-            ->firstOrFail();
+        $cuestionario = $this->versionDelIntento($attempt);
         $pregunta = collect($cuestionario->preguntas ?? [])->firstWhere('id', $questionId);
         abort_unless($pregunta, 404, 'La pregunta no pertenece a este cuestionario.');
 
@@ -170,10 +168,25 @@ class CuestionarioService
         }
         abort_unless($attempt->estado === 'en_progreso', 409, 'Este intento ya fue calificado.');
 
-        $optionOrder = (array) (($attempt->opcionesOrden ?? [])[$questionId] ?? range(0, count($pregunta['opciones']) - 1));
-        $originalOptionIndex = $optionOrder[$optionIndex] ?? null;
-        abort_unless($originalOptionIndex !== null, 422, 'Selecciona una de las opciones disponibles.');
-        $feedback = $this->evaluador->evaluarRespuesta($pregunta, (int) $originalOptionIndex);
+        $type = $pregunta['tipo'] ?? 'unica';
+        $options = $pregunta['opciones'] ?? [];
+        $optionOrder = (array) (($attempt->opcionesOrden ?? [])[$questionId] ?? ($options ? range(0, count($options) - 1) : []));
+        if ($type === 'corta') {
+            abort_unless(is_string($respuesta) && mb_strlen($respuesta) <= 300, 422, 'Escribe una respuesta válida.');
+            $original = $respuesta;
+        } elseif ($type === 'multiple') {
+            abort_unless(is_array($respuesta) && array_is_list($respuesta) && count($respuesta) <= count($options), 422, 'Selecciona opciones válidas.');
+            abort_unless(count($respuesta) === count(array_unique($respuesta, SORT_REGULAR)), 422, 'No repitas opciones.');
+            $original = [];
+            foreach ($respuesta as $index) {
+                abort_unless(is_int($index) && array_key_exists($index, $optionOrder), 422, 'Selecciona opciones válidas.');
+                $original[] = (int) $optionOrder[$index];
+            }
+        } else {
+            abort_unless(is_int($respuesta) && array_key_exists($respuesta, $optionOrder), 422, 'Selecciona una de las opciones disponibles.');
+            $original = (int) $optionOrder[$respuesta];
+        }
+        $feedback = $this->evaluador->evaluarRespuesta($pregunta, $original);
         $answerKey = (string) $attempt->getKey().':'.$questionId;
         try {
             $answer = RespuestaCuestionario::create([
@@ -181,8 +194,9 @@ class CuestionarioService
                 'usuarioId' => (string) $usuario->getAuthIdentifier(),
                 'cuestionarioSlug' => (string) $cuestionario->slug,
                 'preguntaId' => $questionId,
-                'opcion' => (int) $originalOptionIndex,
-                'opcionPresentada' => $optionIndex,
+                ...($type === 'corta' ? ['textoRespuesta' => $original] : ($type === 'multiple'
+                    ? ['opcionesElegidas' => $original]
+                    : ['opcion' => $original])),
                 ...$feedback,
                 'respondidaEn' => now(),
                 'claveUnica' => $answerKey,
@@ -255,6 +269,14 @@ class CuestionarioService
             ->get();
     }
 
+    private function versionDelIntento(IntentoCuestionario $attempt): Cuestionario
+    {
+        return Cuestionario::query()
+            ->where('slug', $attempt->cuestionarioSlug)
+            ->where('version', $attempt->cuestionarioVersion)
+            ->firstOrFail();
+    }
+
     private function presentAttempt(Cuestionario $cuestionario, IntentoCuestionario $attempt): array
     {
         $answered = $this->respuestasDelIntento($attempt);
@@ -274,6 +296,7 @@ class CuestionarioService
             'respuestasPrevias' => collect($answered)->map(fn (array $answer, string $questionId) => [
                 'preguntaId' => $questionId,
                 'correcta' => (bool) ($answer['correcta'] ?? false),
+                'credito' => (float) ($answer['credito'] ?? ((bool) ($answer['correcta'] ?? false) ? 1 : 0)),
                 'respuestaCorrecta' => $answer['respuestaCorrecta'] ?? null,
                 'explicacion' => $answer['explicacion'] ?? null,
             ])->values(),
@@ -286,6 +309,7 @@ class CuestionarioService
         return [
             'preguntaId' => $questionId,
             'correcta' => (bool) ($answer['correcta'] ?? false),
+            'credito' => (float) ($answer['credito'] ?? ((bool) ($answer['correcta'] ?? false) ? 1 : 0)),
             'respuestaCorrecta' => $answer['respuestaCorrecta'] ?? null,
             'explicacion' => $answer['explicacion'] ?? null,
         ];
@@ -297,7 +321,7 @@ class CuestionarioService
         $orders = (array) ($attempt->opcionesOrden ?? []);
 
         foreach ($questions as &$question) {
-            $order = $orders[$question['id']] ?? range(0, count($question['opciones']) - 1);
+            $order = $orders[$question['id']] ?? ($question['opciones'] ? range(0, count($question['opciones']) - 1) : []);
             $question['opciones'] = array_values(array_map(
                 fn (int $index) => $question['opciones'][$index],
                 $order,
@@ -332,7 +356,7 @@ class CuestionarioService
         }
 
         $correctas = collect($answers)->filter(fn (array $answer) => (bool) ($answer['correcta'] ?? false))->count();
-        $puntaje = $this->evaluador->puntaje($correctas, $total);
+        $puntaje = $this->evaluador->puntajePonderado($cuestionario->preguntas ?? [], $answers);
         $estado = $this->evaluador->aprobado($puntaje, (float) $cuestionario->minimoAprobacion)
             ? 'aprobado'
             : 'no_aprobado';
@@ -383,6 +407,7 @@ class CuestionarioService
                 'preguntaId' => (string) $answer->preguntaId,
                 'opcion' => (int) $answer->opcion,
                 'correcta' => (bool) $answer->correcta,
+                'credito' => $answer->credito === null ? ((bool) $answer->correcta ? 1.0 : 0.0) : (float) $answer->credito,
                 'respuestaCorrecta' => (string) $answer->respuestaCorrecta,
                 'explicacion' => (string) $answer->explicacion,
                 'respondidaEn' => $answer->respondidaEn?->toISOString(),
