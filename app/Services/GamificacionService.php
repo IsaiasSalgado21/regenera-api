@@ -200,11 +200,11 @@ class GamificacionService
             ->where('usuarioId', $userId)
             ->orderByDesc('created_at')
             ->get();
-        $catalog = Cuestionario::query()->where('activo', true)->get();
+        $catalog = Cuestionario::query()->where('activo', true)->orderByDesc('version')->get()->unique('slug')->values();
         $quizProgress = collect($this->cuestionarios->catalogo($usuario));
         $medals = $catalog
             ->filter(fn ($quiz) => ! empty($quiz->medalla['slug']))
-            ->map(function ($quiz) use ($medalEvents): array {
+            ->map(function ($quiz) use ($medalEvents, $usuario): array {
                 $medal = $quiz->medalla;
                 $event = $medalEvents->get((string) $medal['slug']);
 
@@ -214,8 +214,10 @@ class GamificacionService
                     'descripcion' => (string) $medal['descripcion'],
                     'icono' => (string) ($medal['icono'] ?? 'award'),
                     'requisito' => 'Aprobar: '.$quiz->titulo,
+                    'requisitos' => array_values($this->requisitosMedalla($quiz)),
+                    'disponibleParaRol' => in_array($usuario->rol, $quiz->audiencia ?? [], true),
                     'desbloqueada' => $event !== null,
-                    'fechaObtencion' => $event?->creadoEn?->toISOString(),
+                    'fechaObtencion' => $event?->creadoEn?->toISOString() ?? $event?->created_at?->toISOString(),
                 ];
             })
             ->values();
@@ -322,30 +324,21 @@ class GamificacionService
         ))) {
             $approved = null;
         }
-        $requirements = [];
+        $completed = ['cuestionario_aprobado' => $approved];
         if ($quiz->requiereOrganizadorVerificado ?? false) {
-            $requirements[] = [
-                'clave' => 'organizador_verificado',
-                'descripcion' => 'Tener una cuenta de organizador verificada.',
-                'cumplido' => $usuario->rol === 'organizador' && (bool) $usuario->organizadorVerificado,
-            ];
+            $completed['organizador_verificado'] = $usuario->rol === 'organizador' && (bool) $usuario->organizadorVerificado;
         }
         if ($quiz->slug === 'restauracion-entorno') {
             $progress = $quizProgress->firstWhere('slug', $quiz->slug);
             $eligibleActivities = $progress !== null
                 ? $progress['actividadesElegibles']
                 : $this->cuestionarios->actividadesElegibles($usuario);
-            $requirements[] = [
-                'clave' => 'asistencia_confirmada',
-                'descripcion' => 'Tener una asistencia confirmada en una actividad finalizada con inscripción válida.',
-                'cumplido' => count($eligibleActivities) > 0,
-            ];
+            $completed['asistencia_confirmada'] = count($eligibleActivities) > 0;
         }
-        $requirements[] = [
-            'clave' => 'cuestionario_aprobado',
-            'descripcion' => 'Aprobar: '.$quiz->titulo,
-            'cumplido' => $approved,
-        ];
+        $requirements = [];
+        foreach ($this->requisitosMedalla($quiz) as $key => $description) {
+            $requirements[] = ['clave' => $key, 'descripcion' => $description, 'cumplido' => $completed[$key]];
+        }
         return [
             'slug' => (string) $quiz->medalla['slug'],
             'nombre' => (string) $quiz->medalla['nombre'],
@@ -362,6 +355,20 @@ class GamificacionService
                 ? 'Falta un estado válido en un intento de este cuestionario.'
                 : ($approved ? 'El cuestionario está aprobado, pero no se encontró el evento de la medalla.' : null),
         ];
+    }
+
+    private function requisitosMedalla(Cuestionario $quiz): array
+    {
+        $requirements = [];
+        if ($quiz->requiereOrganizadorVerificado ?? false) {
+            $requirements['organizador_verificado'] = 'Tener una cuenta de organizador verificada.';
+        }
+        if ($quiz->slug === 'restauracion-entorno') {
+            $requirements['asistencia_confirmada'] = 'Tener una asistencia confirmada en una actividad finalizada con inscripción válida.';
+        }
+        $requirements['cuestionario_aprobado'] = 'Aprobar: '.$quiz->titulo;
+
+        return $requirements;
     }
 
     private function actividadesRealizadas(User $usuario): int

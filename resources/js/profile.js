@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { initializeAvatarCreator, renderAvatarMarkup, selectAvatarReward } from './avatar-creator';
+import { ownRecords, participationStatus, selectProfileMedals } from './profile-data';
 
 const page = document.querySelector('[data-personal-profile]');
 
@@ -18,7 +19,6 @@ if (page) {
     const profileError = page.querySelector('[data-profile-error]');
     const gamificationSection = page.querySelector('[data-gamification-profile]');
     const avatarDialog = page.querySelector('[data-avatar-dialog]');
-    let gamificationHistory = [];
     let pendingAvatarReward = null;
     const api = (path) => axios.get(apiUrl(path), { headers: headers() });
     const appUrl = path => `${appBaseUrl}${path}`;
@@ -168,93 +168,39 @@ if (page) {
         return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[iconName] || locked}</svg>`;
     };
 
-    const renderGamificationTimeline = (items) => {
-        const timeline = page.querySelector('[data-gamification-timeline]');
-        const rows = [...items].filter(item => item.fecha).sort((first, second) => new Date(second.fecha) - new Date(first.fecha));
-        timeline.innerHTML = rows.length
-            ? rows.map(item => `<article class="profile-timeline-item is-${escapeHtml(item.tipo)}">
-                <span class="profile-timeline-mark" aria-hidden="true"></span>
-                <div><h4>${escapeHtml(item.motivo || item.titulo || 'Actividad')}</h4>
-                <p>${escapeHtml(formatDateTime(item.fecha))}${item.detalle ? ` · ${escapeHtml(item.detalle)}` : ''}</p></div>
-            </article>`).join('')
-            : '<p class="profile-muted">Aún no tienes logros o participaciones registradas.</p>';
-    };
-
     const renderGamification = (progress, usuario) => {
-        gamificationHistory = progress.historial || [];
-        const quizHistory = (progress.historialCuestionarios || []).map(attempt => ({
-            tipo: 'cuestionario',
-            motivo: `${attempt.estado === 'aprobado' ? 'Cuestionario aprobado' : attempt.estado === 'no_aprobado' ? 'Cuestionario no aprobado' : 'Cuestionario en progreso'}: ${attempt.cuestionarioSlug}`,
-            fecha: attempt.fechaUltimoIntento || attempt.fechaAprobacion,
-            detalle: attempt.puntuacion === null ? null : `${attempt.puntuacion}%`,
-        }));
-        gamificationHistory = [...gamificationHistory, ...quizHistory];
         gamificationSection.hidden = false;
-        setCount('[data-gamification-points]', new Intl.NumberFormat('es-MX').format(progress.puntos || 0));
-        setCount('[data-gamification-quizzes]', `${progress.cuestionariosAprobados || 0} / ${progress.cuestionariosAsignados || 0}`);
-        setCount('[data-gamification-security]', progress.seguridadValidada ? 'Validada' : 'Pendiente');
-        setCount('[data-gamification-activities]', progress.actividadesRealizadas || 0);
-        setCount('[data-gamification-hours]', `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(progress.horasParticipacion || 0)} h`);
-        setCount('[data-gamification-ecosystems]', progress.ecosistemasBCSAprendidos || 0);
-        setCount('[data-gamification-circular-knowledge]', progress.conocimientoEconomiaCircular === null
-            ? 'Pendiente'
-            : `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(progress.conocimientoEconomiaCircular)}%`);
-        setCount('[data-gamification-level]', `Nivel ${progress.nivel || 1}`);
-
-        const medals = progress.medallas || [];
-        const unlockedCount = medals.filter(medal => medal.desbloqueada).length;
-        setCount('[data-gamification-medal-count]', `${unlockedCount} / ${medals.length}`);
-        page.querySelector('[data-gamification-medals]').innerHTML = medals.map(medal => `<article class="profile-medal ${medal.desbloqueada ? 'is-unlocked' : 'is-locked'}">
-            <span class="profile-medal-icon">${medalSvg(medal.desbloqueada ? medal.icono : 'locked')}</span>
+        const medals = selectProfileMedals(progress.medallas);
+        const medalCard = medal => `<article class="profile-medal ${medal.desbloqueada ? 'is-unlocked' : 'is-locked'}">
+            <span class="profile-medal-icon">${medalSvg(medal.icono)}</span>
             <span class="profile-medal-state">${medal.desbloqueada ? 'Obtenida' : 'Por desbloquear'}</span>
             <h4>${escapeHtml(medal.nombre)}</h4>
             <p>${escapeHtml(medal.descripcion)}</p>
-            <small>${escapeHtml(medal.requisito)}</small>
+            <ul>${medal.requisitos.map(requirement => `<li>${escapeHtml(requirement)}</li>`).join('')}</ul>
             ${medal.fechaObtencion ? `<time datetime="${escapeHtml(medal.fechaObtencion)}">${escapeHtml(formatDate(medal.fechaObtencion))}</time>` : ''}
-        </article>`).join('');
-
-        const nextMedal = progress.siguienteMedalla;
-        const nextMedalCard = page.querySelector('[data-next-medal]');
-        const completeNote = page.querySelector('[data-next-medal-complete]');
-        nextMedalCard.hidden = !nextMedal;
-        completeNote.hidden = Boolean(nextMedal);
-        if (nextMedal) {
-            page.querySelector('[data-next-medal-name]').textContent = nextMedal.nombre;
-            page.querySelector('[data-next-medal-description]').textContent = nextMedal.descripcion;
-            const percentage = nextMedal.progreso?.porcentaje;
-            const safePercentage = Number.isFinite(percentage) ? Math.min(100, Math.max(0, percentage)) : 0;
-            page.querySelector('[data-next-medal-bar]').style.width = `${safePercentage}%`;
-            page.querySelector('[data-next-medal-progress]').textContent = nextMedal.progreso
-                ? `Cuestionario: ${safePercentage}%`
-                : (nextMedal.observacion || 'Progreso no disponible.');
-            page.querySelector('[data-next-medal-requirements]').innerHTML = (nextMedal.requisitos || []).map(requirement => `
-                <li class="${requirement.cumplido === true ? 'is-complete' : ''}">
-                    <span aria-hidden="true">${requirement.cumplido === true ? '✓' : requirement.cumplido === false ? '○' : '—'}</span>
-                    ${escapeHtml(requirement.descripcion)}
-                </li>`).join('');
-            page.querySelector('[data-next-medal-link]').href = appUrl(`/aprendizaje?cuestionario=${encodeURIComponent(nextMedal.cuestionarioSlug)}`);
-        }
-
-        const courses = progress.cuestionarios || [];
-        page.querySelector('[data-gamification-courses]').innerHTML = courses.length
-            ? courses.map(course => `<a class="profile-learning-item" href="${appUrl(`/aprendizaje?cuestionario=${encodeURIComponent(course.slug)}`)}">
-                <span><strong>${escapeHtml(course.titulo)}</strong><small>${escapeHtml(course.estado === 'aprobado' ? `Aprobado · ${course.puntuacion ?? 0}%` : course.bloqueo || course.estado)}</small></span>
-                <span aria-hidden="true">${course.estado === 'aprobado' && document.body.dataset.symbolsBase
-                    ? `<img class="ui-symbol" src="${escapeHtml(document.body.dataset.symbolsBase.replace(/\/+$/, ''))}/confirmado.png" alt="" aria-hidden="true" width="20" height="20">`
-                    : course.estado === 'aprobado' ? '✓' : '→'}</span>
-            </a>`).join('')
-            : '<p class="profile-muted">No hay cuestionarios asignados a tu perfil.</p>';
-
+        </article>`;
+        const renderMedals = (selector, items, empty) => {
+            page.querySelector(selector).innerHTML = items.length
+                ? items.map(medalCard).join('')
+                : `<p class="profile-muted">${empty}</p>`;
+        };
+        renderMedals('[data-recent-medals]', medals.recent, 'Aún no has obtenido medallas. Visita Aprendizaje para comenzar.');
+        renderMedals('[data-earned-medals]', medals.earned, 'Aún no has obtenido medallas.');
+        renderMedals('[data-locked-medals]', medals.locked, 'No tienes medallas pendientes disponibles para tu perfil.');
+        const approved = progress.cuestionarios.filter(course => course.estado === 'aprobado').length;
+        page.querySelector('[data-progress-summary]').textContent = approved
+            ? `${approved} ${approved === 1 ? 'cuestionario aprobado' : 'cuestionarios aprobados'}.`
+            : 'Continúa aprendiendo para conseguir tus primeros logros.';
         const certification = page.querySelector('[data-organizer-certification]');
         certification.hidden = usuario.rol !== 'organizador';
         if (usuario.rol === 'organizador') {
-            const status = progress.certificacionOrganizador?.certificado
+            certification.textContent = progress.certificacionOrganizador?.certificado
                 ? `Certificación de organizador aprobada${progress.certificacionOrganizador.fechaAprobacion ? ` · ${formatDate(progress.certificacionOrganizador.fechaAprobacion)}` : ''}`
                 : 'Certificación de organizador pendiente';
-            certification.textContent = status;
-            certification.classList.toggle('is-certified', Boolean(progress.certificacionOrganizador?.certificado));
         }
-        renderGamificationTimeline(gamificationHistory);
+        page.querySelector('[data-medals-content]').hidden = false;
+        page.querySelector('[data-progress-content]').hidden = false;
+        page.querySelector('[data-gamification-error]').hidden = true;
     };
 
     const loadGamification = async usuario => {
@@ -264,6 +210,8 @@ if (page) {
             return response.data.data;
         } catch (error) {
             gamificationSection.hidden = false;
+            page.querySelector('[data-medals-content]').hidden = true;
+            page.querySelector('[data-progress-content]').hidden = true;
             page.querySelector('[data-gamification-error]').hidden = false;
             page.querySelector('[data-gamification-error]').textContent = error.response?.data?.message
                 || 'No se pudo cargar tu progreso guardado.';
@@ -272,32 +220,21 @@ if (page) {
     };
 
     const activityCard = (volunteer, enrollment, attendance) => {
-        const status = enrollment.estado === 'cancelada'
-            ? 'Inscripción cancelada'
-            : volunteer.estado === 'cancelado'
-                ? 'Voluntariado cancelado'
-                : attendance?.confirmada
-                    ? 'Asistió'
-                    : enrollment.estado === 'completada'
-                        ? 'Participación completada'
-                        : volunteer.finalizadoPorFecha || volunteer.estado === 'finalizado'
-                            ? 'No asistió'
-                            : volunteer.estado === 'pendiente'
-                                ? 'Voluntariado en revisión'
-                                : 'Inscripción activa';
-            const title = ['publicado', 'cancelado', 'finalizado'].includes(volunteer.estado)
-                ? `<a href="${appUrl(`/voluntariados/${encodeURIComponent(volunteer.id)}`)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a>`
-                : escapeHtml(volunteer.titulo || 'Voluntariado');
-            const requestButton = status === 'No asistió'
-                ? `<button type="button" class="profile-request-attendance-button" data-request-attendance="${escapeHtml(volunteer.id)}">Solicitar revisión al propietario</button>`
-                : '';
+        const status = participationStatus(volunteer, enrollment, attendance);
+        const volunteerId = volunteer.id ?? volunteer._id;
+        const title = ['publicado', 'cancelado', 'finalizado'].includes(volunteer.estado)
+            ? `<a href="${appUrl(`/voluntariados/${encodeURIComponent(volunteerId)}`)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a>`
+            : escapeHtml(volunteer.titulo || 'Voluntariado');
+        const requestButton = status.kind === 'unconfirmed'
+            ? `<button type="button" class="profile-request-attendance-button" data-request-attendance="${escapeHtml(volunteerId)}">Solicitar revisión al propietario</button>`
+            : '';
         return `<article class="profile-list-item">
             <div class="profile-list-copy">
-                    <h4>${title}</h4>
+                <h4>${title}</h4>
                 <p>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</p>
                 <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}${volunteer.lugar?.nombre ? ` · ${escapeHtml(volunteer.lugar.nombre)}` : ''}</p>
             </div>
-                <div class="profile-activity-status"><span class="profile-item-status">${escapeHtml(status)}</span>${requestButton}</div>
+            <div class="profile-activity-status"><span class="profile-item-status is-${status.kind}">${escapeHtml(status.label)}</span>${requestButton}</div>
         </article>`;
     };
 
@@ -320,10 +257,9 @@ if (page) {
     const loadUserActivity = async (usuario) => {
         const upcoming = page.querySelector('[data-upcoming-list]');
         const history = page.querySelector('[data-history-list]');
-        const [enrollmentResult, attendanceResult, articleResult] = await Promise.allSettled([
+        const [enrollmentResult, attendanceResult] = await Promise.allSettled([
             api('/api/inscripciones'),
             api('/api/asistencias'),
-            api('/api/articulos'),
         ]);
         try {
             if (enrollmentResult.status === 'rejected' || attendanceResult.status === 'rejected') {
@@ -331,16 +267,12 @@ if (page) {
             }
             const enrollmentResponse = enrollmentResult.value;
             const attendanceResponse = attendanceResult.value;
-            const enrollments = enrollmentResponse.data.inscripciones || [];
-            const attendances = (attendanceResponse.data.asistencias || [])
+            const enrollments = ownRecords(enrollmentResponse.data.inscripciones || [], usuario.id);
+            const attendances = ownRecords(attendanceResponse.data.asistencias || [], usuario.id)
                 .filter(item => item.confirmada === true);
             const attendanceByVolunteer = new Map(
                 attendances.map(item => [String(item.voluntariadoId), item]),
             );
-            const activeEnrollments = enrollments.filter(item => item.estado !== 'cancelada');
-            setCount('[data-user-enrollment-count]', activeEnrollments.length);
-            setCount('[data-user-attendance-count]', attendances.length);
-
             const volunteerIds = [...new Set(enrollments.map(item => String(item.voluntariadoId)).filter(Boolean))];
             const volunteerResults = await Promise.allSettled(
                 volunteerIds.map(async id => {
@@ -358,19 +290,16 @@ if (page) {
                 }
             });
 
-            const now = Date.now();
             const upcomingItems = [];
             const historyItems = [];
             enrollments.forEach(enrollment => {
                 const volunteer = volunteers.get(String(enrollment.voluntariadoId));
                 if (!volunteer) return;
                 const attendance = attendanceByVolunteer.get(String(enrollment.voluntariadoId));
-                const isUpcoming = enrollment.estado !== 'cancelada'
+                const isUpcoming = ['inscrita', 'activa'].includes(enrollment.estado)
                     && volunteer.estado !== 'cancelado'
                     && !volunteer.finalizadoPorFecha
                     && volunteer.estado !== 'finalizado'
-                    && new Date(volunteer.fechaInicio).getTime() >= now
-                    && enrollment.estado !== 'completada'
                     && !attendance;
                 (isUpcoming ? upcomingItems : historyItems).push({
                     volunteer,
@@ -383,28 +312,29 @@ if (page) {
 
             upcoming.innerHTML = upcomingItems.length
                 ? upcomingItems.map(item => activityCard(item.volunteer, item.enrollment, item.attendance)).join('')
-                : '<p class="profile-muted">No tienes voluntariados próximos inscritos.</p>';
+                : '<p class="profile-muted">No tienes voluntariados próximos o en curso.</p>';
             history.innerHTML = historyItems.length
                 ? historyItems.map(item => activityCard(item.volunteer, item.enrollment, item.attendance)).join('')
                 : '<p class="profile-muted">Aún no tienes participaciones en tu historial.</p>';
-            const activityTimeline = historyItems.map(item => ({
-                tipo: 'actividad',
-                motivo: item.attendance?.confirmada ? 'Asistencia confirmada' : item.enrollment.estado === 'cancelada' ? 'Inscripción cancelada' : 'Actividad inscrita',
-                fecha: item.volunteer.fechaInicio,
-                detalle: item.volunteer.titulo,
-            }));
-            renderGamificationTimeline([...gamificationHistory, ...activityTimeline]);
             if (failedVolunteerLookups) {
                 const notice = '<p class="profile-inline-error">Algunos detalles de actividades no están disponibles en este momento.</p>';
                 upcoming.insertAdjacentHTML('beforeend', notice);
+                history.insertAdjacentHTML('beforeend', notice);
             }
+        } catch (error) {
+            const message = error.response?.status === 401
+                ? 'Tu sesión expiró. Inicia sesión nuevamente para consultar tu actividad.'
+                : 'No se pudo cargar toda tu actividad. Intenta de nuevo más tarde.';
+            showSectionError(upcoming, message);
+            showSectionError(history, message);
+        }
+    };
 
-            const articleList = page.querySelector('[data-profile-articles]');
-            if (articleResult.status === 'rejected') {
-                showSectionError(articleList, 'No se pudieron cargar tus artículos.');
-                return;
-            }
-            const articles = (articleResult.value.data.data || [])
+    const loadUserArticles = async usuario => {
+        const articleList = page.querySelector('[data-profile-articles]');
+        try {
+            const response = await api('/api/articulos');
+            const articles = (response.data.data || [])
                 .filter(article => String(article.autorId) === String(usuario.id))
                 .sort((a, b) => new Date(b.fechaActualizacion || b.fechaPublicacion || 0) - new Date(a.fechaActualizacion || a.fechaPublicacion || 0));
             articleList.innerHTML = articles.length
@@ -415,14 +345,9 @@ if (page) {
                 </article>`).join('')
                 : '<p class="profile-muted">Todavía no tienes artículos propios.</p>';
         } catch (error) {
-            const message = error.response?.status === 401
-                ? 'Tu sesión expiró. Inicia sesión nuevamente para consultar tu actividad.'
-                : 'No se pudo cargar toda tu actividad. Intenta de nuevo más tarde.';
-            showSectionError(upcoming, message);
-            showSectionError(history, message);
-            showSectionError(page.querySelector('[data-profile-articles]'), message);
-            setCount('[data-user-enrollment-count]', '—');
-            setCount('[data-user-attendance-count]', '—');
+            showSectionError(articleList, error.response?.status === 401
+                ? 'Tu sesión expiró. Inicia sesión nuevamente para consultar tus artículos.'
+                : 'No se pudieron cargar tus artículos.');
         }
     };
 
@@ -490,6 +415,7 @@ if (page) {
             accessMessage.innerHTML = `Inicia sesión para ver tu perfil personal. <a href="${appUrl('/login')}">Iniciar sesión</a>`;
             page.querySelector('[data-profile-identity]').hidden = true;
             page.querySelectorAll('[data-profile-section]').forEach(section => { section.hidden = true; });
+            page.querySelector('[data-participation-section]').hidden = true;
             gamificationSection.hidden = true;
             return;
         }
@@ -519,11 +445,16 @@ if (page) {
             page.querySelectorAll('[data-profile-section]').forEach(section => {
                 section.hidden = section.dataset.profileSection !== usuario.rol;
             });
+            const canParticipate = ['usuario', 'organizador'].includes(usuario.rol);
+            page.querySelector('[data-participation-section]').hidden = !canParticipate;
 
             const progress = await loadGamification(usuario);
             initializeProfileAvatar(usuario, progress);
-            if (usuario.rol === 'usuario') await loadUserActivity(usuario);
-            if (usuario.rol === 'organizador') await loadOrganizerActivity();
+            await Promise.all([
+                canParticipate ? loadUserActivity(usuario) : Promise.resolve(),
+                usuario.rol === 'usuario' ? loadUserArticles(usuario) : Promise.resolve(),
+                usuario.rol === 'organizador' ? loadOrganizerActivity() : Promise.resolve(),
+            ]);
         } catch (error) {
             profileError.hidden = false;
             profileError.textContent = error.response?.status === 401

@@ -57,6 +57,11 @@ lugares relacionados se enlazan por separado.
 
 `GET /api/gamificacion/progreso` requiere autenticación y conserva `medallas`.
 También devuelve `medallasObtenidas`, `medallasBloqueadas` y `siguienteMedalla`.
+Cada medalla incluye sus `requisitos` y `disponibleParaRol`; el perfil muestra
+las obtenidas recientes y las pendientes del rol, usando la versión activa más
+reciente de cada cuestionario. El historial de voluntariados utiliza las
+inscripciones y asistencias del usuario autenticado: solo indica asistencia
+confirmada cuando existe ese registro, no por el estado de la inscripción.
 La siguiente medalla respeta el rol y prioriza seguridad, manglar, economía
 circular y liderazgo; las demás siguen el orden del catálogo por cuestionario.
 `siguienteMedalla.progreso` mide únicamente la aprobación binaria del

@@ -925,8 +925,31 @@ html[data-theme="dark"] .impact-history th {
 
 html[data-theme="dark"] .profile-list-item,
 html[data-theme="dark"] .profile-article-item,
-html[data-theme="dark"] .profile-notification-section {
+html[data-theme="dark"] .profile-notification-section,
+html[data-theme="dark"] .profile-progress,
+html[data-theme="dark"] .profile-all-medals {
     border-color: #35473d;
+}
+
+html[data-theme="dark"] .profile-medal {
+    background: #22332a;
+    border-color: #35473d;
+}
+
+html[data-theme="dark"] .profile-medal.is-locked {
+    background: #252c28;
+}
+
+html[data-theme="dark"] :is(.profile-medal h4, .profile-all-medals h3, .profile-pending-medals h3, .profile-progress h2) {
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] :is(.profile-medal p, .profile-medal ul, .profile-medal time, .profile-medal-state, .profile-progress p, .profile-section-heading p) {
+    color: #b7c6bc;
+}
+
+html[data-theme="dark"] :is(.profile-progress a, .profile-all-medals summary) {
+    color: #b7e5d1;
 }
 
 html[data-theme="dark"] .profile-list-item h4 a,

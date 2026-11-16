@@ -198,6 +198,62 @@
     font-size: clamp(1.6rem, 3vw, 2.1rem);
 }
 
+.profile-section-heading p {
+    color: #62756b;
+    font-size: .9rem;
+    margin: .4rem 0 0;
+}
+
+.profile-progress {
+    align-items: center;
+    border-top: 1px solid #dfe5dc;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+}
+
+.profile-progress[hidden] {
+    display: none;
+}
+
+.profile-progress h2 {
+    color: #164f3d;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    margin: .25rem 0;
+}
+
+.profile-progress p {
+    color: #62756b;
+    font-size: .9rem;
+    margin: .4rem 0 0;
+}
+
+.profile-progress a,
+.profile-all-medals summary {
+    color: #164f3d;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+.profile-history-panel {
+    margin-top: 1rem;
+}
+
+.profile-item-status.is-confirmed {
+    background: #dcefe1;
+    color: #175637;
+}
+
+.profile-item-status.is-unconfirmed,
+.profile-item-status.is-cancelled {
+    background: #f0f0ec;
+    color: #5b655e;
+}
+
 .profile-stat-grid {
     display: grid;
     gap: 1rem;
@@ -464,8 +520,21 @@
 
 .profile-medal-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: .75rem;
+}
+
+.profile-all-medals {
+    border-top: 1px solid #e6e9df;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+}
+
+.profile-all-medals h3,
+.profile-pending-medals h3 {
+    color: #164f3d;
+    font-size: .95rem;
+    margin: 1.4rem 0 .75rem;
 }
 
 .profile-medal {
@@ -498,6 +567,7 @@
 .profile-medal.is-locked .profile-medal-icon {
     background: #e6e8e3;
     color: #828a83;
+    filter: grayscale(1);
 }
 
 .profile-medal-icon svg,
@@ -525,11 +595,16 @@
 
 .profile-medal p,
 .profile-medal small,
+.profile-medal ul,
 .profile-medal time {
     margin: 0;
     color: #66716c;
     font-size: .72rem;
     line-height: 1.4;
+}
+
+.profile-medal ul {
+    padding-left: 1rem;
 }
 
 .profile-learning-list {
@@ -628,7 +703,8 @@
     }
 
     .profile-heading,
-    .profile-section-heading {
+    .profile-section-heading,
+    .profile-progress {
         align-items: flex-start;
         flex-direction: column;
     }

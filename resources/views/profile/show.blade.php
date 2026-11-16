@@ -46,72 +46,44 @@
 
         <section class="profile-gamification" data-gamification-profile hidden aria-labelledby="gamificationHeading">
             <div class="profile-section-heading">
-                <div><span class="profile-eyebrow">APRENDIZAJE Y PARTICIPACIÓN</span><h2 id="gamificationHeading">Mi progreso</h2></div>
-                <a href="{{ route('learning.index') }}">Ir a Aprendizaje <span aria-hidden="true">→</span></a>
+                <div><span class="profile-eyebrow">TUS LOGROS</span><h2 id="gamificationHeading">Medallas</h2><p>Un reconocimiento a tu aprendizaje y compromiso.</p></div>
             </div>
-            <p class="profile-inline-error" data-gamification-error hidden></p>
-            <div class="profile-stat-grid profile-stat-grid-four">
-                <article class="profile-stat-card"><span>Puntos acumulados</span><strong data-gamification-points>—</strong></article>
-                <article class="profile-stat-card"><span>Cuestionarios aprobados</span><strong data-gamification-quizzes>—</strong></article>
-                <article class="profile-stat-card"><span>Seguridad validada</span><strong data-gamification-security>—</strong></article>
-                <article class="profile-stat-card"><span>Actividades realizadas</span><strong data-gamification-activities>—</strong></article>
-                <article class="profile-stat-card"><span>Horas programadas de actividades asistidas</span><strong data-gamification-hours>—</strong></article>
-                <article class="profile-stat-card"><span>Ecosistemas BCS aprendidos</span><strong data-gamification-ecosystems>—</strong></article>
-                <article class="profile-stat-card"><span>Conocimiento en economía circular</span><strong data-gamification-circular-knowledge>—</strong></article>
-            </div>
-            <p class="profile-inline-note" data-gamification-hours-note>Estimación con el horario programado de actividades finalizadas, asistencia confirmada e inscripción no cancelada; el sistema no registra la hora de salida individual.</p>
-            <p class="profile-inline-note">El porcentaje de economía circular mide el resultado del cuestionario; no representa la conducta ambiental.</p>
-            <p class="profile-organizer-certification" data-organizer-certification hidden></p>
-            <section class="profile-next-medal" data-next-medal hidden aria-labelledby="nextMedalHeading">
-                <div class="profile-next-medal-mark" aria-hidden="true">✦</div>
-                <div class="profile-next-medal-content">
-                    <span class="profile-eyebrow">PRÓXIMO LOGRO</span>
-                    <h3 id="nextMedalHeading" data-next-medal-name></h3>
-                    <p data-next-medal-description></p>
-                    <div class="profile-next-medal-track" role="img" aria-label="Progreso del siguiente cuestionario">
-                        <span data-next-medal-bar></span>
-                    </div>
-                    <p class="profile-next-medal-progress" data-next-medal-progress></p>
-                    <ul data-next-medal-requirements></ul>
-                    <a data-next-medal-link href="{{ route('learning.index') }}">Continuar aprendizaje <span aria-hidden="true">↗</span></a>
+            <p class="profile-inline-error" data-gamification-error hidden role="alert"></p>
+            <section class="profile-panel profile-medals-panel" data-medals-content hidden>
+                <div class="profile-panel-heading"><h3>Obtenidas recientemente</h3></div>
+                <div class="profile-medal-grid" data-recent-medals></div>
+                <details class="profile-all-medals">
+                    <summary>Ver todas las medallas obtenidas</summary>
+                    <h3>Medallas obtenidas</h3>
+                    <div class="profile-medal-grid" data-earned-medals></div>
+                </details>
+                <div class="profile-pending-medals">
+                    <h3>Por conseguir</h3>
+                    <div class="profile-medal-grid" data-locked-medals></div>
                 </div>
             </section>
-            <p class="profile-next-medal-complete" data-next-medal-complete hidden>Ya obtuviste todas las medallas disponibles para tu perfil.</p>
-            <div class="profile-gamification-grid">
-                <section class="profile-panel">
-                    <div class="profile-panel-heading"><h3>Medallas</h3><span data-gamification-medal-count>—</span></div>
-                    <div class="profile-medal-grid" data-gamification-medals></div>
-                </section>
-                <section class="profile-panel">
-                    <div class="profile-panel-heading"><h3>Progreso educativo</h3><span data-gamification-level>—</span></div>
-                    <div class="profile-learning-list" data-gamification-courses></div>
-                </section>
+            <section class="profile-progress" data-progress-content hidden aria-labelledby="progressHeading">
+                <div><span class="profile-eyebrow">APRENDIZAJE</span><h2 id="progressHeading">Mi progreso</h2><p data-progress-summary></p><p data-organizer-certification hidden></p></div>
+                <a href="{{ route('learning.index') }}">Continuar aprendizaje <span aria-hidden="true">→</span></a>
+            </section>
+        </section>
+
+        <section class="profile-role-section" data-participation-section hidden>
+            <div class="profile-section-heading">
+                <div><span class="profile-eyebrow">MI PARTICIPACIÓN</span><h2>Historial de voluntariados</h2><p>Tu participación en las actividades de la comunidad.</p></div>
+                <a href="{{ route('voluntariados.index') }}">Explorar voluntariados <span aria-hidden="true">→</span></a>
             </div>
-            <section class="profile-panel profile-gamification-timeline-panel">
-                <div class="profile-panel-heading"><h3>Historial de logros y actividades</h3></div>
-                <div class="profile-timeline" data-gamification-timeline><p class="profile-muted">Cargando tu historial…</p></div>
+            <section class="profile-panel">
+                <div class="profile-panel-heading"><h3>Próximos y en curso</h3></div>
+                <div class="profile-list" data-upcoming-list><p class="profile-muted">Cargando tus actividades…</p></div>
+            </section>
+            <section class="profile-panel profile-history-panel">
+                <div class="profile-panel-heading"><h3>Participaciones</h3></div>
+                <div class="profile-list" data-history-list><p class="profile-muted">Cargando tu historial…</p></div>
             </section>
         </section>
 
         <section class="profile-role-section" data-profile-section="usuario" hidden>
-            <div class="profile-section-heading">
-                <div><span class="profile-eyebrow">MI PARTICIPACIÓN</span><h2>Actividad voluntaria</h2></div>
-                <a href="{{ route('voluntariados.index') }}">Explorar voluntariados <span aria-hidden="true">→</span></a>
-            </div>
-            <div class="profile-stat-grid">
-                <article class="profile-stat-card"><span>Inscripciones activas y completadas</span><strong data-user-enrollment-count>—</strong></article>
-                <article class="profile-stat-card"><span>Participaciones confirmadas</span><strong data-user-attendance-count>—</strong></article>
-            </div>
-            <div class="profile-content-grid">
-                <section class="profile-panel">
-                    <div class="profile-panel-heading"><h3>Próximos voluntariados</h3></div>
-                    <div class="profile-list" data-upcoming-list><p class="profile-muted">Cargando tus actividades…</p></div>
-                </section>
-                <section class="profile-panel">
-                    <div class="profile-panel-heading"><h3>Historial de participaciones</h3></div>
-                    <div class="profile-list" data-history-list><p class="profile-muted">Cargando tu historial…</p></div>
-                </section>
-            </div>
             <section class="profile-panel profile-articles-panel">
                 <div class="profile-panel-heading"><h3>Mis artículos</h3><a href="{{ route('articulos.index') }}">Ver artículos <span aria-hidden="true">→</span></a></div>
                 <div class="profile-article-list" data-profile-articles><p class="profile-muted">Cargando tus artículos…</p></div>
