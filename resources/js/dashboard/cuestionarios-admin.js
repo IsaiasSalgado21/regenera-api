@@ -11,6 +11,10 @@ function initializeQuizAdmin() {
     const questions = root.querySelector('[data-quiz-questions]');
     const errorBox = root.querySelector('[data-quiz-admin-error]');
     const notice = root.querySelector('[data-quiz-admin-notice]');
+    const identifiers = root.querySelector('[data-quiz-identifiers]');
+    const identifierStatus = root.querySelector('[data-quiz-identifier-status]');
+    const submitButton = root.querySelector('[data-quiz-submit]');
+    const formError = root.querySelector('[data-quiz-form-error]');
     let activeQuizzes = [];
 
     const token = () => sessionStorage.getItem('regenera_access_token');
@@ -59,7 +63,7 @@ function initializeQuizAdmin() {
         heading.append(title, remove);
 
         const idLabel = document.createElement('label');
-        idLabel.textContent = 'Identificador';
+        idLabel.textContent = 'Identificador de la pregunta';
         const idInput = document.createElement('input');
         idInput.dataset.questionId = '';
         idInput.required = true;
@@ -155,6 +159,13 @@ function initializeQuizAdmin() {
         errorBox.hidden = true;
         try {
             activeQuizzes = await request('/admin/cuestionarios');
+            identifiers.replaceChildren(...[...new Set(activeQuizzes.map(quiz => quiz.slug))]
+                .sort((a, b) => a.localeCompare(b))
+                .map(slug => {
+                    const option = document.createElement('option');
+                    option.value = slug;
+                    return option;
+                }));
             renderList();
             const params = new URLSearchParams(location.search);
             const requestedSlug = params.get('editar');
@@ -179,8 +190,27 @@ function initializeQuizAdmin() {
         }
     }
 
+    function updateIdentifierState() {
+        const slug = form.elements.slug.value.trim();
+        const existing = activeQuizzes.find(quiz => quiz.slug === slug);
+        const isVersion = Boolean(form.elements.slugOriginal.value || existing);
+        identifierStatus.hidden = !isVersion;
+        identifierStatus.textContent = isVersion
+            ? 'Este identificador ya existe. Al guardar se creará una nueva versión y la versión actual dejará de estar activa.'
+            : '';
+        submitButton.textContent = isVersion ? 'Guardar nueva versión' : 'Crear cuestionario';
+        if (isVersion) {
+            form.elements.slug.removeAttribute('pattern');
+        } else {
+            form.elements.slug.pattern = '[a-z0-9]+(?:-[a-z0-9]+)*';
+        }
+        root.querySelector('[data-quiz-medal-attendance]').hidden = slug !== 'restauracion-entorno';
+        root.querySelector('[data-quiz-medal-verification]').hidden = !form.elements.requiereOrganizadorVerificado.checked;
+    }
+
     function openEditor(quiz = null) {
         form.reset();
+        formError.hidden = true;
         questions.replaceChildren();
         form.elements.slugOriginal.value = quiz?.slug || '';
         form.elements.slug.value = quiz?.slug || '';
@@ -194,12 +224,13 @@ function initializeQuizAdmin() {
         form.elements.medallaSlug.value = quiz?.medalla?.slug || '';
         form.elements.medallaNombre.value = quiz?.medalla?.nombre || '';
         form.elements.medallaDescripcion.value = quiz?.medalla?.descripcion || '';
-        form.elements.medallaIcono.value = quiz?.medalla?.icono || 'award';
+        form.elements.medallaIcono.value = quiz?.medalla?.icono || '';
         form.querySelectorAll('input[name="audiencia"]').forEach(input => {
             input.checked = (quiz?.audiencia || []).includes(input.value);
         });
         (quiz?.preguntas || []).forEach(question => questions.append(questionRow(question)));
         if (!quiz) questions.append(questionRow());
+        updateIdentifierState();
         root.querySelector('[data-quiz-form-heading]').textContent = quiz
             ? `Nueva versión de ${quiz.titulo}`
             : 'Nuevo cuestionario';
@@ -221,10 +252,13 @@ function initializeQuizAdmin() {
     root.querySelector('[data-quiz-create]').addEventListener('click', () => openEditor());
     root.querySelector('[data-quiz-add-question]').addEventListener('click', () => questions.append(questionRow()));
     root.querySelectorAll('[data-quiz-cancel]').forEach(button => button.addEventListener('click', () => { form.hidden = true; }));
+    form.elements.slug.addEventListener('input', updateIdentifierState);
+    form.elements.requiereOrganizadorVerificado.addEventListener('change', updateIdentifierState);
 
     form.addEventListener('submit', async event => {
         event.preventDefault();
         errorBox.hidden = true;
+        formError.hidden = true;
         const quizQuestions = [...questions.querySelectorAll('[data-question-id]')].map(idInput => {
             const row = idInput.closest('[data-quiz-question]');
             const options = row.querySelector('[data-question-options]').value
@@ -239,14 +273,26 @@ function initializeQuizAdmin() {
                 explicacion: row.querySelector('[data-question-explanation]').value.trim(),
             };
         });
-        if (!quizQuestions.length || quizQuestions.some(question => question.respuestaCorrecta >= question.opciones.length)) {
-            showNotice('Cada pregunta necesita dos opciones y un índice correcto válido.', true);
+        if (!quizQuestions.length || quizQuestions.some(question => question.opciones.length < 2 || question.respuestaCorrecta >= question.opciones.length)) {
+            formError.textContent = 'Cada pregunta necesita dos opciones y un índice correcto válido.';
+            formError.hidden = false;
+            return;
+        }
+        if (new Set(quizQuestions.map(question => question.id)).size !== quizQuestions.length) {
+            formError.textContent = 'Cada pregunta debe tener un identificador distinto dentro del cuestionario.';
+            formError.hidden = false;
             return;
         }
 
         const originalSlug = form.elements.slugOriginal.value;
+        const selectedSlug = form.elements.slug.value.trim();
+        const existing = activeQuizzes.find(quiz => quiz.slug === selectedSlug);
+        if (!originalSlug && existing && !window.confirm(
+            `“${selectedSlug}” ya existe. Se guardará una nueva versión y la versión actual dejará de estar activa. ¿Continuar?`,
+        )) return;
+        const versionSlug = originalSlug || existing?.slug;
         const payload = {
-            slug: form.elements.slug.value.trim(),
+            slug: selectedSlug,
             titulo: form.elements.titulo.value.trim(),
             descripcion: form.elements.descripcion.value.trim(),
             guia: form.elements.guia.value.trim(),
@@ -262,23 +308,23 @@ function initializeQuizAdmin() {
                 icono: form.elements.medallaIcono.value.trim(),
             },
         };
-        const button = form.querySelector('[type="submit"]');
-        button.disabled = true;
+        submitButton.disabled = true;
         try {
-            const path = originalSlug
-                ? `/admin/cuestionarios/${encodeURIComponent(originalSlug)}`
+            const path = versionSlug
+                ? `/admin/cuestionarios/${encodeURIComponent(versionSlug)}`
                 : '/admin/cuestionarios';
             const response = await request(path, {
-                method: originalSlug ? 'PUT' : 'POST',
+                method: versionSlug ? 'PUT' : 'POST',
                 body: JSON.stringify(payload),
             });
             form.hidden = true;
             showNotice(response.message || 'Cuestionario guardado.');
             await loadQuizzes();
         } catch (error) {
-            showNotice(error.message, true);
+            formError.textContent = Object.values(error.data?.errors || {}).flat()[0] || error.message;
+            formError.hidden = false;
         } finally {
-            button.disabled = false;
+            submitButton.disabled = false;
         }
     });
 

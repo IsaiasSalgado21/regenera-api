@@ -55,6 +55,12 @@ lugares relacionados se enlazan por separado.
 
 ## Progreso de medallas
 
+En el editor administrativo de cuestionarios, el identificador puede ser nuevo
+o elegirse del catálogo existente. Elegir uno existente y confirmar el guardado
+crea una nueva versión y desactiva la anterior; no crea un cuestionario duplicado.
+La medalla se otorga al aprobar el cuestionario, además de los requisitos de
+asistencia o verificación que correspondan.
+
 `GET /api/gamificacion/progreso` requiere autenticación y conserva `medallas`.
 También devuelve `medallasObtenidas`, `medallasBloqueadas` y `siguienteMedalla`.
 Cada medalla incluye sus `requisitos` y `disponibleParaRol`; el perfil muestra

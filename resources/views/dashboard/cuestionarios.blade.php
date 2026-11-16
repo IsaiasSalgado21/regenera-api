@@ -36,9 +36,12 @@
             <button class="icon-button" type="button" data-quiz-cancel aria-label="Cerrar formulario">×</button>
         </div>
         <input type="hidden" name="slugOriginal">
-        <label>Identificador
-            <input name="slug" required maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ej. seguridad-limpieza">
+        <label>Identificador del cuestionario
+            <input name="slug" list="quiz-identifiers" required maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ej. seguridad-limpieza" aria-describedby="quiz-identifier-help quiz-identifier-status" autocomplete="off">
         </label>
+        <datalist id="quiz-identifiers" data-quiz-identifiers></datalist>
+        <p class="quiz-admin-help" id="quiz-identifier-help">Selecciona un identificador existente o escribe uno nuevo con letras minúsculas, números y guiones.</p>
+        <p class="quiz-admin-identifier-status" id="quiz-identifier-status" data-quiz-identifier-status hidden role="status"></p>
         <label>Título<input name="titulo" required maxlength="150"></label>
         <label>Descripción<textarea name="descripcion" rows="2" required maxlength="500"></textarea></label>
         <label>Guía de estudio<textarea name="guia" rows="4" required maxlength="2000"></textarea></label>
@@ -54,21 +57,38 @@
             <label>Puntos por aprobar<input name="puntosAprobacion" type="number" min="0" max="10000" step="1" required></label>
         </div>
         <fieldset class="quiz-admin-medal">
-            <legend>Medalla</legend>
-            <div class="dashboard-form-row">
-                <label>Identificador<input name="medallaSlug" required maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*"></label>
-                <label>Nombre<input name="medallaNombre" required maxlength="100"></label>
+            <legend>Medalla del cuestionario</legend>
+            <p class="quiz-admin-medal-intro">Reconoce a quienes aprueben este cuestionario. Completa los datos que verán en su perfil.</p>
+            <div class="quiz-admin-medal-requirements">
+                <strong>Cómo se obtiene</strong>
+                <p>Se otorga al aprobar el cuestionario con el porcentaje mínimo configurado arriba.</p>
+                <p data-quiz-medal-attendance hidden>Este cuestionario también requiere asistencia confirmada en una actividad finalizada con inscripción válida.</p>
+                <p data-quiz-medal-verification hidden>También requiere una cuenta de organizador verificada.</p>
             </div>
-            <label>Descripción<input name="medallaDescripcion" required maxlength="300"></label>
-            <label>Icono disponible<input name="medallaIcono" required maxlength="40" pattern="[a-z0-9-]+" placeholder="shield-check"></label>
+            <div class="dashboard-form-row">
+                <label>Identificador de la medalla<input name="medallaSlug" required maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ej. voluntario-seguro"><small>Clave estable, sin espacios. Si se usa en otro cuestionario, ambos comparten la misma medalla.</small></label>
+                <label>Nombre visible<input name="medallaNombre" required maxlength="100" placeholder="ej. Voluntario Seguro"><small>Así aparecerá en el perfil.</small></label>
+            </div>
+            <label>Descripción de la medalla<textarea name="medallaDescripcion" rows="2" required maxlength="300" placeholder="Describe qué reconoce este logro"></textarea></label>
+            <label>Icono
+                <input name="medallaIcono" list="quiz-medal-icons" required maxlength="40" pattern="[a-z0-9\-]+" placeholder="Selecciona o escribe un icono">
+                <small>Elige un icono compatible; otros identificadores pueden mostrarse con el símbolo predeterminado.</small>
+            </label>
+            <datalist id="quiz-medal-icons">
+                <option value="shield-check">Protección</option>
+                <option value="mangrove">Manglar</option>
+                <option value="recycle">Reciclaje</option>
+                <option value="leader">Liderazgo</option>
+            </datalist>
         </fieldset>
         <div class="quiz-admin-questions-heading">
             <div><span class="dashboard-eyebrow">EVALUACIÓN</span><h3>Preguntas</h3></div>
             <button class="button button-secondary" type="button" data-quiz-add-question>Añadir pregunta</button>
         </div>
         <div class="quiz-admin-questions" data-quiz-questions></div>
+        <p class="dashboard-error quiz-admin-form-error" data-quiz-form-error hidden role="alert"></p>
         <div class="dashboard-form-actions">
-            <button class="button button-primary" type="submit">Guardar versión</button>
+            <button class="button button-primary" type="submit" data-quiz-submit>Crear cuestionario</button>
             <button class="button button-secondary" type="button" data-quiz-cancel>Cancelar</button>
         </div>
     </form>

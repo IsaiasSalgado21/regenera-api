@@ -762,6 +762,50 @@
     font-weight: 700;
 }
 
+.quiz-admin-help,
+.quiz-admin-identifier-status,
+.quiz-admin-medal-intro,
+.quiz-admin-medal-requirements p,
+.quiz-admin-medal label small {
+    color: #53665b;
+    font-size: .82rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.quiz-admin-help {
+    margin: -7px 0 12px;
+}
+
+.quiz-admin-identifier-status {
+    border-left: 3px solid #b87932;
+    margin: 0 0 12px;
+    padding: .65rem .85rem;
+    background: #f7f1e7;
+    color: #70491e;
+}
+
+.quiz-admin-medal-intro {
+    margin: 0 0 1rem;
+}
+
+.quiz-admin-medal-requirements {
+    border: 1px solid #cfe0d3;
+    border-radius: 9px;
+    padding: .8rem 1rem;
+    background: #edf5ef;
+    color: #164f3d;
+    font-size: .86rem;
+}
+
+.quiz-admin-medal-requirements p {
+    margin: .35rem 0 0;
+}
+
+.quiz-admin-medal label small {
+    display: block;
+}
+
 .quiz-admin-audience label {
     display: inline-flex;
     align-items: center;
@@ -809,6 +853,52 @@
 
 .quiz-admin-question label {
     margin: 12px 0;
+}
+
+html[data-theme="dark"] .quiz-admin-page .quiz-admin-question,
+html[data-theme="dark"] .quiz-admin-page .quiz-admin-medal-requirements {
+    border-color: #45594e;
+    background: #22332a;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .quiz-admin-page :is(.quiz-admin-audience, .quiz-admin-medal) {
+    border-color: #45594e;
+}
+
+html[data-theme="dark"] .quiz-admin-page :is(.quiz-admin-audience legend, .quiz-admin-medal legend, .quiz-admin-help, .quiz-admin-medal-intro, .quiz-admin-medal-requirements p, .quiz-admin-medal label small) {
+    color: #b7c6bc;
+}
+
+html[data-theme="dark"] .quiz-admin-page .quiz-admin-identifier-status {
+    border-color: #d3a35f;
+    background: #382f22;
+    color: #f4d8ac;
+}
+
+html[data-theme="dark"] .quiz-admin-page .dashboard-form :is(input:not([type="checkbox"]), textarea, select) {
+    border-color: #52695b;
+    background: #142019;
+    color: #e7eee9;
+    color-scheme: dark;
+}
+
+html[data-theme="dark"] .quiz-admin-page .dashboard-form :is(input, textarea, select):focus-visible,
+html[data-theme="dark"] .quiz-admin-page :is(button, summary):focus-visible {
+    border-color: #8bc9a7;
+    outline: 3px solid #8bc9a7;
+    outline-offset: 2px;
+}
+
+html[data-theme="dark"] .quiz-admin-page .button-secondary,
+html[data-theme="dark"] .quiz-admin-page .icon-button {
+    border-color: #52695b;
+    background: #263a2e;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .quiz-admin-page :is(.button-secondary, .icon-button):hover {
+    background: #365441;
 }
 
 .dashboard-date-row {
