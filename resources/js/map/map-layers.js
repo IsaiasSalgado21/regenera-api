@@ -80,6 +80,7 @@ function makeIcon(item, selected = false) {
 }
 
 function selectMarker(layer, marker, item) {
+    if (selectedMarker?.marker === marker) return;
     if (selectedMarker) {
         activeMap.removeLayer(selectedMarker.marker);
         selectedMarker.marker.setIcon(makeIcon(selectedMarker.item));
@@ -90,7 +91,7 @@ function selectMarker(layer, marker, item) {
     selectedMarker = { marker, item, layer };
     marker.setIcon(makeIcon(item, true));
     marker.setZIndexOffset(1000);
-    marker.addTo(activeMap);
+    if (activeMap.hasLayer(layerGroups[layer].points)) marker.addTo(activeMap);
 }
 
 function openFeature(marker, item, onSelect) {
@@ -159,21 +160,25 @@ export function setLayerData(layer, items, onSelect) {
             keyboard: true,
             alt: markerLabel(item),
         });
-        openFeature(marker, item, selected => {
-            selectMarker(layer, marker, selected);
-            onSelect(selected);
-        });
+        openFeature(marker, item, onSelect);
         groups.points.addLayer(marker);
         markers.get(layer).set(String(item.id), { marker, item });
     });
 }
 
-export function focusMapFeature(map, layer, id) {
+export function selectMapFeature(layer, id) {
     const entry = markers.get(layer)?.get(String(id));
     const group = layerGroups[layer]?.points;
     if (!entry || !group) return false;
     selectMarker(layer, entry.marker, entry.item);
-    map.setView(entry.marker.getLatLng(), entry.item.zona_aproximada ? 10 : 17);
+    return true;
+}
+
+export function focusMapFeature(map, layer, id) {
+    if (!selectMapFeature(layer, id)) return false;
+    const { marker, item } = markers.get(layer).get(String(id));
+    map.stop();
+    map.setView(marker.getLatLng(), item.zona_aproximada ? 10 : layer === 'lugares' ? 18 : 17, { animate: false });
     return true;
 }
 

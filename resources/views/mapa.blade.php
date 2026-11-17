@@ -31,6 +31,8 @@
                         </label>
                         <span class="map-layer-count" data-layer-count="voluntariados">Cargando…</span>
                     </div>
+                    <details class="map-filter-details">
+                    <summary>Filtros</summary>
                     <form class="map-filter-form" data-map-filters="voluntariados">
                         <label>
                             Categoría
@@ -69,6 +71,7 @@
                         <button type="submit" class="map-filter-button">Aplicar</button>
                         <button type="button" class="map-clear-button" data-layer-clear="voluntariados">Limpiar filtros</button>
                     </form>
+                    </details>
                     <div class="map-layer-feedback" data-layer-feedback="voluntariados" role="status" aria-live="polite">
                         <button type="button" data-layer-retry="voluntariados" hidden>Reintentar</button>
                     </div>
@@ -82,6 +85,8 @@
                         </label>
                         <span class="map-layer-count" data-layer-count="lugares">Cargando…</span>
                     </div>
+                    <details class="map-filter-details">
+                    <summary>Filtros</summary>
                     <form class="map-filter-form" data-map-filters="lugares">
                         <label>
                             Tipo
@@ -97,6 +102,7 @@
                         <button type="submit" class="map-filter-button">Aplicar</button>
                         <button type="button" class="map-clear-button" data-layer-clear="lugares">Limpiar filtros</button>
                     </form>
+                    </details>
                     <div class="map-layer-feedback" data-layer-feedback="lugares" role="status" aria-live="polite">
                         <button type="button" data-layer-retry="lugares" hidden>Reintentar</button>
                     </div>
@@ -110,6 +116,8 @@
                         </label>
                         <span class="map-layer-count" data-layer-count="flora-fauna">Cargando…</span>
                     </div>
+                    <details class="map-filter-details">
+                    <summary>Filtros</summary>
                     <form class="map-filter-form" data-map-filters="flora-fauna">
                         <label>
                             Tipo
@@ -131,6 +139,7 @@
                         <button type="submit" class="map-filter-button">Aplicar</button>
                         <button type="button" class="map-clear-button" data-layer-clear="flora-fauna">Limpiar filtros</button>
                     </form>
+                    </details>
                     <div class="map-layer-feedback" data-layer-feedback="flora-fauna" role="status" aria-live="polite">
                         <button type="button" data-layer-retry="flora-fauna" hidden>Reintentar</button>
                     </div>

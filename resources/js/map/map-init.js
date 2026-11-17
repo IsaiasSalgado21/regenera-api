@@ -2,7 +2,7 @@ import L from 'leaflet';
 import { bajaCaliforniaSurBoundary, bajaCaliforniaSurBounds } from '../geo/baja-california-sur';
 import { fetchCurrentUser, fetchMapLayer } from './map-api.js';
 import { initializeMapFilters } from './map-filters.js';
-import { addMapLayers, fitMapToResults, focusMapFeature, setLayerData, setLayerVisible } from './map-layers.js';
+import { addMapLayers, fitMapToResults, focusMapFeature, selectMapFeature, setLayerData, setLayerVisible } from './map-layers.js';
 import { createMapPanel } from './map-panel.js';
 
 const layerNames = ['voluntariados', 'lugares', 'flora-fauna'];
@@ -41,7 +41,33 @@ if (mapElement) {
     let authError = '';
     let authLoading = true;
     let selectedFeature = null;
+    let selectedLayer = null;
     const latestItems = new Map(layerNames.map(layer => [layer, []]));
+    const recenterControl = L.control({ position: 'topright' });
+    let recenterButton;
+    recenterControl.onAdd = () => {
+        const container = L.DomUtil.create('div', 'leaflet-bar map-recenter-control');
+        recenterButton = L.DomUtil.create('button', '', container);
+        recenterButton.type = 'button';
+        recenterButton.textContent = 'Centrar selección';
+        recenterButton.title = 'Volver a la ubicación seleccionada';
+        recenterButton.disabled = true;
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        L.DomEvent.on(recenterButton, 'click', () => {
+            if (!selectedFeature || !selectedLayer) return;
+            const toggle = document.querySelector(`[data-layer-toggle="${selectedLayer}"]`);
+            if (toggle && !toggle.checked) {
+                toggle.checked = true;
+                setLayerVisible(map, selectedLayer, true);
+            }
+            if (!focusMapFeature(map, selectedLayer, selectedFeature.id)) {
+                showFeedback(selectedLayer, 'La ubicación seleccionada ya no está disponible en el mapa.', 'empty');
+            }
+        });
+        return container;
+    };
+    recenterControl.addTo(map);
 
     const renderFeature = createMapPanel({
         panel: document.getElementById('mapInfoPanel'),
@@ -50,9 +76,26 @@ if (mapElement) {
         onEnrolled: () => loadLayer('voluntariados'),
     });
 
-    function showFeature(item) {
+    function showFeature(item, layer) {
+        if (!selectMapFeature(layer, item.id)) {
+            showFeedback(layer, 'La ubicación seleccionada no está disponible en el mapa.', 'empty');
+            return;
+        }
         selectedFeature = item;
+        selectedLayer = layer;
+        recenterButton.disabled = false;
         renderFeature(item);
+    }
+
+    function clearSelectedFeature(message) {
+        selectedFeature = null;
+        selectedLayer = null;
+        recenterButton.disabled = true;
+        const panel = document.getElementById('mapInfoPanel');
+        const text = document.createElement('p');
+        text.className = 'map-panel-placeholder';
+        text.textContent = message;
+        panel.replaceChildren(text);
     }
 
     function showFeedback(layer, message, state = '', canRetry = false, canClear = false) {
@@ -108,7 +151,12 @@ if (mapElement) {
         try {
             const items = await fetchMapLayer(layer, params ?? filters.getFilters(layer));
             latestItems.set(layer, items);
-            setLayerData(layer, items, showFeature);
+            setLayerData(layer, items, item => showFeature(item, layer));
+            if (selectedLayer === layer) {
+                const selected = items.find(item => String(item.id) === String(selectedFeature.id));
+                if (selected && selectMapFeature(layer, selected.id)) selectedFeature = selected;
+                else clearSelectedFeature('La selección ya no está disponible con estos filtros.');
+            }
             if (counter) counter.textContent = `${items.length} ${items.length === 1 ? 'registro' : 'registros'}`;
 
             if (layer === 'lugares') populatePlaceFilter(items);
@@ -123,7 +171,8 @@ if (mapElement) {
         } catch (error) {
             if (error.name === 'CanceledError' || error.name === 'AbortError') return;
             latestItems.set(layer, []);
-            setLayerData(layer, [], showFeature);
+            setLayerData(layer, [], item => showFeature(item, layer));
+            if (selectedLayer === layer) clearSelectedFeature('No se pudo actualizar la selección.');
             if (counter) counter.textContent = 'No disponible';
             showFeedback(layer, error.message, 'error', true);
         }
@@ -194,12 +243,15 @@ if (mapElement) {
         layer,
         layer === 'voluntariados' ? focusedVolunteerFilters : undefined,
     ))).then(() => {
-        fitMapToResults(map, layerNames.flatMap(layer => latestItems.get(layer)));
-        if (!focusedLayer) return;
+        if (!focusedLayer) {
+            fitMapToResults(map, layerNames.flatMap(layer => latestItems.get(layer)));
+            return;
+        }
 
         const selected = latestItems.get(focusedLayer)
             .find(item => String(item.id) === String(focusedId));
         if (!selected) {
+            fitMapToResults(map, layerNames.flatMap(layer => latestItems.get(layer)));
             if (!feedbackElements.get(focusedLayer)?.classList.contains('is-error')) {
                 showFeedback(focusedLayer, 'No se encontró la ubicación solicitada o no está disponible en el mapa.', 'empty');
             }
@@ -209,6 +261,6 @@ if (mapElement) {
             showFeedback(focusedLayer, 'La ubicación solicitada no se puede mostrar en el mapa.', 'empty');
             return;
         }
-        showFeature(selected);
+        showFeature(selected, focusedLayer);
     });
 }

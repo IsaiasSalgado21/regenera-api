@@ -78,7 +78,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .map-layer-toggle {
@@ -100,6 +100,73 @@
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
+}
+
+.map-filter-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #315d49;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    list-style: none;
+}
+
+.map-filter-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.map-filter-details summary::after {
+    content: "+";
+    font-size: 18px;
+    line-height: 1;
+}
+
+.map-filter-details[open] summary::after {
+    content: "−";
+}
+
+.map-filter-details[open] .map-filter-form {
+    margin-top: 12px;
+}
+
+.map-filter-details summary:focus-visible {
+    outline: 3px solid #2f8064;
+    outline-offset: 3px;
+}
+
+html[data-theme="dark"] .map-filter-details summary {
+    color: #b6dbc4;
+}
+
+.map-recenter-control button {
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 4px;
+    background: #fff;
+    color: #164f3d;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.map-recenter-control button:hover:not(:disabled) {
+    background: #e8f2eb;
+}
+
+.map-recenter-control button:focus-visible {
+    outline: 3px solid #2f8064;
+    outline-offset: -3px;
+}
+
+.map-recenter-control button:disabled {
+    color: #718078;
+    cursor: not-allowed;
 }
 
 .map-filter-form {
