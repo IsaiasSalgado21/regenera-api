@@ -50,6 +50,23 @@ class CrudAccessTest extends TestCase
         $this->getJson('/api/admin/voluntariados/organizadores')->assertForbidden();
     }
 
+    public function test_impact_log_routes_restrict_roles(): void
+    {
+        $this->getJson('/api/organizador/bitacora-impacto')->assertUnauthorized();
+
+        $usuario = new User(['rol' => 'usuario', 'perfilCompleto' => true]);
+        $usuario->setAttribute('_id', '507f1f77bcf86cd799439011');
+        Sanctum::actingAs($usuario);
+        $this->getJson('/api/organizador/bitacora-impacto')->assertForbidden();
+        Sanctum::actingAs($usuario);
+        $this->getJson('/api/admin/voluntariados/507f1f77bcf86cd799439011/dashboard')->assertForbidden();
+
+        $organizador = new User(['rol' => 'organizador', 'perfilCompleto' => true]);
+        $organizador->setAttribute('_id', '507f1f77bcf86cd799439012');
+        Sanctum::actingAs($organizador);
+        $this->getJson('/api/admin/bitacora-impacto')->assertForbidden();
+    }
+
     public function test_create_requests_reject_client_supplied_owner_and_state(): void
     {
         $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => true, 'perfilCompleto' => true]);

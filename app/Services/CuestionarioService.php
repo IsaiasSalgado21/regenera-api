@@ -19,10 +19,12 @@ class CuestionarioService
         private readonly EvaluacionCuestionario $evaluador,
         private readonly VoluntariadoWorkflow $workflow,
         private readonly VoluntariadoHorario $horario,
+        private readonly CatalogoMedallas $medallas,
     ) {}
 
     public function catalogo(User $usuario): array
     {
+        $medallas = $this->medallas->todas();
         return Cuestionario::query()
             ->where('activo', true)
             ->orderByDesc('version')
@@ -34,7 +36,7 @@ class CuestionarioService
             ->filter(fn (Cuestionario $cuestionario) => in_array($usuario->rol, $cuestionario->audiencia ?? [], true)
                 && (! ($cuestionario->requiereOrganizadorVerificado ?? false)
                     || ($usuario->rol === 'organizador' && (bool) $usuario->organizadorVerificado)))
-            ->map(function (Cuestionario $cuestionario) use ($usuario): array {
+            ->map(function (Cuestionario $cuestionario) use ($usuario, $medallas): array {
                 $attempts = $this->userAttempts($usuario, $cuestionario->slug);
                 $latest = $attempts->first();
                 $eligibleActivities = $cuestionario->slug === 'restauracion-entorno'
@@ -59,6 +61,7 @@ class CuestionarioService
                 $available = $available
                     && (! ($cuestionario->requiereOrganizadorVerificado ?? false) || (bool) $usuario->organizadorVerificado);
 
+                $medalla = $medallas->get((string) ($cuestionario->medalla['slug'] ?? ''));
                 return [
                     'slug' => (string) $cuestionario->slug,
                     'version' => (int) $cuestionario->version,
@@ -76,7 +79,7 @@ class CuestionarioService
                         ->first(fn ($attempt) => $attempt->estado === 'aprobado')
                         ?->fechaAprobacion?->toISOString(),
                     'puntuacion' => $latest?->puntuacion === null ? null : (float) $latest->puntuacion,
-                    'medalla' => $cuestionario->medalla,
+                    'medalla' => $medalla && $medalla['activo'] ? $medalla : null,
                     'actividadesElegibles' => $eligibleActivities,
                 ];
             })

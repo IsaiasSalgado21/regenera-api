@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BitacoraImpactoController;
 use App\Http\Controllers\Admin\CuestionarioController as AdminCuestionarioController;
 use App\Http\Controllers\Admin\FloraFaunaController as AdminFloraFaunaController;
 use App\Http\Controllers\Admin\LugarController as AdminLugarController;
+use App\Http\Controllers\Admin\MedallaController as AdminMedallaController;
 use App\Http\Controllers\Admin\VoluntariadoController as AdminVoluntariadoController;
 use App\Http\Controllers\Api\ArticuloController;
 use App\Http\Controllers\Api\FloraFaunaController;
@@ -117,6 +118,10 @@ Route::prefix('admin')
         Route::put('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'update']);
         Route::patch('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'update']);
         Route::delete('/cuestionarios/{slug}', [AdminCuestionarioController::class, 'destroy']);
+        Route::get('/medallas', [AdminMedallaController::class, 'index']);
+        Route::post('/medallas', [AdminMedallaController::class, 'store']);
+        Route::put('/medallas/{slug}', [AdminMedallaController::class, 'update']);
+        Route::delete('/medallas/{slug}', [AdminMedallaController::class, 'destroy']);
         Route::get('/gamificacion/estadisticas', [GamificacionController::class, 'estadisticas']);
         Route::get('/gamification/intentos/{attemptId}', [GamificacionController::class, 'detalleIntento']);
         Route::get('/bitacora-impacto', [BitacoraImpactoController::class, 'index']);
@@ -160,8 +165,11 @@ Route::prefix('admin')
         Route::delete('/voluntariados/{id}', [AdminVoluntariadoController::class, 'destroy']);
     });
 
+Route::middleware(['auth:sanctum', 'role:organizador'])
+    ->get('/organizador/bitacora-impacto', [BitacoraImpactoController::class, 'index']);
+
 Route::get('/admin/voluntariados/{id}/dashboard', [AdminVoluntariadoController::class, 'dashboard'])
-    ->middleware('auth:sanctum');
+    ->middleware(['auth:sanctum', 'role:admin,organizador']);
 
 Route::get('/articulos', [ArticuloController::class, 'index'])->middleware('auth.optional');
 Route::post('/articulos', [ArticuloController::class, 'store'])->middleware('auth:sanctum');

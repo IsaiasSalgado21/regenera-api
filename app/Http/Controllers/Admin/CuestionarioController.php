@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cuestionario;
+use App\Models\Medalla;
+use App\Services\CatalogoMedallas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class CuestionarioController extends Controller
 {
+    public function __construct(private readonly CatalogoMedallas $medallas) {}
+
     public function index()
     {
         $latest = Cuestionario::query()
@@ -44,7 +48,7 @@ class CuestionarioController extends Controller
     public function update(Request $request, string $slug)
     {
         $current = Cuestionario::query()->where('slug', $slug)->orderByDesc('version')->firstOrFail();
-        $data = $this->validateQuiz($request);
+        $data = $this->validateQuiz($request, false, $current);
         $data['slug'] = $slug;
         $data['version'] = (int) $current->version + 1;
         $data['activo'] = true;
@@ -72,8 +76,19 @@ class CuestionarioController extends Controller
         ]);
     }
 
-    private function validateQuiz(Request $request, bool $creating = false): array
+    private function validateQuiz(Request $request, bool $creating = false, ?Cuestionario $current = null): array
     {
+        if ($request->has('medallaSlug')) {
+            $slug = $request->validate(['medallaSlug' => ['required', 'string', 'max:80', 'alpha_dash']])['medallaSlug'];
+            $medalla = $this->medallas->todas()->get($slug);
+            abort_unless($medalla, 422, 'Selecciona una medalla existente.');
+            abort_if(! $medalla['activo'] && ($current?->medalla['slug'] ?? null) !== $slug, 422, 'No se puede vincular una medalla desactivada.');
+            $request->merge(['medalla' => collect($medalla)->only(['slug', 'nombre', 'descripcion', 'icono'])->all()]);
+        } elseif (is_string($request->input('medalla.slug'))) {
+            $slug = $request->input('medalla.slug');
+            $medalla = Medalla::query()->where('slug', $slug)->first();
+            abort_if($medalla && ! $medalla->activo && ($current?->medalla['slug'] ?? null) !== $slug, 422, 'No se puede vincular una medalla desactivada.');
+        }
         $rules = [
             'titulo' => ['required', 'string', 'max:150'],
             'descripcion' => ['required', 'string', 'max:500'],

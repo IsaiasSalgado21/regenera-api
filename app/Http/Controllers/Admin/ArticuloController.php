@@ -151,11 +151,11 @@ class ArticuloController extends Controller
         $this->authorize('eliminar', $articulo);
         $this->auditoria->registrar(
             $request->user(),
-            'eliminar_borrador',
+            'eliminar',
             'articulo',
             (string) $articulo->_id,
             $request,
-            ['estado_anterior' => 'borrador'],
+            ['estado_anterior' => $articulo->estado],
         );
         $images = $this->gridFsImages->paths($articulo->imagenes, $articulo->imagen);
         $articulo->delete();
@@ -163,7 +163,7 @@ class ArticuloController extends Controller
 
         return response()->json([
             'data' => ['id' => $id],
-            'message' => 'Borrador eliminado correctamente.',
+            'message' => 'Artículo eliminado correctamente.',
         ]);
     }
 }

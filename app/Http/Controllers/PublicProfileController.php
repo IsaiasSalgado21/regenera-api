@@ -7,6 +7,7 @@ use App\Models\EventoGamificacion;
 use App\Models\User;
 use App\Services\GridFsImageService;
 use App\Services\AccountProfile;
+use App\Services\CatalogoMedallas;
 use Illuminate\Http\JsonResponse;
 
 class PublicProfileController extends Controller
@@ -14,6 +15,7 @@ class PublicProfileController extends Controller
     public function __construct(
         private readonly GridFsImageService $images,
         private readonly AccountProfile $profiles,
+        private readonly CatalogoMedallas $catalogoMedallas,
     ) {}
 
     public function show(string $id): JsonResponse
@@ -29,18 +31,19 @@ class PublicProfileController extends Controller
             ->get()
             ->keyBy('referenciaId');
 
+        $catalogo = $this->catalogoMedallas->todas();
         $medals = Cuestionario::query()
-            ->where('activo', true)
             ->orderByDesc('version')
             ->get()
-            ->unique('slug')
-            ->map(function ($quiz) use ($events): ?array {
+            ->unique(fn ($quiz) => (string) ($quiz->medalla['slug'] ?? ''))
+            ->map(function ($quiz) use ($events, $catalogo): ?array {
                 $medal = $quiz->medalla ?? [];
                 $slug = (string) ($medal['slug'] ?? '');
                 $event = $slug !== '' ? $events->get($slug) : null;
                 if (! $event) {
                     return null;
                 }
+                $medal = $catalogo->get($slug) ?? $medal;
 
                 return [
                     'slug' => $slug,
@@ -52,6 +55,20 @@ class PublicProfileController extends Controller
             })
             ->filter()
             ->values();
+        $visibleMedals = $medals->pluck('slug')->all();
+        foreach ($events as $slug => $event) {
+            $medal = $catalogo->get((string) $slug);
+            if (! $medal || in_array((string) $slug, $visibleMedals, true)) {
+                continue;
+            }
+            $medals->push([
+                'slug' => (string) $slug,
+                'nombre' => $medal['nombre'],
+                'descripcion' => $medal['descripcion'],
+                'icono' => $medal['icono'],
+                'fechaObtencion' => $event->creadoEn?->toISOString() ?? $event->created_at?->toISOString(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,

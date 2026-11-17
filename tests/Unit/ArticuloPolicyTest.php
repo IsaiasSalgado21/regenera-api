@@ -67,4 +67,15 @@ class ArticuloPolicyTest extends TestCase
         $this->assertFalse($policy->aprobar($organizador, $pendiente));
         $this->assertFalse($policy->despublicar($admin, $pendiente));
     }
+
+    public function test_only_admin_can_delete_articles_in_any_state(): void
+    {
+        $policy = new ArticuloPolicy;
+        foreach (['borrador', 'pendiente', 'publicado', 'rechazado'] as $estado) {
+            $articulo = new Articulo(['estado' => $estado]);
+            $this->assertTrue($policy->eliminar(new User(['rol' => 'admin']), $articulo));
+            $this->assertFalse($policy->eliminar(new User(['rol' => 'organizador']), $articulo));
+            $this->assertFalse($policy->eliminar(new User(['rol' => 'usuario']), $articulo));
+        }
+    }
 }

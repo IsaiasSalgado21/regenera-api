@@ -7,6 +7,7 @@ use App\Models\Cuestionario;
 use App\Models\EventoGamificacion;
 use App\Models\IntentoCuestionario;
 use App\Models\Inscripcion;
+use App\Models\Medalla;
 use App\Models\User;
 use App\Models\Voluntariado;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class GamificacionService
         private readonly CuestionarioService $cuestionarios,
         private readonly VoluntariadoWorkflow $workflow,
         private readonly VoluntariadoHorario $horario,
+        private readonly CatalogoMedallas $medallas,
     ) {}
 
     public function registrarAprobacion(User $usuario, Cuestionario $cuestionario, IntentoCuestionario $intento): void
@@ -45,7 +47,10 @@ class GamificacionService
         );
 
         $medal = $cuestionario->medalla ?? [];
-        if (! empty($medal['slug'])) {
+        $catalogEntry = ! empty($medal['slug'])
+            ? Medalla::query()->where('slug', $medal['slug'])->first()
+            : null;
+        if (! empty($medal['slug']) && (! $catalogEntry || $catalogEntry->activo)) {
             $this->registrarEvento(
                 $userId,
                 'medalla',
@@ -168,12 +173,24 @@ class GamificacionService
             ->where('usuarioId', $userId)
             ->orderByDesc('created_at')
             ->get();
-        $catalog = Cuestionario::query()->where('activo', true)->orderByDesc('version')->get()->unique('slug')->values();
+        $versions = Cuestionario::query()->orderByDesc('version')->get();
+        $catalog = $versions->where('activo', true)->unique('slug')->values();
+        $medalCatalog = $this->medallas->todas();
         $quizProgress = collect($this->cuestionarios->catalogo($usuario));
-        $medals = $catalog
-            ->filter(fn ($quiz) => ! empty($quiz->medalla['slug']))
-            ->map(function ($quiz) use ($medalEvents, $usuario): array {
-                $medal = $quiz->medalla;
+        $medals = $catalog->concat($versions)
+            ->filter(function ($quiz) use ($medalEvents, $medalCatalog): bool {
+                $slug = $quiz->medalla['slug'] ?? null;
+                if (! $slug) {
+                    return false;
+                }
+                $earned = $medalEvents->has((string) $slug);
+                $active = (bool) ($medalCatalog->get((string) $slug)['activo'] ?? true);
+
+                return $earned || ($quiz->activo && $active);
+            })
+            ->unique(fn ($quiz) => (string) $quiz->medalla['slug'])
+            ->map(function ($quiz) use ($medalEvents, $usuario, $medalCatalog): array {
+                $medal = $medalCatalog->get((string) $quiz->medalla['slug']) ?? $quiz->medalla;
                 $event = $medalEvents->get((string) $medal['slug']);
 
                 return [
@@ -189,6 +206,24 @@ class GamificacionService
                 ];
             })
             ->values();
+        $visibleMedals = $medals->pluck('slug')->all();
+        foreach ($medalEvents as $slug => $event) {
+            $medal = $medalCatalog->get((string) $slug);
+            if (! $medal || in_array((string) $slug, $visibleMedals, true)) {
+                continue;
+            }
+            $medals->push([
+                'slug' => (string) $slug,
+                'nombre' => $medal['nombre'],
+                'descripcion' => $medal['descripcion'],
+                'icono' => $medal['icono'],
+                'requisito' => 'Condición de obtención no disponible.',
+                'requisitos' => [],
+                'disponibleParaRol' => true,
+                'desbloqueada' => true,
+                'fechaObtencion' => $event->creadoEn?->toISOString() ?? $event->created_at?->toISOString(),
+            ]);
+        }
         $approvedAttempts = $attempts->filter(fn ($attempt) => $attempt->estado === 'aprobado');
         $pointsTotal = (int) $points->sum('cantidad');
         $organizerAttempt = $approvedAttempts->firstWhere('cuestionarioSlug', 'organizacion-responsable');
@@ -221,7 +256,13 @@ class GamificacionService
             'medallas' => $medals->all(),
             'medallasObtenidas' => $medals->where('desbloqueada', true)->values()->all(),
             'medallasBloqueadas' => $medals->where('desbloqueada', false)->values()->all(),
-            'siguienteMedalla' => $this->siguienteMedalla($usuario, $catalog, $quizProgress, $attempts, $medalEvents),
+            'siguienteMedalla' => $this->siguienteMedalla(
+                $usuario,
+                $catalog->filter(fn ($quiz) => (bool) ($medalCatalog->get((string) ($quiz->medalla['slug'] ?? ''))['activo'] ?? true)),
+                $quizProgress,
+                $attempts,
+                $medalEvents,
+            ),
             'cuestionarios' => $quizProgress->all(),
             'cuestionariosAsignados' => $quizProgress->count(),
             'historialCuestionarios' => $attempts->map(fn ($attempt) => [

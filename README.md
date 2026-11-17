@@ -89,10 +89,16 @@ o elegirse del catálogo existente. El título genera una sugerencia normalizada
 con un sufijo libre si ya existe. Elegir uno existente y confirmar el guardado
 crea una nueva versión y desactiva la anterior; no crea un cuestionario duplicado.
 El identificador de una versión existente permanece fijo; al crear se puede
-volver a generar desde el título. El selector muestra los iconos compatibles
-con el perfil y conserva los identificadores antiguos.
+volver a generar desde el título. El editor de medallas ofrece iconos compatibles
+con el perfil y conserva los identificadores antiguos. Las medallas se gestionan
+por separado en `/admin/medallas` y se seleccionan desde el cuestionario. Las
+medallas anteriores se leen de sus cuestionarios sin modificar sus versiones.
+Para desplegar el catálogo ejecuta `php artisan migrate` y crea el índice único
+de identificadores antes de permitir su administración.
 La medalla se otorga al aprobar el cuestionario, además de los requisitos de
-asistencia o verificación que correspondan.
+asistencia o verificación que correspondan. Una medalla desactivada no se
+otorga en nuevos intentos; las ya obtenidas y sus relaciones se conservan.
+Las medallas sin vínculos ni logros pueden eliminarse.
 
 Las listas de cuestionarios del editor, la sección de gamificación y aprendizaje
 permiten buscar por nombre y navegar los resultados de seis en seis. El resumen
@@ -110,7 +116,8 @@ reanudan con la versión con la que se iniciaron.
 También devuelve `medallasObtenidas`, `medallasBloqueadas` y `siguienteMedalla`.
 Cada medalla incluye sus `requisitos` y `disponibleParaRol`; el perfil muestra
 las obtenidas recientes y las pendientes del rol, usando la versión activa más
-reciente de cada cuestionario. El historial de voluntariados utiliza las
+reciente de cada cuestionario y conservando los logros de versiones inactivas.
+El historial de voluntariados utiliza las
 inscripciones y asistencias del usuario autenticado: solo indica asistencia
 confirmada cuando existe ese registro, no por el estado de la inscripción.
 La siguiente medalla respeta el rol y prioriza seguridad, manglar, economía

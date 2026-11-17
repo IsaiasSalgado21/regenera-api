@@ -83,9 +83,11 @@
             const existingDashboard = nav.querySelector("[data-auth-dashboard]");
             if (existingDashboard) existingDashboard.remove();
 
-            if (user.rol === "admin" || user.rol === "organizador") {
+            if (["admin", "organizador", "usuario"].includes(user.rol)) {
                 const dashboardLink = document.createElement("a");
-                dashboardLink.href = `${appBase}${user.rol === "admin" ? "/admin/dashboard" : "/organizador/dashboard"}`;
+                const panelPath = user.rol === "admin" ? "/admin/dashboard"
+                    : user.rol === "organizador" ? "/organizador/dashboard" : "/voluntario/dashboard";
+                dashboardLink.href = `${appBase}${panelPath}`;
                 dashboardLink.className = "user-nav";
                 dashboardLink.dataset.authDashboard = "";
                 dashboardLink.textContent = "Panel";

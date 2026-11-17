@@ -1,7 +1,6 @@
 import '../../css/dashboard.css';
 import '../../css/quiz-list.css';
 import { createQuizPager } from '../quiz-list';
-import { medalIconMarkup, medalIcons } from '../medal-icons';
 
 const root = document.querySelector('[data-quiz-admin]');
 
@@ -19,6 +18,7 @@ function initializeQuizAdmin() {
     const submitButton = root.querySelector('[data-quiz-submit]');
     const formError = root.querySelector('[data-quiz-form-error]');
     let activeQuizzes = [];
+    let medals = [];
     let identifierEdited = false;
     const pager = createQuizPager(
         root.querySelector('[data-quiz-admin-search]'),
@@ -215,7 +215,11 @@ function initializeQuizAdmin() {
         root.querySelector('[data-quiz-admin-loading]').hidden = false;
         errorBox.hidden = true;
         try {
-            activeQuizzes = await request('/admin/cuestionarios');
+            [activeQuizzes, medals] = await Promise.all([
+                request('/admin/cuestionarios'),
+                request('/admin/medallas'),
+            ]);
+            root.querySelector('[data-quiz-create]').hidden = false;
             identifiers.replaceChildren(...[...new Set(activeQuizzes.map(quiz => quiz.slug))]
                 .sort((a, b) => a.localeCompare(b))
                 .map(slug => {
@@ -236,6 +240,7 @@ function initializeQuizAdmin() {
                 }
             }
         } catch (error) {
+            root.querySelector('[data-quiz-create]').hidden = true;
             errorBox.hidden = false;
             errorBox.textContent = error.message;
             if (error.status === 401 || error.status === 403) {
@@ -279,11 +284,8 @@ function initializeQuizAdmin() {
         form.elements.minimoAprobacion.value = quiz?.minimoAprobacion ?? 75;
         form.elements.puntosAprobacion.value = quiz?.puntosAprobacion ?? 20;
         form.elements.requiereOrganizadorVerificado.checked = Boolean(quiz?.requiereOrganizadorVerificado);
-        form.elements.medallaSlug.value = quiz?.medalla?.slug || '';
-        form.elements.medallaNombre.value = quiz?.medalla?.nombre || '';
-        form.elements.medallaDescripcion.value = quiz?.medalla?.descripcion || '';
-        form.elements.medallaIcono.value = quiz?.medalla?.icono || '';
-        updateMedalIcon();
+        renderMedalOptions(quiz?.medalla?.slug || '');
+        updateMedalDescription();
         form.querySelectorAll('input[name="audiencia"]').forEach(input => {
             input.checked = (quiz?.audiencia || []).includes(input.value);
         });
@@ -299,6 +301,14 @@ function initializeQuizAdmin() {
             : 'Nuevo cuestionario';
         form.hidden = false;
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderMedalOptions(selectedMedal) {
+        form.elements.medallaSlug.replaceChildren(new Option('Selecciona una medalla', ''));
+        medals.filter(medal => medal.activo || medal.slug === selectedMedal).forEach(medal => {
+            form.elements.medallaSlug.add(new Option(`${medal.nombre}${medal.activo ? '' : ' · Desactivada'}`, medal.slug));
+        });
+        form.elements.medallaSlug.value = selectedMedal;
     }
 
     async function deactivateQuiz(quiz) {
@@ -353,35 +363,23 @@ function initializeQuizAdmin() {
     });
     form.elements.requiereOrganizadorVerificado.addEventListener('change', updateIdentifierState);
 
-    const iconList = root.querySelector('[data-quiz-medal-icons]');
-    const iconPreview = root.querySelector('[data-quiz-medal-preview]');
-    medalIcons.forEach(icon => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'quiz-medal-icon-choice';
-        button.dataset.icon = icon.id;
-        button.innerHTML = `${medalIconMarkup(icon.id)}<span>${escapeHtml(icon.label)}</span>`;
-        button.addEventListener('click', () => {
-            form.elements.medallaIcono.value = icon.id;
-            updateMedalIcon();
-        });
-        iconList.append(button);
-    });
-    function updateMedalIcon() {
-        const value = form.elements.medallaIcono.value.trim();
-        const icon = medalIcons.find(item => item.id === value);
-        iconList.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.icon === value)));
-        iconPreview.replaceChildren();
-        if (!value) {
-            iconPreview.textContent = 'Selecciona un icono.';
-            return;
-        }
-        const symbol = document.createElement('span');
-        symbol.className = 'quiz-medal-preview-icon';
-        symbol.innerHTML = medalIconMarkup(value);
-        iconPreview.append(symbol, document.createTextNode(icon ? `Seleccionado: ${icon.label}` : 'Icono anterior: se mostrará el símbolo predeterminado.'));
+    function updateMedalDescription() {
+        const medal = medals.find(item => item.slug === form.elements.medallaSlug.value);
+        root.querySelector('[data-quiz-medal-description]').textContent = medal
+            ? `${medal.descripcion}${medal.activo ? '' : ' Esta medalla está desactivada y no se otorgará en nuevos intentos.'}`
+            : 'Crea una medalla si todavía no aparece en el catálogo.';
     }
-    form.elements.medallaIcono.addEventListener('input', updateMedalIcon);
+    form.elements.medallaSlug.addEventListener('change', updateMedalDescription);
+    window.addEventListener('focus', async () => {
+        if (form.hidden) return;
+        try {
+            medals = await request('/admin/medallas');
+            renderMedalOptions(form.elements.medallaSlug.value);
+            updateMedalDescription();
+        } catch (error) {
+            showNotice(`No se pudo actualizar el catálogo de medallas: ${error.message}`, true);
+        }
+    });
 
     form.addEventListener('submit', async event => {
         event.preventDefault();
@@ -438,12 +436,7 @@ function initializeQuizAdmin() {
             minimoAprobacion: Number(form.elements.minimoAprobacion.value),
             puntosAprobacion: Number(form.elements.puntosAprobacion.value),
             preguntas: quizQuestions,
-            medalla: {
-                slug: form.elements.medallaSlug.value.trim(),
-                nombre: form.elements.medallaNombre.value.trim(),
-                descripcion: form.elements.medallaDescripcion.value.trim(),
-                icono: form.elements.medallaIcono.value.trim(),
-            },
+            medallaSlug: form.elements.medallaSlug.value,
         };
         submitButton.disabled = true;
         try {

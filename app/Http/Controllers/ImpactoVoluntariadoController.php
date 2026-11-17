@@ -39,6 +39,10 @@ class ImpactoVoluntariadoController extends Controller
         $isAdmin = $usuario?->rol === 'admin';
         $isOwner = $usuario
             && (string) $voluntariado->organizadorId === (string) $usuario->getAuthIdentifier();
+        abort_unless(
+            $isAdmin || $isOwner || in_array($voluntariado->estado, ['publicado', 'cancelado', 'finalizado'], true),
+            404,
+        );
         $tiposPersonalizados = $isAdmin || $isOwner
             ? TipoImpactoVoluntariado::query()
                 ->where('organizadorId', (string) $voluntariado->organizadorId)

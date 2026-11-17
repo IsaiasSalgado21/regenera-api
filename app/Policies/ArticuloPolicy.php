@@ -62,6 +62,6 @@ class ArticuloPolicy
     }
     public function eliminar(User $user, Articulo $articulo): bool
     {
-        return $user->rol === 'admin' && $articulo->estado === 'borrador';
+        return $user->rol === 'admin';
     }
 }

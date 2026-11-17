@@ -13,6 +13,7 @@ use App\Services\VoluntariadoHorario;
 use App\Services\VoluntariadoWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use MongoDB\BSON\ObjectId;
 
 class BitacoraImpactoController extends Controller
 {
@@ -32,7 +33,20 @@ class BitacoraImpactoController extends Controller
             'estado' => ['nullable', 'in:finalizado,publicado'],
         ]);
 
-        $finalizados = Voluntariado::query()
+        $query = Voluntariado::query();
+        if ($request->user()->rol === 'organizador') {
+            $organizadorId = (string) $request->user()->getAuthIdentifier();
+            $query->where(function ($voluntariados) use ($organizadorId): void {
+                $voluntariados->where('organizadorId', $organizadorId);
+                if (preg_match('/^[a-f0-9]{24}$/i', $organizadorId)) {
+                    $voluntariados->orWhere('organizadorId', new ObjectId($organizadorId));
+                }
+            });
+        } else {
+            abort_unless($request->user()->rol === 'admin', 403);
+        }
+
+        $finalizados = $query
             ->get()
             ->filter(fn (Voluntariado $voluntariado) => $this->workflow->finalizado($voluntariado, $this->horario))
             ->values();

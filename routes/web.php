@@ -18,8 +18,10 @@ Route::get('/admin/dashboard', fn () => view('dashboard.index', ['dashboardRole'
     ->name('dashboard.admin');
 Route::get('/admin/cuestionarios', fn () => view('dashboard.cuestionarios'))
     ->name('dashboard.quizzes');
+Route::view('/admin/medallas', 'dashboard.medallas')->name('dashboard.medals');
 Route::get('/organizador/dashboard', fn () => view('dashboard.index', ['dashboardRole' => 'organizador']))
     ->name('dashboard.organizador');
+Route::view('/voluntario/dashboard', 'dashboard.voluntario')->name('dashboard.voluntario');
 Route::get('/notificaciones', fn () => view('notifications.index'))->name('notifications.index');
 Route::get('/perfil', fn () => view('profile.show'))->name('profile.show');
 Route::view('/completar-perfil', 'auth.complete')->name('profile.complete');

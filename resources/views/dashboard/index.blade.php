@@ -46,7 +46,7 @@
             <button type="button" class="dashboard-tab" data-section="places">Lugares</button>
             <button type="button" class="dashboard-tab" data-section="flora">Flora y fauna</button>
             <button type="button" class="dashboard-tab" data-section="voluntariados">Voluntariados</button>
-            <button type="button" class="dashboard-tab" data-section="impact-log" data-admin-only hidden>Bitácora de impacto</button>
+            <button type="button" class="dashboard-tab" data-section="impact-log">Bitácora de impacto</button>
             <button type="button" class="dashboard-tab" data-section="gamification" data-admin-only hidden>Gamificación</button>
             <button type="button" class="dashboard-tab" data-section="users" data-admin-only hidden>Usuarios</button>
         </nav>
@@ -64,8 +64,22 @@
                 <button type="button" class="button button-secondary" data-retry="articles">Reintentar</button>
             </div>
             <div class="dashboard-loading" data-loading="articles">Cargando artículos…</div>
+            <label class="dashboard-article-filter">Filtrar por estado
+                <select data-article-status>
+                    <option value="">Todos</option>
+                    <option value="pendiente">Pendientes</option>
+                    <option value="borrador">Borradores</option>
+                    <option value="publicado">Publicados</option>
+                    <option value="rechazado">Rechazados</option>
+                </select>
+            </label>
             <div class="dashboard-card-grid" id="articleCards"></div>
-            <p class="dashboard-empty" data-empty="articles" hidden>No hay artículos para mostrar.</p>
+            <p class="dashboard-empty" data-empty="articles" hidden>No hay artículos para este filtro.</p>
+            <nav class="dashboard-article-pagination" data-article-pagination aria-label="Páginas de artículos" hidden>
+                <button class="button button-secondary" type="button" data-article-page="-1">Anterior</button>
+                <span data-article-page-label></span>
+                <button class="button button-secondary" type="button" data-article-page="1">Siguiente</button>
+            </nav>
             <form class="dashboard-form" id="articleForm" hidden>
                 <div class="dashboard-form-heading">
                     <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="article">Nuevo artículo</h3></div>
@@ -101,8 +115,10 @@
                 <button type="button" class="button button-secondary" data-retry="places">Reintentar</button>
             </div>
             <div class="dashboard-loading" data-loading="places">Cargando lugares…</div>
+            @include('dashboard.list-search', ['resource' => 'places', 'label' => 'lugares'])
             <div class="dashboard-card-grid" id="placeCards"></div>
             <p class="dashboard-empty" data-empty="places" hidden>No hay lugares para mostrar.</p>
+            @include('dashboard.list-pagination', ['resource' => 'places', 'label' => 'lugares'])
             <form class="dashboard-form" id="placeForm" hidden>
                 <div class="dashboard-form-heading">
                     <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="place">Nuevo lugar</h3></div>
@@ -160,8 +176,10 @@
                 <button type="button" class="button button-secondary" data-retry="voluntariados">Reintentar</button>
             </div>
             <div class="dashboard-loading" data-loading="voluntariados">Cargando voluntariados…</div>
+            @include('dashboard.list-search', ['resource' => 'voluntariados', 'label' => 'voluntariados'])
             <div class="dashboard-card-grid" id="voluntariadoCards"></div>
             <p class="dashboard-empty" data-empty="voluntariados" hidden>No hay voluntariados para mostrar.</p>
+            @include('dashboard.list-pagination', ['resource' => 'voluntariados', 'label' => 'voluntariados'])
             <form class="dashboard-form" id="voluntariadoForm" hidden>
                 <div class="dashboard-form-heading">
                     <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="voluntariado">Nuevo voluntariado</h3></div>
@@ -306,8 +324,10 @@
                 <button type="button" class="button button-secondary" data-retry="flora">Reintentar</button>
             </div>
             <div class="dashboard-loading" data-loading="flora">Cargando registros…</div>
+            @include('dashboard.list-search', ['resource' => 'flora', 'label' => 'flora y fauna'])
             <div class="dashboard-card-grid" id="floraCards"></div>
             <p class="dashboard-empty" data-empty="flora" hidden>No hay registros para mostrar.</p>
+            @include('dashboard.list-pagination', ['resource' => 'flora', 'label' => 'flora y fauna'])
             <form class="dashboard-form" id="floraForm" hidden>
                 <div class="dashboard-form-heading">
                     <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="flora">Nuevo registro</h3></div>
@@ -385,7 +405,7 @@
             </form>
         </section>
 
-        <section class="dashboard-section" id="section-impact-log" data-resource="impact-log" data-admin-only hidden>
+        <section class="dashboard-section" id="section-impact-log" data-resource="impact-log" hidden>
             <div class="dashboard-section-heading">
                 <div>
                     <span class="dashboard-eyebrow">RESULTADOS REGISTRADOS</span>
@@ -448,7 +468,10 @@
                     <h2>Gamificación</h2>
                     <p class="impact-log-caption">Intentos, aprobaciones y recompensas registradas en MongoDB.</p>
                 </div>
-                <a class="button button-secondary" href="{{ route('dashboard.quizzes') }}">Gestionar cuestionarios</a>
+                <div class="dashboard-card-actions">
+                    <a class="button button-secondary" href="{{ route('dashboard.quizzes') }}">Gestionar cuestionarios</a>
+                    <a class="button button-secondary" href="{{ route('dashboard.medals') }}">Gestionar medallas</a>
+                </div>
             </div>
             <div class="dashboard-loading" data-loading="gamification" hidden>Consultando estadísticas…</div>
             <div class="dashboard-error" data-error="gamification" hidden>
@@ -495,8 +518,10 @@
                 <button type="button" class="button button-secondary" data-retry="users">Reintentar</button>
             </div>
             <div class="dashboard-loading" data-loading="users">Cargando usuarios…</div>
+            @include('dashboard.list-search', ['resource' => 'users', 'label' => 'usuarios'])
             <div class="dashboard-card-grid" id="userCards"></div>
             <p class="dashboard-empty" data-empty="users" hidden>No hay usuarios registrados.</p>
+            @include('dashboard.list-pagination', ['resource' => 'users', 'label' => 'usuarios'])
             <form class="dashboard-form" id="userForm" hidden>
                 <div class="dashboard-form-heading">
                     <div><span class="dashboard-eyebrow">EDITOR</span><h3 data-form-title="user">Nuevo usuario</h3></div>

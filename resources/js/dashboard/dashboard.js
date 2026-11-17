@@ -51,6 +51,8 @@ function initializeDashboard() {
     const byId = id => document.getElementById(id);
     let impactEvolutionChart = null;
     let impactCategoryChart = null;
+    let articlePage = 1;
+    const listPages = {};
     const volunteerTokenOptions = {
         requisitos: [
             ['🧴', 'Usar bloqueador biodegradable', 'bloqueador-solar'],
@@ -223,15 +225,37 @@ function initializeDashboard() {
         return google + map;
     }
 
+    function listPage(resource, records, fields) {
+        const normalize = value => String(value ?? '').normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().trim();
+        const query = normalize(root.querySelector(`[data-dashboard-search="${resource}"]`).value);
+        const filtered = records.filter(record => fields.some(field => normalize(record[field]).includes(query)));
+        const pages = Math.max(1, Math.ceil(filtered.length / 10));
+        const page = Math.min(Math.max(1, listPages[resource] || 1), pages);
+        listPages[resource] = page;
+        const pagination = root.querySelector(`[data-dashboard-pagination="${resource}"]`);
+        pagination.hidden = pages <= 1;
+        pagination.querySelector('[data-dashboard-page-label]').textContent = `${page} / ${pages} · ${filtered.length} resultados`;
+        pagination.querySelector('[data-dashboard-page="-1"]').disabled = page === 1;
+        pagination.querySelector('[data-dashboard-page="1"]').disabled = page === pages;
+        const empty = root.querySelector(`[data-empty="${resource}"]`);
+        empty.textContent = query ? 'No hay resultados para esta búsqueda.' : 'No hay registros para mostrar.';
+        return filtered.slice((page - 1) * 10, page * 10);
+    }
+
     function renderArticles(user) {
         const isAdmin = user.rol === 'admin';
         const ownArticles = isAdmin
             ? cache.articles
             : cache.articles.filter(article => String(article.autorId) === String(user.id));
-        const list = isAdmin ? ownArticles : ownArticles;
+        const statusFilter = root.querySelector('[data-article-status]').value;
+        const list = ownArticles.filter(article => !statusFilter || article.estado === statusFilter);
+        const pageCount = Math.max(1, Math.ceil(list.length / 10));
+        articlePage = Math.min(articlePage, pageCount);
+        const visibleArticles = list.slice((articlePage - 1) * 10, articlePage * 10);
         const element = byId('articleCards');
 
-        element.innerHTML = list.map(article => {
+        element.innerHTML = visibleArticles.map(article => {
             const status = `<span class="status-pill status-${escapeHtml(article.estado)}">${escapeHtml(article.estado)}</span>`;
             let actions = '';
 
@@ -247,8 +271,8 @@ function initializeDashboard() {
 
                 if (article.estado === 'borrador') {
                     actions += action('Publicar', 'publish-article', article.id, 'primary');
-                    actions += action('Eliminar borrador', 'delete-article', article.id, 'danger');
                 }
+                actions += action('Eliminar', 'delete-article', article.id, 'danger');
             } else {
                 if (['borrador', 'rechazado'].includes(article.estado)) {
                     actions += action('Editar', 'edit-article', article.id);
@@ -256,18 +280,25 @@ function initializeDashboard() {
                 }
             }
 
-            return card({
-                title: article.titulo,
-                description: article.motivoRechazo
-                    ? `${article.contenido} Motivo de rechazo: ${article.motivoRechazo}`
-                    : article.contenido,
-                meta: `${status}<span>${escapeHtml(article.categoria)}</span>`,
-                id: article.id,
-                actions,
-            });
+            return `<article class="dashboard-card dashboard-article" data-record-id="${escapeHtml(article.id)}">
+                <div class="dashboard-card-body">
+                    <div class="dashboard-card-meta">${status}<span>${escapeHtml(article.categoria)}</span></div>
+                    <h3>${escapeHtml(article.titulo)}</h3>
+                    <details><summary>Ver contenido</summary>
+                        <p class="dashboard-article-content">${escapeHtml(article.contenido)}</p>
+                        ${article.motivoRechazo ? `<p><strong>Motivo de rechazo:</strong> ${escapeHtml(article.motivoRechazo)}</p>` : ''}
+                    </details>
+                </div>
+                <div class="dashboard-card-actions">${actions}</div>
+            </article>`;
         }).join('');
 
         showResourceState('articles', list.length ? 'ready' : 'empty');
+        const pagination = root.querySelector('[data-article-pagination]');
+        pagination.hidden = pageCount <= 1;
+        pagination.querySelector('[data-article-page-label]').textContent = `${articlePage} / ${pageCount}`;
+        pagination.querySelector('[data-article-page="-1"]').disabled = articlePage <= 1;
+        pagination.querySelector('[data-article-page="1"]').disabled = articlePage >= pageCount;
         root.querySelector('[data-article-heading]').textContent = isAdmin
             ? 'Revisión y gestión de artículos'
             : 'Mis artículos';
@@ -277,9 +308,10 @@ function initializeDashboard() {
     }
 
     function renderPlaces(user) {
-        const list = user.rol === 'admin'
+        const records = user.rol === 'admin'
             ? cache.places
             : cache.places.filter(place => String(place.creadoPor) === String(user.id));
+        const list = listPage('places', records, ['nombre', 'municipio', 'tipo', 'estado']);
         const cards = byId('placeCards');
 
         placePreviewMaps.forEach(map => map.remove());
@@ -349,13 +381,14 @@ function initializeDashboard() {
     }
 
     function renderFlora(user) {
-        const list = user.rol === 'admin'
+        const records = user.rol === 'admin'
             ? cache.flora
             : cache.flora.filter(record => String(record.creadoPor) === String(user.id));
+        const list = listPage('flora', records, ['nombre', 'nombreCientifico', 'tipo', 'estado']);
 
         byId('floraCards').innerHTML = list.map(record => {
             const meta = `<span class="status-pill status-${escapeHtml(record.estado)}">${escapeHtml(record.estado)}</span><span>${escapeHtml(record.tipo)}</span><span>${escapeHtml(record.estadoConservacion || 'Conservación sin especificar')}</span>`;
-            let actions = action('Editar', 'edit-flora', record.id);
+            let actions = user.rol === 'admin' ? action('Editar', 'edit-flora', record.id) : '';
             if (user.rol === 'admin') {
                 if (record.estado === 'publicado') {
                     actions += action('Archivar', 'archive-flora', record.id, 'danger');
@@ -381,7 +414,7 @@ function initializeDashboard() {
     }
 
     function renderVoluntariados() {
-        const list = cache.voluntariados;
+        const list = listPage('voluntariados', cache.voluntariados, ['titulo', 'categoria', 'estado', 'organizadorNombre']);
 
         byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
             const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>Organiza: ${escapeHtml(voluntariado.organizadorNombre || 'No disponible')}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
@@ -710,7 +743,7 @@ function initializeDashboard() {
     }
 
     function renderUsers() {
-        const users = cache.users;
+        const users = listPage('users', cache.users, ['nombre', 'correo', 'rol', 'estado']);
         byId('userCards').innerHTML = users.map(usuario => {
             const meta = `<span class="status-pill status-${escapeHtml(usuario.estado)}">${escapeHtml(usuario.estado)}</span><span>${escapeHtml(usuario.rol)}</span>`;
             const verification = usuario.rol === 'organizador' && usuario.organizadorVerificado
@@ -855,7 +888,7 @@ function initializeDashboard() {
             .filter(input => input.value)
             .map(input => [input.dataset.impactLogFilter, input.value]));
         try {
-            const response = await dashboardApi.impactLog(filters);
+            const response = await dashboardApi.impactLog(filters, user.rol);
             cache.impactLog = response.data;
             content.hidden = false;
             renderImpactLog(cache.impactLog);
@@ -981,12 +1014,6 @@ function initializeDashboard() {
             if (resource === 'articles') {
                 const response = await dashboardApi.listArticles();
                 cache.articles = response.data;
-                if (user.rol === 'admin') {
-                    const pending = await dashboardApi.listPendingArticles();
-                    cache.pending = pending.data;
-                    const pendingIds = new Set(cache.pending.map(article => article.id));
-                    cache.articles = cache.articles.filter(article => !pendingIds.has(article.id)).concat(cache.pending);
-                }
                 renderArticles(user);
             } else if (resource === 'places') {
                 cache.places = (await dashboardApi.listPlaces(user.rol)).data;
@@ -1723,7 +1750,7 @@ function initializeDashboard() {
                     break;
 
                 case 'delete-article':
-                    await dashboardApi.deleteDraft(id);
+                    await dashboardApi.deleteArticle(id);
                     break;
 
                 case 'submit-article':
@@ -1844,9 +1871,9 @@ function initializeDashboard() {
                 style: 'is-danger',
             },
             'delete-article': {
-                title: 'Eliminar borrador',
-                message: 'Esta acción eliminará permanentemente el borrador. No podrás recuperarlo.',
-                button: 'Eliminar borrador',
+                title: 'Eliminar artículo',
+                message: 'Esta acción eliminará permanentemente el artículo y sus imágenes. No podrás recuperarlo.',
+                button: 'Eliminar artículo',
                 icon: '!',
                 style: 'is-danger',
             },
@@ -1897,6 +1924,30 @@ function initializeDashboard() {
             await loadResource(activeSection);
         });
     });
+
+    root.querySelector('[data-article-status]').addEventListener('change', () => {
+        articlePage = 1;
+        renderArticles(user);
+    });
+    root.querySelectorAll('[data-article-page]').forEach(button => button.addEventListener('click', () => {
+        articlePage += Number(button.dataset.articlePage);
+        renderArticles(user);
+    }));
+    const listRenderers = {
+        places: () => renderPlaces(user),
+        flora: () => renderFlora(user),
+        voluntariados: renderVoluntariados,
+        users: renderUsers,
+    };
+    root.querySelectorAll('[data-dashboard-search]').forEach(input => input.addEventListener('input', () => {
+        listPages[input.dataset.dashboardSearch] = 1;
+        listRenderers[input.dataset.dashboardSearch]();
+    }));
+    root.querySelectorAll('[data-dashboard-page]').forEach(button => button.addEventListener('click', () => {
+        const resource = button.closest('[data-dashboard-pagination]').dataset.dashboardPagination;
+        listPages[resource] = (listPages[resource] || 1) + Number(button.dataset.dashboardPage);
+        listRenderers[resource]();
+    }));
 
     root.addEventListener('input', event => {
         const query = event.target.closest('[data-location-query]');
@@ -2438,7 +2489,9 @@ function initializeDashboard() {
             byId('dashboardTitle').textContent = user.rol === 'admin' ? 'Panel de administración' : 'Panel de organizador';
             byId('dashboardWelcome').textContent = `Hola, ${user.nombre}. Administra el contenido de Regenera BCS.`;
             root.querySelectorAll('[data-admin-only]').forEach(element => {
-                element.hidden = user.rol !== 'admin';
+                if (!element.classList.contains('dashboard-section')) {
+                    element.hidden = user.rol !== 'admin';
+                }
             });
             byId('dashboardContent').hidden = false;
             if (user.rol === 'admin') {
@@ -2453,6 +2506,7 @@ function initializeDashboard() {
                 button.hidden = !['admin', 'organizador'].includes(user.rol);
             });
             root.querySelector('[data-new="place"]').hidden = user.rol !== 'admin' && !user.organizadorVerificado;
+            root.querySelector('[data-new="flora"]').hidden = user.rol !== 'admin';
             const addPlaceButton = root.querySelector('[data-add-volunteer-place]');
             addPlaceButton.hidden = !(user.rol === 'organizador' && user.organizadorVerificado);
             initializePlaceCreator(addPlaceButton, place => {

@@ -24,7 +24,7 @@
 
     <section class="dashboard-section-heading quiz-admin-list-heading">
         <div><span class="dashboard-eyebrow">CATÁLOGO VERSIONADO</span><h2>Cuestionarios</h2></div>
-        <button class="button button-primary" type="button" data-quiz-create>Crear cuestionario</button>
+        <button class="button button-primary" type="button" data-quiz-create hidden>Crear cuestionario</button>
     </section>
     <div class="dashboard-loading" data-quiz-admin-loading hidden>Cargando cuestionarios…</div>
     <div data-quiz-admin-search></div>
@@ -61,24 +61,18 @@
         </div>
         <fieldset class="quiz-admin-medal">
             <legend>Medalla del cuestionario</legend>
-            <p class="quiz-admin-medal-intro">Reconoce a quienes aprueben este cuestionario. Completa los datos que verán en su perfil.</p>
+            <p class="quiz-admin-medal-intro">Selecciona la medalla que recibirán quienes aprueben este cuestionario.</p>
             <div class="quiz-admin-medal-requirements">
                 <strong>Cómo se obtiene</strong>
                 <p>Se otorga al aprobar el cuestionario con el porcentaje mínimo configurado arriba.</p>
                 <p data-quiz-medal-attendance hidden>Este cuestionario también requiere asistencia confirmada en una actividad finalizada con inscripción válida.</p>
                 <p data-quiz-medal-verification hidden>También requiere una cuenta de organizador verificada.</p>
             </div>
-            <div class="dashboard-form-row">
-                <label>Identificador de la medalla<input name="medallaSlug" required maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ej. voluntario-seguro"><small>Clave estable, sin espacios. Si se usa en otro cuestionario, ambos comparten la misma medalla.</small></label>
-                <label>Nombre visible<input name="medallaNombre" required maxlength="100" placeholder="ej. Voluntario Seguro"><small>Así aparecerá en el perfil.</small></label>
-            </div>
-            <label>Descripción de la medalla<textarea name="medallaDescripcion" rows="2" required maxlength="300" placeholder="Describe qué reconoce este logro"></textarea></label>
-            <label>Icono de la medalla
-                <input name="medallaIcono" required maxlength="40" pattern="[a-z0-9\-]+" placeholder="Selecciona un icono o escribe uno existente">
-                <small>Selecciona un icono visualmente. Los identificadores anteriores siguen siendo compatibles.</small>
+            <label>Medalla
+                <select name="medallaSlug" required><option value="">Selecciona una medalla</option></select>
             </label>
-            <div class="quiz-medal-icons" data-quiz-medal-icons aria-label="Iconos disponibles"></div>
-            <p class="quiz-medal-preview" data-quiz-medal-preview aria-live="polite"></p>
+            <p class="quiz-admin-help" data-quiz-medal-description></p>
+            <a class="button button-secondary" href="{{ route('dashboard.medals') }}" target="_blank" rel="noopener">Gestionar medallas</a>
         </fieldset>
         <div class="quiz-admin-questions-heading">
             <div><span class="dashboard-eyebrow">EVALUACIÓN</span><h3>Preguntas</h3></div>

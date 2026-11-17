@@ -60,9 +60,10 @@ export const dashboardApi = {
     voluntariadoDashboard: id => request('get', `/api/admin/voluntariados/${id}/dashboard`),
     listOrganizadores: () => request('get', '/api/admin/voluntariados/organizadores'),
     listUsers: () => request('get', '/api/admin/usuarios'),
-    impactLog: filters => {
+    impactLog: (filters, role) => {
         const query = new URLSearchParams(filters).toString();
-        return request('get', `/api/admin/bitacora-impacto${query ? `?${query}` : ''}`);
+        const prefix = role === 'admin' ? 'admin' : 'organizador';
+        return request('get', `/api/${prefix}/bitacora-impacto${query ? `?${query}` : ''}`);
     },
     gamificationStats: () => request('get', '/api/admin/gamificacion/estadisticas'),
     gamificationAttempt: attemptId => request('get', `/api/admin/gamification/intentos/${encodeURIComponent(attemptId)}`),
@@ -87,7 +88,7 @@ export const dashboardApi = {
     approveArticle: id => request('patch', `/api/admin/articulos/${id}/aprobar`),
     rejectArticle: (id, motivo) => request('patch', `/api/admin/articulos/${id}/rechazar`, { motivo }),
     unpublishArticle: id => request('patch', `/api/admin/articulos/${id}/despublicar`),
-    deleteDraft: id => request('delete', `/api/admin/articulos/${id}`),
+    deleteArticle: id => request('delete', `/api/admin/articulos/${id}`),
     unreadNotifications: () => request('get', '/api/notificaciones/no-leidas'),
     allNotifications: () => request('get', '/api/notificaciones'),
     markNotificationRead: id => request('patch', `/api/notificaciones/${id}/leida`),
