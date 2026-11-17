@@ -7,7 +7,7 @@
             <h1>Completa tus datos</h1>
             <p>Necesitamos estos datos para continuar. Tu correo secundario y los datos del tutor son privados.</p>
             <form data-complete-profile>
-                @include('auth.profile-fields', ['profilePrefix' => 'complete', 'profileBirth' => true])
+                @include('auth.profile-fields', ['profilePrefix' => 'complete', 'profileBirth' => true, 'profileBirthParts' => true, 'profileDescription' => false])
                 <button type="submit">Guardar y continuar</button>
                 <p data-complete-status role="status" aria-live="polite"></p>
             </form>

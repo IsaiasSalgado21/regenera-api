@@ -932,12 +932,24 @@ html[data-theme="dark"] .profile-all-medals {
 }
 
 html[data-theme="dark"] .profile-medal {
-    background: #22332a;
+    background: linear-gradient(180deg, #2a4032, #22332a 58%);
     border-color: #35473d;
 }
 
 html[data-theme="dark"] .profile-medal.is-locked {
     background: #252c28;
+}
+
+html[data-theme="dark"] .profile-medal-icon {
+    background: #304c3b;
+    box-shadow: inset 0 0 0 1px #496b54;
+    color: #b7e5c7;
+}
+
+html[data-theme="dark"] .profile-medal.is-locked .profile-medal-icon {
+    background: #3a423c;
+    box-shadow: inset 0 0 0 1px #515e54;
+    color: #aab8b0;
 }
 
 html[data-theme="dark"] :is(.profile-medal h4, .profile-all-medals h3, .profile-pending-medals h3, .profile-progress h2) {
