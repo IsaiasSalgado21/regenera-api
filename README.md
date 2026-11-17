@@ -160,6 +160,46 @@ para incluir sus lugares administrados aunque no tengan coordenadas de mapa.
 `GET /api/voluntariados/categorias` devuelve las categorías recomendadas y las
 que ya se han utilizado, para que las nuevas categorías puedan reutilizarse.
 
+## Comentarios en voluntariados
+
+Todas las rutas de comentarios requieren `auth:sanctum`. La lista devuelve
+comentarios públicos publicados y las dudas privadas del autor; el organizador
+propietario y los administradores pueden consultar todos los comentarios del
+voluntariado. Las respuestas se guardan en la misma colección, sin relación
+padre: una respuesta a una duda privada permanece privada y no publicada.
+
+- `GET /api/voluntariados/{voluntariado}/comentarios`: lista en orden
+  cronológico ascendente.
+- `POST /api/voluntariados/{voluntariado}/comentarios`: recibe
+  `{"contenido":"¿Qué materiales necesito?","es_privado":true}`. Si
+  `comentarios_por_defecto` es `privado`, las publicaciones de voluntarios
+  siempre se guardan como privadas. No se requiere inscripción previa.
+- `POST /api/comentarios/{comentario}/responder`: el organizador propietario o
+  un administrador responde con `{"contenido":"Trae guantes y agua."}`.
+- `PATCH /api/comentarios/{comentario}/visibilidad`: el organizador propietario
+  o un administrador cambia `es_publicado` en comentarios no privados.
+- `PATCH /api/comentarios/{comentario}/publicar`: publica una duda privada,
+  convirtiéndola en pública y publicada.
+- `DELETE /api/comentarios/{comentario}`: permite borrar al autor, al
+  organizador propietario o a un administrador. El borrado es físico porque
+  los comentarios no usan soft deletes.
+- `PATCH /api/voluntariados/{voluntariado}/config-comentarios`: cambia
+  `comentarios_por_defecto` a `publico` o `privado`; solo el organizador
+  propietario o un administrador.
+
+Las respuestas de creación, lectura y actualización usan `data` y `message`;
+la eliminación devuelve `message`. Cada comentario incluye `id`, `contenido`,
+`es_privado`, `es_publicado`, `created_at`, `autor` (solo `nombre` y `rol`) y
+los permisos calculados `puede_moderar`, `puede_publicar` y `puede_eliminar`.
+La API no devuelve correo, teléfono ni coordenadas en estos recursos. La
+validación responde `422`; una acción sin permiso responde `403`, una ruta
+inexistente `404` y una petición sin sesión `401`. Las acciones de moderación,
+publicación, eliminación y configuración quedan registradas en auditoría.
+
+La guía de componentes, carga de datos demo, pruebas manuales y auditorías de
+accesibilidad/rendimiento/seguridad está en
+[docs/comentarios-frontend.md](docs/comentarios-frontend.md).
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

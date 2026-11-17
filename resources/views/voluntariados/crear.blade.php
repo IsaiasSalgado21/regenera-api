@@ -56,7 +56,8 @@
                 </ul>
             </div>
 
-            <form id="createVoluntariadoForm" class="dashboard-form create-form" novalidate>
+            <form id="createVoluntariadoForm" class="dashboard-form create-form"
+                data-voluntariado-url="{{ url('/voluntariados') }}" novalidate>
                 <div class="dashboard-form-heading">
                     <div>
                         <span class="dashboard-eyebrow">EDITOR</span>
@@ -184,6 +185,14 @@
                             placeholder="Describe la actividad, qué se hará y por qué es importante para el entorno."></textarea>
                 </label>
 
+                <label for="comentariosPorDefecto" id="commentDefaultsField" hidden>
+                    Comentarios por defecto
+                    <select id="comentariosPorDefecto" name="comentarios_por_defecto">
+                        <option value="publico" selected>Públicos (todos pueden ver y comentar)</option>
+                        <option value="privado">Solo dudas privadas (solo tú y el autor las ven)</option>
+                    </select>
+                </label>
+
                 <div class="dashboard-form-actions">
                     <button type="submit" class="button button-primary" id="submitBtn">
                         Enviar voluntariado
@@ -213,6 +222,8 @@
             const categoriaCustomInput = document.getElementById('categoriaCustom');
             const categoryLoadMessage = document.getElementById('categoryLoadMessage');
             const placeLoadMessage = document.getElementById('placeLoadMessage');
+            const commentDefaultsField = document.getElementById('commentDefaultsField');
+            let canConfigureComments = false;
             const suggestionOptions = {
                 requisitos: [
                     ['bloqueador-solar', 'Usar bloqueador biodegradable', '🧴'],
@@ -238,6 +249,9 @@
 
             if (!form) return;
 
+            const apiBaseUrl = document.querySelector('meta[name="api-base-url"]')?.content || '/api';
+            const apiUrl = path => path.startsWith('/api/') ? `${apiBaseUrl}${path.slice(4)}` : path;
+
             function categoryLabel(value) {
                 const labels = {
                     'limpieza-de-playas': 'Limpieza de playas',
@@ -260,7 +274,7 @@
             async function loadPlaces() {
                 try {
                     const token = sessionStorage.getItem('regenera_access_token');
-                    const response = await fetch('/api/lugares', {
+                    const response = await fetch(apiUrl('/api/lugares'), {
                         headers: {
                             Accept: 'application/json',
                             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -293,7 +307,7 @@
 
             async function loadRecommendedCategories() {
                 try {
-                    const response = await fetch('/api/voluntariados/categorias', {
+                    const response = await fetch(apiUrl('/api/voluntariados/categorias'), {
                         headers: { Accept: 'application/json' },
                     });
                     const result = await response.json();
@@ -514,8 +528,8 @@
                     if (!categoria) {
                         message.textContent = 'Escribe un nombre válido para la nueva categoría.';
                         message.className = 'form-message is-error';
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Enviar voluntariado';
+                        submitBtn.disabled = Boolean(form.dataset.createdId);
+                        submitBtn.textContent = form.dataset.createdId ? 'Voluntariado creado' : 'Enviar voluntariado';
                         categoriaCustomInput.focus();
                         return;
                     }
@@ -535,8 +549,8 @@
                     await submitWithoutImage(formData, fechaInicio, horaInicio, fechaFin, horaFin);
                 }
 
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Enviar voluntariado';
+                submitBtn.disabled = Boolean(form.dataset.createdId);
+                submitBtn.textContent = form.dataset.createdId ? 'Voluntariado creado' : 'Enviar voluntariado';
             });
 
             async function submitWithoutImage(formData, fechaInicio, horaInicio, fechaFin, horaFin) {
@@ -552,6 +566,7 @@
                     cupo: parseInt(formData.get('cupo')),
                     requisitos: formData.get('requisitos') ? formData.get('requisitos').split('\n').filter(Boolean) : [],
                     materiales: formData.get('materiales') ? formData.get('materiales').split('\n').filter(Boolean) : [],
+                    comentarios_por_defecto: formData.get('comentarios_por_defecto') || 'publico',
                 };
 
                 await sendPayload(payload);
@@ -572,6 +587,7 @@
                 if (requisitos) requisitos.split('\n').filter(Boolean).forEach(value => fd.append('requisitos[]', value));
                 const materiales = formData.get('materiales');
                 if (materiales) materiales.split('\n').filter(Boolean).forEach(value => fd.append('materiales[]', value));
+                fd.append('comentarios_por_defecto', formData.get('comentarios_por_defecto') || 'publico');
                 fd.append('imagen', formData.get('imagen'));
 
                 const payload = {};
@@ -586,6 +602,7 @@
             }
 
             async function sendPayload(payload, formData = null) {
+                let createdVoluntariadoId = null;
                 try {
                     const token = sessionStorage.getItem('regenera_access_token');
                     const headers = {
@@ -593,18 +610,56 @@
                         ...(token ? { Authorization: `Bearer ${token}` } : {}),
                         ...(!formData ? { 'Content-Type': 'application/json' } : {}),
                     };
-                    const response = await fetch('/api/voluntariados', {
+                    const response = await fetch(apiUrl('/api/voluntariados'), {
                         method: 'POST',
                         headers,
                         body: formData || JSON.stringify(payload),
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message || 'Error al crear el voluntariado.');
+                    const voluntariado = result.voluntariado || result.data;
+                    const voluntariadoId = voluntariado?.id || voluntariado?._id;
+                    createdVoluntariadoId = voluntariadoId || null;
+                    if (canConfigureComments) {
+                        if (!voluntariadoId) {
+                            const error = new Error('El voluntariado se creó, pero la respuesta no incluyó su ID para guardar la configuración de comentarios. No vuelvas a enviar el formulario.');
+                            error.createdWithoutId = true;
+                            throw error;
+                        }
+                        const commentsDefault = formData?.get('comentarios_por_defecto')
+                            || payload.comentarios_por_defecto
+                            || 'publico';
+                        let configResponse;
+                        try {
+                            configResponse = await fetch(
+                                apiUrl(`/api/voluntariados/${encodeURIComponent(voluntariadoId)}/config-comentarios`),
+                                {
+                                    method: 'PATCH',
+                                    headers: {
+                                        Accept: 'application/json',
+                                        'Content-Type': 'application/json',
+                                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                    },
+                                    body: JSON.stringify({
+                                        comentarios_por_defecto: commentsDefault,
+                                    }),
+                                },
+                            );
+                        } catch {
+                            const error = new Error('El voluntariado se creó, pero no se pudo guardar la configuración de comentarios. No vuelvas a enviar el formulario; actualízala desde el dashboard.');
+                            error.createdVoluntariadoId = voluntariadoId;
+                            throw error;
+                        }
+                        const configResult = await configResponse.json().catch(() => ({}));
+                        if (!configResponse.ok) {
+                            const error = new Error(`El voluntariado se creó, pero no se pudo guardar la configuración de comentarios: ${configResult.message || 'actualízala desde el dashboard.'}`);
+                            error.createdVoluntariadoId = voluntariadoId;
+                            throw error;
+                        }
+                    }
                     const el = document.getElementById('createMessage');
                     el.textContent = result.message || 'Voluntariado creado correctamente.';
                     el.className = 'form-message is-success';
-                    const voluntariado = result.voluntariado || result.data;
-                    const voluntariadoId = voluntariado?.id || voluntariado?._id;
                     if (voluntariado?.estado === 'publicado' && voluntariadoId) {
                         setTimeout(() => {
                             window.location.href = '/voluntariados/' + voluntariadoId;
@@ -618,6 +673,15 @@
                     const el = document.getElementById('createMessage');
                     el.textContent = error.message || 'Error inesperado. Intenta nuevamente.';
                     el.className = 'form-message is-error';
+                    if (error.createdVoluntariadoId || error.createdWithoutId) {
+                        form.dataset.createdId = error.createdVoluntariadoId || 'unknown';
+                    }
+                    if (error.createdVoluntariadoId) {
+                        const link = document.createElement('a');
+                        link.href = `${form.dataset.voluntariadoUrl}/${encodeURIComponent(error.createdVoluntariadoId)}`;
+                        link.textContent = ' Abrir el voluntariado.';
+                        el.appendChild(link);
+                    }
                 }
             }
 
@@ -643,7 +707,7 @@
                 }
 
                 try {
-                    const response = await fetch('/api/auth/me', {
+                    const response = await fetch(apiUrl('/api/auth/me'), {
                         headers: {
                             Accept: 'application/json',
                             Authorization: `Bearer ${token}`,
@@ -671,6 +735,8 @@
 
                     const esAdmin = user.rol === 'admin';
                     const esOrganizadorVerificado = user.rol === 'organizador' && Boolean(user.organizadorVerificado);
+                    canConfigureComments = esAdmin || esOrganizadorVerificado;
+                    commentDefaultsField.hidden = !canConfigureComments;
                     await loadPlaces();
                     document.querySelector('[data-add-volunteer-place]').hidden = !esOrganizadorVerificado;
                     infoAdmin.hidden = !(esAdmin || esOrganizadorVerificado);

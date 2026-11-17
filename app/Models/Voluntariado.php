@@ -29,6 +29,7 @@ class Voluntariado extends Model
         'imagen',
         'imagenes',
         'estado',
+        'comentarios_por_defecto',
         'tokenAsistencia',
         'codigoCorto',
         'codigoAsistenciaActivo',
@@ -45,6 +46,7 @@ class Voluntariado extends Model
         static::creating(function (Voluntariado $voluntariado): void {
             $voluntariado->inscritosActivos ??= 0;
             $voluntariado->codigoAsistenciaActivo ??= true;
+            $voluntariado->comentarios_por_defecto ??= 'publico';
             if (! is_string($voluntariado->tokenAsistencia) || $voluntariado->tokenAsistencia === '') {
                 $voluntariado->tokenAsistencia = Str::random(64);
             }

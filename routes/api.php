@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\LugarController as AdminLugarController;
 use App\Http\Controllers\Admin\MedallaController as AdminMedallaController;
 use App\Http\Controllers\Admin\VoluntariadoController as AdminVoluntariadoController;
 use App\Http\Controllers\Api\ArticuloController;
+use App\Http\Controllers\Api\ComentarioController;
+use App\Http\Controllers\Api\ConfigComentariosController;
 use App\Http\Controllers\Api\FloraFaunaController;
 use App\Http\Controllers\Api\LugarController;
 use App\Http\Controllers\AsistenciaController;
@@ -87,6 +89,15 @@ Route::put('/lugares/{id}', [LugarController::class, 'update'])->middleware('aut
 Route::get('/voluntariados', [VoluntariadoController::class, 'index'])->middleware('auth.optional');
 Route::get('/voluntariados/categorias', [VoluntariadoController::class, 'categorias']);
 Route::post('/voluntariados', [VoluntariadoController::class, 'store'])->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/voluntariados/{voluntariado}/comentarios', [ComentarioController::class, 'index']);
+    Route::post('/voluntariados/{voluntariado}/comentarios', [ComentarioController::class, 'store']);
+    Route::patch('/voluntariados/{voluntariado}/config-comentarios', [ConfigComentariosController::class, 'update']);
+    Route::post('/comentarios/{comentario}/responder', [ComentarioController::class, 'responder']);
+    Route::patch('/comentarios/{comentario}/visibilidad', [ComentarioController::class, 'updateVisibilidad']);
+    Route::patch('/comentarios/{comentario}/publicar', [ComentarioController::class, 'publicar']);
+    Route::delete('/comentarios/{comentario}', [ComentarioController::class, 'destroy']);
+});
 Route::get('/voluntariados/{id}', [VoluntariadoController::class, 'show'])->middleware('auth.optional');
 Route::get('/voluntariados/{id}/impactos', [ImpactoVoluntariadoController::class, 'index'])->middleware('auth.optional');
 Route::get('/impactos/resumen', [ImpactoVoluntariadoController::class, 'resumen']);

@@ -57,6 +57,7 @@ export const dashboardApi = {
     listPlaces: role => request('get', role === 'admin' ? '/api/admin/lugares' : '/api/lugares'),
     listFlora: role => request('get', role === 'admin' ? '/api/admin/flora-fauna' : '/api/flora-fauna'),
     listVoluntariados: () => request('get', '/api/admin/voluntariados'),
+    getVoluntariado: id => request('get', `/api/voluntariados/${encodeURIComponent(id)}`),
     voluntariadoDashboard: id => request('get', `/api/admin/voluntariados/${id}/dashboard`),
     listOrganizadores: () => request('get', '/api/admin/voluntariados/organizadores'),
     listUsers: () => request('get', '/api/admin/usuarios'),
@@ -74,7 +75,31 @@ export const dashboardApi = {
     listPendingArticles: () => request('get', '/api/admin/articulos/pendientes'),
     savePlace: (id, data) => request('post', id ? `/api/lugares/${id}` : '/api/lugares', id ? methodOverride(data, 'put') : data),
     saveFlora: (id, data) => request('post', id ? `/api/flora-fauna/${id}` : '/api/flora-fauna', id ? methodOverride(data, 'put') : data),
-    saveVoluntariado: (id, data) => request('post', id ? `/api/admin/voluntariados/${id}` : '/api/admin/voluntariados', id ? methodOverride(data, 'put') : data),
+    saveVoluntariado: async (id, data) => {
+        const result = await request(
+            'post',
+            id ? `/api/admin/voluntariados/${id}` : '/api/admin/voluntariados',
+            id ? methodOverride(data, 'put') : data,
+        );
+        const voluntariadoId = id || result.data?.id;
+        if (!voluntariadoId) {
+            throw new Error('El voluntariado se guardó, pero la respuesta no incluyó su ID para guardar la configuración de comentarios.');
+        }
+        try {
+            await request('patch', `/api/voluntariados/${encodeURIComponent(voluntariadoId)}/config-comentarios`, {
+                comentarios_por_defecto: data.get('comentarios_por_defecto') || 'publico',
+            });
+        } catch (error) {
+            const failure = new Error(
+                `El voluntariado se guardó, pero no se pudo guardar la configuración de comentarios: ${error.message}`,
+                { cause: error },
+            );
+            failure.status = error.status;
+            failure.data = error.data;
+            throw failure;
+        }
+        return result;
+    },
     saveArticle: (id, data) => request('post', id ? `/api/articulos/${id}` : '/api/articulos', id ? methodOverride(data, 'put') : data),
     deleteVoluntariado: id => request('delete', `/api/admin/voluntariados/${id}`),
     respondAttendanceRequest: (id, decision, motivo) => request('patch', `/api/asistencias/solicitudes/${id}/responder`, { decision, motivo }),

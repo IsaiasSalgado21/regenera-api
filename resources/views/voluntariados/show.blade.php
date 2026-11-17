@@ -340,6 +340,42 @@
             </section>
         </section>
 
+        <section class="volunteer-comments"
+            data-volunteer-comments
+            data-volunteer-id="{{ (string) $voluntariado->_id }}"
+            data-comments-default="{{ $voluntariado->comentarios_por_defecto ?? 'publico' }}"
+            aria-labelledby="volunteer-comments-title">
+            <header class="volunteer-comments-heading">
+                <span>CONVERSACIÓN</span>
+                <h2 id="volunteer-comments-title">Comentarios y dudas</h2>
+                <p>Comparte preguntas o actualizaciones relacionadas con esta actividad.</p>
+            </header>
+            <p class="comment-status" data-comments-status role="status" aria-live="polite">Cargando comentarios…</p>
+            <div class="comment-login" data-comments-login hidden>
+                <p>Inicia sesión para ver y participar en la conversación.</p>
+                <a class="button button-primary" href="{{ route('login') }}">Iniciar sesión</a>
+            </div>
+            <div class="comment-list" data-comments-list aria-live="polite"></div>
+            <button class="button button-secondary comment-retry" type="button" data-comments-retry hidden>Reintentar</button>
+            <div class="comment-composer" data-comments-composer hidden>
+                <h3>Deja un comentario</h3>
+                <form data-comment-create>
+                    <label for="volunteerCommentContent">Tu comentario</label>
+                    <textarea id="volunteerCommentContent" name="contenido" rows="4" maxlength="1000" required aria-describedby="volunteerCommentError"></textarea>
+                    <div class="comment-form-meta">
+                        <label class="comment-private-toggle">
+                            <input name="es_privado" type="checkbox">
+                            <span>Enviar como duda privada</span>
+                        </label>
+                        <span data-comment-count>0 / 1000</span>
+                    </div>
+                    <p class="comment-private-help" data-private-help hidden></p>
+                    <p class="comment-form-error" id="volunteerCommentError" data-comment-error role="alert" hidden></p>
+                    <button class="button button-primary" type="submit">Enviar comentario</button>
+                </form>
+            </div>
+        </section>
+
         @if ($voluntariadoFinalizado)
         <section class="volunteer-impact" aria-labelledby="volunteer-impact-title">
             <header class="volunteer-impact-heading">

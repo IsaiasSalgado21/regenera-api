@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { bajaCaliforniaSurBounds } from './geo/baja-california-sur';
+import './voluntariado-comments';
 
 const gallery = document.querySelector('[data-volunteer-gallery]');
 const lightbox = document.querySelector('[data-gallery-lightbox]');

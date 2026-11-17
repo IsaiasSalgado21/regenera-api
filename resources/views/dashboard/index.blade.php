@@ -292,6 +292,12 @@
                     <div data-token-values></div>
                 </div>
                 <label>Descripción<textarea name="descripcion" rows="5" required maxlength="3000"></textarea></label>
+                <label>Comentarios por defecto
+                    <select name="comentarios_por_defecto">
+                        <option value="publico" selected>Públicos (todos pueden ver y comentar)</option>
+                        <option value="privado">Solo dudas privadas (solo tú y el autor las ven)</option>
+                    </select>
+                </label>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar voluntariado</button>
                     <button class="button button-secondary" type="button" data-cancel="voluntariado">Cancelar</button>

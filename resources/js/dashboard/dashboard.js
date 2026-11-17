@@ -1652,6 +1652,22 @@ function initializeDashboard() {
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    async function openVoluntariadoEditor(record) {
+        if (!record) {
+            showNotice('No se encontró el voluntariado que quieres editar.', 'error');
+            return;
+        }
+        try {
+            const response = await dashboardApi.getVoluntariado(record.id);
+            openForm('voluntariado', {
+                ...record,
+                comentarios_por_defecto: response.voluntariado?.comentarios_por_defecto || 'publico',
+            });
+        } catch (error) {
+            showNotice(error.message, 'error');
+        }
+    }
+
     function formPayload(type, form) {
         const payload = new FormData();
         for (const [name, value] of new FormData(form).entries()) {
@@ -1702,7 +1718,11 @@ function initializeDashboard() {
             .find(item => String(item.id) === String(id));
 
         if (actionName.startsWith('edit-')) {
-            openForm(actionName.slice(5), record);
+            if (actionName === 'edit-voluntariado') {
+                await openVoluntariadoEditor(record);
+            } else {
+                openForm(actionName.slice(5), record);
+            }
             return;
         }
 
@@ -2553,7 +2573,7 @@ function initializeDashboard() {
                     && record
                     && (user.rol === 'admin' || !record.iniciadoPorFecha)) {
                     setVolunteerListVisible(true, false);
-                    openForm('voluntariado', record);
+                    await openVoluntariadoEditor(record);
                 } else {
                     await showVolunteerDetail(volunteerId, false);
                 }
