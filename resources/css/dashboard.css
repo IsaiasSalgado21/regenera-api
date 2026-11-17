@@ -1311,7 +1311,7 @@ html[data-theme="dark"] .quiz-admin-page :is(.button-secondary, .icon-button):ho
 
 .dashboard-location-picker {
     position: relative;
-    z-index: 1;
+    z-index: 4;
 }
 
 .dashboard-location-summary {
@@ -1545,6 +1545,79 @@ html[data-theme="dark"] .quiz-admin-page :is(.button-secondary, .icon-button):ho
     padding: 12px;
     color: var(--dashboard-muted);
     font-size: .82rem;
+}
+
+html[data-theme="dark"] #voluntariadoForm :is(
+    .dashboard-date-trigger,
+    .dashboard-time-control,
+    .dashboard-capacity-control,
+    .dashboard-location-suggestions,
+    .dashboard-token-suggestions
+) {
+    border-color: #45594e;
+    background: #142019;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] #voluntariadoForm :is(
+    .dashboard-date-trigger [data-date-label],
+    .dashboard-date-header,
+    .dashboard-location-tag,
+    .dashboard-token-chip,
+    .dashboard-location-summary,
+    .dashboard-capacity-control input[name="cupo"]
+) {
+    color: #c9e8d5;
+}
+
+html[data-theme="dark"] #voluntariadoForm .dashboard-time-control input[type="time"] {
+    background: transparent;
+}
+
+html[data-theme="dark"] #voluntariadoForm :is(
+    .dashboard-location-tag,
+    .dashboard-token-chip,
+    .dashboard-location-summary,
+    .dashboard-capacity-step,
+    .dashboard-date-header button
+) {
+    border-color: #45594e;
+    background: #284335;
+    color: #c9e8d5;
+}
+
+html[data-theme="dark"] #voluntariadoForm :is(
+    .dashboard-location-suggestions button,
+    .dashboard-token-suggestions button
+) {
+    border-color: #35473d;
+    background: #1b2822;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] #voluntariadoForm :is(
+    .dashboard-location-suggestions button,
+    .dashboard-token-suggestions button,
+    .dashboard-capacity-step,
+    .dashboard-date-header button,
+    .dashboard-date-days button:not(:disabled)
+):is(:hover, :focus-visible) {
+    background: #355847;
+    color: #fff;
+}
+
+html[data-theme="dark"] #voluntariadoForm .dashboard-date-days button.is-selected {
+    background: #347b5c;
+    color: #fff;
+}
+
+html[data-theme="dark"] #voluntariadoForm .dashboard-date-days button:disabled {
+    color: #78867d;
+}
+
+html[data-theme="dark"] #voluntariadoForm .icon-button {
+    background: #284335;
+    color: #e7eee9;
 }
 
 .dashboard-choice-field {

@@ -22,6 +22,8 @@ import {
 } from '../geo/baja-california-sur';
 import { dashboardApi } from './dashboard-api';
 import { initializeLocationSelector } from '../map-selector';
+import { initializePlaceCreator } from '../propose-place';
+import { reverseGeocodePlace } from '../geo/reverse-place';
 import { createQuizPager } from '../quiz-list';
 
 const root = document.getElementById('dashboardRoot');
@@ -393,7 +395,7 @@ function initializeDashboard() {
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
             } else if (!voluntariado.iniciadoPorFecha
                 && (user.organizadorVerificado || ['pendiente', 'rechazado'].includes(voluntariado.estado))) {
-                actions += action('Editar y reenviar', 'edit-voluntariado', voluntariado.id);
+                actions += action(voluntariado.estado === 'rechazado' ? 'Editar y reenviar' : 'Editar', 'edit-voluntariado', voluntariado.id);
                 actions += action('Eliminar', 'delete-voluntariado', voluntariado.id, 'danger');
             }
 
@@ -678,6 +680,7 @@ function initializeDashboard() {
             if (clearUrl) {
                 const url = new URL(window.location.href);
                 url.searchParams.delete('voluntariado');
+                url.searchParams.delete('editar');
                 window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
             }
         }
@@ -1041,7 +1044,6 @@ function initializeDashboard() {
     let placeMarker = null;
     let geocodeController = null;
     let geocodeRequest = 0;
-    let lastGeocodeRequestAt = 0;
 
     function initializePlacePreviews() {
         root.querySelectorAll('[data-place-preview]').forEach(element => {
@@ -1073,22 +1075,6 @@ function initializeDashboard() {
                 fillOpacity: 1,
             }).addTo(map);
             placePreviewMaps.set(element, map);
-        });
-    }
-
-    function waitForGeocodeSlot(signal, delay) {
-        if (delay <= 0) return Promise.resolve();
-
-        return new Promise((resolve, reject) => {
-            const timeout = window.setTimeout(() => {
-                signal.removeEventListener('abort', onAbort);
-                resolve();
-            }, delay);
-            const onAbort = () => {
-                window.clearTimeout(timeout);
-                reject(new DOMException('La consulta fue cancelada.', 'AbortError'));
-            };
-            signal.addEventListener('abort', onAbort, { once: true });
         });
     }
 
@@ -1136,60 +1122,15 @@ function initializeDashboard() {
         geocodeController?.abort();
         geocodeController = new AbortController();
         const requestId = ++geocodeRequest;
-        const params = new URLSearchParams({
-            lat: String(latitude),
-            lon: String(longitude),
-            format: 'jsonv2',
-            addressdetails: '1',
-            namedetails: '1',
-            extratags: '1',
-            'accept-language': 'es',
-        });
-
         try {
-            const signal = geocodeController.signal;
-            await waitForGeocodeSlot(signal, 1000 - (Date.now() - lastGeocodeRequestAt));
+            const { details, result } = await reverseGeocodePlace(latitude, longitude, geocodeController.signal);
             if (requestId !== geocodeRequest) return;
-            lastGeocodeRequestAt = Date.now();
-
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, {
-                headers: { Accept: 'application/json' },
-                signal,
-            });
-            if (!response.ok) throw new Error(`El servicio de ubicación respondió con ${response.status}.`);
-
-            const result = await response.json();
-            if (requestId !== geocodeRequest) return;
-            if (!result.address) throw new Error('No se encontraron datos para este punto.');
-
-            const address = result.address;
-            const municipality = address.municipality
-                || address.city
-                || address.town
-                || address.village
-                || address.county
-                || address.district
-                || address.state_district
-                || '';
-            const name = result.name
-                || result.namedetails?.name
-                || address.amenity
-                || address.road
-                || address.neighbourhood
-                || address.suburb
-                || (municipality ? `Lugar en ${municipality}` : '');
-            const streetAddress = [
-                address.house_number,
-                address.road,
-                address.neighbourhood || address.suburb,
-            ].filter(Boolean).join(', ');
-
-            form.elements.nombre.value = name.slice(0, 150);
-            form.elements.municipio.value = municipality.slice(0, 100);
-            form.elements.direccion.value = (streetAddress || result.display_name || '').slice(0, 255);
+            form.elements.nombre.value = details.nombre || (details.municipio ? `Lugar en ${details.municipio}` : '');
+            form.elements.municipio.value = details.municipio;
+            form.elements.direccion.value = details.direccion;
             form.elements.tipo.value = placeTypeFromGeocode(result);
 
-            if (municipality && name) {
+            if (details.municipio && form.elements.nombre.value) {
                 status.textContent = 'Datos completados. Puedes revisar o corregir los campos antes de guardar.';
             } else {
                 status.classList.add('is-error');
@@ -2375,13 +2316,6 @@ function initializeDashboard() {
                                     : 'users',
                 );
             } catch (error) {
-                if (error.data?.code === 'certificacion_organizador_requerida' && user.rol === 'organizador') {
-                    const destination = new URL(`${appBasePath}/aprendizaje`, window.location.origin);
-                    destination.searchParams.set('cuestionario', error.data.cuestionario || 'organizacion-responsable');
-                    window.location.assign(`${destination.pathname}${destination.search}`);
-                    return;
-                }
-
                 showNotice(error.message, 'error');
             } finally {
                 submit.disabled = false;
@@ -2519,6 +2453,15 @@ function initializeDashboard() {
                 button.hidden = !['admin', 'organizador'].includes(user.rol);
             });
             root.querySelector('[data-new="place"]').hidden = user.rol !== 'admin' && !user.organizadorVerificado;
+            const addPlaceButton = root.querySelector('[data-add-volunteer-place]');
+            addPlaceButton.hidden = !(user.rol === 'organizador' && user.organizadorVerificado);
+            initializePlaceCreator(addPlaceButton, place => {
+                cache.places.push(place);
+                const picker = byId('voluntariadoForm').querySelector('[data-location-picker]');
+                picker.locationSelection = [place];
+                renderLocationPicker(picker);
+                showNotice('Lugar publicado y seleccionado.');
+            });
             await loadResource('articles');
             await Promise.all([loadResource('places'), loadResource('flora')]);
             await loadResource('voluntariados');
@@ -2536,12 +2479,14 @@ function initializeDashboard() {
                     section.hidden = !selected;
                     section.classList.toggle('is-active', selected);
                 });
-                await showVolunteerDetail(volunteerId, false);
                 const record = cache.voluntariados.find(item => String(item.id) === String(volunteerId));
                 if (new URLSearchParams(window.location.search).get('editar') === '1'
                     && record
                     && (user.rol === 'admin' || !record.iniciadoPorFecha)) {
+                    setVolunteerListVisible(true, false);
                     openForm('voluntariado', record);
+                } else {
+                    await showVolunteerDetail(volunteerId, false);
                 }
             }
             if (user.rol === 'admin') await loadResource('users');

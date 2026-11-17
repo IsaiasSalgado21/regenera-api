@@ -501,25 +501,3 @@ html[data-theme="dark"] .dashboard-token-add-icon {
         justify-content: center;
     }
 }
-.propose-place-dialog {
-    width: min(94vw, 680px);
-    max-height: 90vh;
-    padding: 0;
-    border: 0;
-    border-radius: 18px;
-    background: var(--dashboard-surface, #fff);
-    color: var(--dashboard-text, #1d3028);
-}
-
-.propose-place-dialog::backdrop {
-    background: rgba(0, 0, 0, .6);
-}
-
-.propose-place-dialog .dashboard-form {
-    margin: 0;
-}
-
-html[data-theme="dark"] .propose-place-dialog {
-    background: #18251f;
-    color: #edf5ef;
-}

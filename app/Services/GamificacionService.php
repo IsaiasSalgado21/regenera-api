@@ -91,38 +91,6 @@ class GamificacionService
         return $role === 'usuario' && ! $hasHistory && ! $approved;
     }
 
-    public function requiereCertificacionPrimeraPublicacion(User $usuario): bool
-    {
-        if ($usuario->rol !== 'organizador' || ! $usuario->organizadorVerificado) {
-            return false;
-        }
-
-        $organizerId = (string) $usuario->getAuthIdentifier();
-        $objectIdClass = 'MongoDB\\BSON\\ObjectId';
-        $organizerStoredId = preg_match('/^[a-f0-9]{24}$/i', $organizerId)
-            ? new $objectIdClass($organizerId)
-            : $organizerId;
-        $hasPublished = Voluntariado::query()
-            ->where(function ($query) use ($organizerId, $organizerStoredId): void {
-                $query->where('organizadorId', $organizerId)
-                    ->orWhere('organizadorId', $organizerStoredId);
-            })
-            ->whereIn('estado', ['publicado', 'finalizado'])
-            ->exists();
-        $approved = IntentoCuestionario::query()
-            ->where('usuarioId', $organizerId)
-            ->where('cuestionarioSlug', 'organizacion-responsable')
-            ->where('estado', 'aprobado')
-            ->exists();
-
-        return self::debeCertificarPrimeraPublicacion($usuario->rol, (bool) $usuario->organizadorVerificado, $hasPublished, $approved);
-    }
-
-    public static function debeCertificarPrimeraPublicacion(string $role, bool $verified, bool $hasPublished, bool $approved): bool
-    {
-        return $role === 'organizador' && $verified && ! $hasPublished && ! $approved;
-    }
-
     public function registrarParticipacion(User $usuario, Voluntariado $voluntariado): bool
     {
         $userId = (string) $usuario->getAuthIdentifier();

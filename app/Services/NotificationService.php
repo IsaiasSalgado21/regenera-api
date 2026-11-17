@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Articulo;
 use App\Models\Asistencia;
 use App\Models\Inscripcion;
-use App\Models\Lugar;
 use App\Models\Notificacion;
 use App\Models\User;
 use App\Models\Voluntariado;
@@ -73,21 +72,6 @@ class NotificationService
                 'articulo',
                 (string) $articulo->_id,
                 ['estado' => 'pendiente', 'url' => url('/admin/dashboard')],
-            );
-        }
-    }
-
-    public function lugarEnviadoRevision(Lugar $lugar): void
-    {
-        foreach (User::query()->where('rol', 'admin')->get() as $admin) {
-            $this->crear(
-                (string) $admin->getAuthIdentifier(),
-                'sistema',
-                'Hay un lugar pendiente de revisión',
-                'El lugar «'.$lugar->nombre.'» espera tu revisión en el panel de control.',
-                'lugar',
-                (string) $lugar->_id,
-                ['estado' => 'pendiente_de_aprobacion', 'url' => url('/admin/dashboard?seccion=places')],
             );
         }
     }

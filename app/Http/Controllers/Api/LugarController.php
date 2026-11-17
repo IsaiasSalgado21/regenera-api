@@ -9,7 +9,6 @@ use App\Models\Lugar;
 use App\Services\AuditoriaService;
 use App\Services\BajaCaliforniaSurBoundary;
 use App\Services\GridFsImageService;
-use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use MongoDB\BSON\ObjectId;
@@ -22,7 +21,6 @@ class LugarController extends Controller
         private readonly AuditoriaService $auditoria,
         BajaCaliforniaSurBoundary $boundary,
         private readonly GridFsImageService $gridFsImages,
-        private readonly NotificationService $notificaciones,
     ) {
         $this->boundary = $boundary;
     }
@@ -67,14 +65,11 @@ class LugarController extends Controller
         $lugar = Lugar::create([
             ...$validated,
             'tipo' => $validated['tipo'] ?? 'otro',
-            'estado' => $request->user()->rol === 'organizador' ? 'pendiente_de_aprobacion' : 'activo',
-            'propuesto' => $request->user()->rol === 'organizador',
+            'estado' => 'activo',
+            'propuesto' => false,
             'creadoPor' => new ObjectId((string) $request->user()->getAuthIdentifier()),
         ]);
 
-        if ($lugar->propuesto) {
-            $this->notificaciones->lugarEnviadoRevision($lugar);
-        }
         if ($request->user()->rol === 'admin') {
             $this->auditoria->registrar(
                 $request->user(),

@@ -178,6 +178,7 @@
                     <div class="dashboard-location-selected" data-location-selected></div>
                     <div data-location-values></div>
                 </div>
+                <button type="button" class="button button-secondary" data-add-volunteer-place hidden>Agregar un lugar</button>
                 <label data-admin-only>Organizador
                     <select name="organizadorId" data-organizer-select>
                         <option value="">Selecciona un organizador</option>
@@ -541,6 +542,8 @@
     <div class="gamification-attempt-answers" data-gamification-attempt-answers></div>
     <footer class="dashboard-form-actions"><button class="button button-secondary" type="button" data-gamification-attempt-close>Cerrar</button></footer>
 </dialog>
+
+@include('voluntariados.place-dialog')
 
 <dialog class="dashboard-dialog" id="rejectDialog">
     <form id="rejectForm">

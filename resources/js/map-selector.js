@@ -31,23 +31,31 @@ export function initializeLocationSelector(form) {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
 
+    let movingFromInputs = false;
     const updateInputs = () => {
+        if (movingFromInputs) return;
         const center = map.getCenter();
         latitudeInput.value = center.lat.toFixed(7);
         longitudeInput.value = center.lng.toFixed(7);
     };
 
     map.on('moveend', updateInputs);
+    map.on('click', event => map.panTo(event.latlng));
 
     const moveMapFromInputs = () => {
         if (!validCoordinate(latitudeInput.value, -90, 90)
             || !validCoordinate(longitudeInput.value, -180, 180)) return;
 
-        map.setView([Number(latitudeInput.value), Number(longitudeInput.value)]);
+        movingFromInputs = true;
+        try {
+            map.setView([Number(latitudeInput.value), Number(longitudeInput.value)], map.getZoom(), { reset: true });
+        } finally {
+            movingFromInputs = false;
+        }
     };
 
-    latitudeInput.addEventListener('input', moveMapFromInputs);
-    longitudeInput.addEventListener('input', moveMapFromInputs);
+    latitudeInput.addEventListener('change', moveMapFromInputs);
+    longitudeInput.addEventListener('change', moveMapFromInputs);
 
     const selector = {
         map,
