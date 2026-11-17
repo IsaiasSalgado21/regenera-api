@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { apiUrl } from './api-url';
+import { loadForCompleteProfile } from './notification-access';
 
 const drawer = document.querySelector('[data-notification-drawer]');
 if (drawer) {
@@ -76,12 +77,33 @@ if (drawer) {
     }
 
     async function load() {
-        if (!sessionStorage.getItem('regenera_access_token')) {
+        const token = sessionStorage.getItem('regenera_access_token');
+        if (!token) {
             toggles.forEach(toggle => { toggle.hidden = true; });
+            updateBadge(0);
             return;
         }
         try {
-            const response = await axios.get(apiUrl('/api/notificaciones'), { headers: tokenHeaders() });
+            const response = await loadForCompleteProfile(
+                token,
+                () => sessionStorage.getItem('regenera_access_token'),
+                async accessToken => {
+                    const result = await axios.get(apiUrl('/api/auth/me'), {
+                        headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
+                    });
+                    return result.data.usuario;
+                },
+                accessToken => axios.get(apiUrl('/api/notificaciones'), {
+                    headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
+                }),
+            );
+            if (sessionStorage.getItem('regenera_access_token') !== token) return;
+            if (!response) {
+                notifications = [];
+                updateBadge(0);
+                toggles.forEach(toggle => { toggle.hidden = true; });
+                return;
+            }
             notifications = response.data.data ?? [];
             isAdmin = response.data.esAdmin === true;
             recipientFilters.hidden = !isAdmin;
@@ -90,7 +112,10 @@ if (drawer) {
             status.textContent = '';
             toggles.forEach(toggle => { toggle.hidden = false; });
         } catch (error) {
-            if (error.response?.status === 401) sessionStorage.removeItem('regenera_access_token');
+            if (sessionStorage.getItem('regenera_access_token') !== token) return;
+            if (error.response?.status === 401 && sessionStorage.getItem('regenera_access_token') === token) {
+                sessionStorage.removeItem('regenera_access_token');
+            }
             status.textContent = 'No pudimos cargar tus notificaciones. Intenta de nuevo.';
         }
     }

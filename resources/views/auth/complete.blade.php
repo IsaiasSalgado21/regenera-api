@@ -16,5 +16,7 @@
 </main>
 @endsection
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pages.css') }}">
     <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
 @endpush

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { apiUrl } from './api-url';
+import { loadForCompleteProfile } from './notification-access';
 
 const page = document.querySelector('[data-notification-center]');
 if (page) {
@@ -82,7 +83,17 @@ if (page) {
             return;
         }
         try {
-            const response = await axios.get(apiUrl('/api/notificaciones'), { headers });
+            const response = await loadForCompleteProfile(
+                token,
+                () => sessionStorage.getItem('regenera_access_token'),
+                async () => (await axios.get(apiUrl('/api/auth/me'), { headers })).data.usuario,
+                () => axios.get(apiUrl('/api/notificaciones'), { headers }),
+            );
+            if (!response) {
+                markAll.disabled = true;
+                status.textContent = 'Completa tus datos para consultar las notificaciones.';
+                return;
+            }
             notifications = response.data.data ?? [];
             isAdmin = response.data.esAdmin === true;
             const openedNotificationId = new URLSearchParams(window.location.search).get('pushNotification');

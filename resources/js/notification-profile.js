@@ -27,7 +27,8 @@ if (page) {
     }
 
     async function load() {
-        if (!sessionStorage.getItem('regenera_access_token')) {
+        const token = sessionStorage.getItem('regenera_access_token');
+        if (!token) {
             setStatus('Inicia sesión para configurar tus preferencias.', true);
             frequencyForm.querySelectorAll('select, button').forEach(control => { control.disabled = true; });
             pushButton.disabled = true;
@@ -36,10 +37,15 @@ if (page) {
         frequencyForm.querySelectorAll('select, button').forEach(control => { control.disabled = false; });
         pushButton.disabled = false;
         try {
-            const [userResponse, preferenceResponse] = await Promise.all([
-                axios.get(apiUrl('/api/auth/me'), { headers: headers() }),
-                axios.get(apiUrl('/api/notificaciones/preferencias'), { headers: headers() }),
-            ]);
+            const userResponse = await axios.get(apiUrl('/api/auth/me'), { headers: headers() });
+            if (sessionStorage.getItem('regenera_access_token') !== token) return;
+            if (userResponse.data.usuario.perfilCompleto !== true) {
+                frequencyForm.querySelectorAll('select, button').forEach(control => { control.disabled = true; });
+                pushButton.disabled = true;
+                setStatus('Completa tus datos para configurar tus preferencias.', true);
+                return;
+            }
+            const preferenceResponse = await axios.get(apiUrl('/api/notificaciones/preferencias'), { headers: headers() });
             if (userResponse.data.usuario.rol === 'admin') {
                 reminderSettings.hidden = true;
             } else {
