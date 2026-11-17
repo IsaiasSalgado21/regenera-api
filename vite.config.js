@@ -16,6 +16,7 @@ export default defineConfig({
                 'resources/js/dashboard/cuestionarios-admin.js',
                 'resources/js/personal-volunteers.js',
                 'resources/js/voluntariado-detail.js',
+                'resources/js/propose-place.js',
                 'resources/js/asistencia.js',
             ],
             refresh: true,

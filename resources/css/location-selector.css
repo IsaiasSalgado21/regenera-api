@@ -4,7 +4,7 @@
 
 .location-selector-help {
     margin: 0 0 9px;
-    color: var(--dashboard-muted);
+    color: var(--dashboard-muted, #66716c);
     font-size: .85rem;
     font-weight: 400;
 }
@@ -13,7 +13,7 @@
     position: relative;
     min-height: 280px;
     overflow: hidden;
-    border: 1px solid var(--dashboard-border);
+    border: 1px solid var(--dashboard-border, #dce3dd);
     border-radius: 14px;
     background: #dce8df;
 }
@@ -38,7 +38,7 @@
     transform: translate(-50%, -100%) rotate(-45deg);
     border: 3px solid #fff;
     border-radius: 50% 50% 50% 0;
-    background: var(--dashboard-green);
+    background: var(--dashboard-green, #164f3d);
     box-shadow: 0 3px 8px rgb(20 32 27 / 42%);
     pointer-events: none;
 }

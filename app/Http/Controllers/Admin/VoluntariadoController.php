@@ -320,7 +320,9 @@ class VoluntariadoController extends Controller
         $validated = $request->validate($this->rules(true));
         $validated = $this->normalize($validated, true);
         if (array_key_exists('lugarId', $validated)) {
-            $lugar = $this->validatePlace($validated['lugarId']);
+            $lugar = $validated['lugarId'] === (string) $voluntariado->lugarId
+                ? Lugar::findOrFail($validated['lugarId'])
+                : $this->validatePlace($validated['lugarId']);
             $validated['latitud'] = $lugar->latitud;
             $validated['longitud'] = $lugar->longitud;
         }
@@ -594,14 +596,7 @@ class VoluntariadoController extends Controller
 
     private function validatePlace(string $id): Lugar
     {
-        $lugar = preg_match('/^[a-f0-9]{24}$/i', $id) ? Lugar::find($id) : null;
-        if (! $lugar) {
-            throw ValidationException::withMessages([
-                'lugarId' => 'Selecciona un lugar existente de la lista.',
-            ]);
-        }
-
-        return $lugar;
+        return Lugar::requireActive($id);
     }
 
     private function ensureCanManage(Request $request, Voluntariado $voluntariado): void

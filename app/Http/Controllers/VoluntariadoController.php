@@ -167,6 +167,7 @@ class VoluntariadoController extends Controller
             'imagen' => 'nullable|file|image|max:5120',
         ]);
 
+        Lugar::requireActive($validated['lugarId']);
         $initialState = $this->workflow->estadoInicial($user);
         if ($initialState === 'publicado' && $this->gamificacion->requiereCertificacionPrimeraPublicacion($user)) {
             return response()->json([
@@ -278,6 +279,9 @@ class VoluntariadoController extends Controller
             ],
         ]);
 
+        if (isset($validated['lugarId']) && $validated['lugarId'] !== (string) $voluntariado->lugarId) {
+            Lugar::requireActive($validated['lugarId']);
+        }
         $estadoAnterior = $voluntariado->estado;
         $validated['estado'] = $this->workflow->estadoTrasEdicion(
             $request->user(),

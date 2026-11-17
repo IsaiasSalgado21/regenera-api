@@ -24,7 +24,7 @@ class ResourcePoliciesTest extends TestCase
         $lugarPolicy = new LugarPolicy;
         $floraFaunaPolicy = new FloraFaunaPolicy;
 
-        $this->assertTrue($lugarPolicy->create($organizador));
+        $this->assertFalse($lugarPolicy->create($organizador));
         $this->assertTrue($lugarPolicy->update($organizador, $lugarPropio));
         $this->assertFalse($floraFaunaPolicy->update($organizador, $registroAjeno));
         $this->assertFalse($floraFaunaPolicy->archivar($organizador, $registroAjeno));

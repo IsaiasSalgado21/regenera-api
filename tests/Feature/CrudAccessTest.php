@@ -52,7 +52,7 @@ class CrudAccessTest extends TestCase
 
     public function test_create_requests_reject_client_supplied_owner_and_state(): void
     {
-        $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false, 'perfilCompleto' => true]);
+        $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => true, 'perfilCompleto' => true]);
         $organizador->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($organizador);
 
@@ -60,6 +60,9 @@ class CrudAccessTest extends TestCase
             'nombre' => 'Lugar de prueba',
             'municipio' => 'La Paz',
             'tipo' => 'playa',
+            'direccion' => 'Dirección de prueba',
+            'latitud' => 24.1426,
+            'longitud' => -110.3128,
             'estado' => 'archivado',
         ])->assertUnprocessable()
             ->assertJsonValidationErrors('estado');

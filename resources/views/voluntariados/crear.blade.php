@@ -191,11 +191,38 @@
                 </div>
             </form>
 
+            <dialog id="proposePlaceDialog" class="propose-place-dialog" aria-labelledby="proposePlaceTitle">
+                <form id="proposePlaceForm" class="dashboard-form create-form">
+                    <div class="dashboard-form-heading">
+                        <div><h2 id="proposePlaceTitle">Registrar nuevo lugar</h2></div>
+                        <button type="button" class="icon-button" data-close-place aria-label="Cerrar">×</button>
+                    </div>
+                    <p>El lugar se enviará a revisión. Podrás seleccionarlo cuando sea aprobado.</p>
+                    <label>Nombre <input name="nombre" required maxlength="150"></label>
+                    <label>Dirección <input name="direccion" required maxlength="255"></label>
+                    <div class="dashboard-form-row">
+                        <label>Latitud <input name="latitud" type="number" step="any" min="-90" max="90" required></label>
+                        <label>Longitud <input name="longitud" type="number" step="any" min="-180" max="180" required></label>
+                    </div>
+                    <div class="location-selector">
+                        <p class="location-selector-help">Arrastra el mapa para situar el marcador dentro de Baja California Sur.</p>
+                        <div class="location-selector-map" data-location-map aria-label="Mapa para seleccionar la ubicación">
+                            <div class="location-selector-pin" aria-hidden="true"></div>
+                        </div>
+                    </div>
+                    <p id="proposePlaceMessage" class="form-message" role="status" aria-live="polite"></p>
+                    <div class="dashboard-form-actions">
+                        <button type="submit" class="button button-primary">Enviar a revisión</button>
+                        <button type="button" class="button button-secondary" data-close-place>Cancelar</button>
+                    </div>
+                </form>
+            </dialog>
         </div>
     </section>
 </main>
 
 @push('scripts')
+    @vite('resources/js/propose-place.js')
     <script>
         (function () {
             const form = document.getElementById('createVoluntariadoForm');
@@ -210,6 +237,7 @@
             const categoriaCustomInput = document.getElementById('categoriaCustom');
             const categoryLoadMessage = document.getElementById('categoryLoadMessage');
             const placeLoadMessage = document.getElementById('placeLoadMessage');
+            let canProposePlace = false;
             const suggestionOptions = {
                 requisitos: [
                     ['bloqueador-solar', 'Usar bloqueador biodegradable', '🧴'],
@@ -270,6 +298,7 @@
 
                     lugarSelect.replaceChildren(new Option('Selecciona un lugar', ''));
                     places.forEach(lugar => {
+                        if (lugar.estado !== 'activo') return;
                         const id = lugar.id || lugar._id || lugar.lugares_id;
                         if (!id || !lugar.nombre) return;
                         const option = new Option(
@@ -278,9 +307,10 @@
                         );
                         lugarSelect.appendChild(option);
                     });
-                    if (!places.length) {
+                    if (lugarSelect.options.length === 1) {
                         lugarSelect.options[0].textContent = 'No hay lugares disponibles para tu cuenta';
                     }
+                    if (canProposePlace) lugarSelect.add(new Option('Registrar nuevo lugar', '__propose_place__'));
                 } catch (error) {
                     placeLoadMessage.textContent = error.message || 'No se pudieron cargar los lugares.';
                     placeLoadMessage.className = 'form-message is-error';
@@ -321,7 +351,6 @@
                 categoriaCustomInput.value = '';
             });
 
-            void loadPlaces();
             void loadRecommendedCategories();
 
             const hoy = [new Date().getFullYear(), String(new Date().getMonth() + 1).padStart(2, '0'), String(new Date().getDate()).padStart(2, '0')].join('-');
@@ -668,6 +697,8 @@
 
                     const esAdmin = user.rol === 'admin';
                     const esOrganizadorVerificado = user.rol === 'organizador' && Boolean(user.organizadorVerificado);
+                    canProposePlace = esOrganizadorVerificado;
+                    void loadPlaces();
                     infoAdmin.hidden = !(esAdmin || esOrganizadorVerificado);
                     infoUsuario.hidden = esAdmin || esOrganizadorVerificado;
                 } catch (error) {

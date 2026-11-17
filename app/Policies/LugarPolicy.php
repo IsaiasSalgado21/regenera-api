@@ -16,14 +16,16 @@ class LugarPolicy
 
     public function create(User $user): bool
     {
-        // MVP: organizadorVerificado no bloquea la creación de voluntariados.
-        return in_array($user->rol, ['admin', 'organizador'], true);
+        return $user->rol === 'admin'
+            || ($user->rol === 'organizador' && $user->organizadorVerificado);
     }
 
     public function update(User $user, Lugar $lugar): bool
     {
         return $user->rol === 'admin'
-            || ($user->rol === 'organizador' && (string) $lugar->creadoPor === (string) $user->getAuthIdentifier());
+            || ($user->rol === 'organizador'
+                && (string) $lugar->creadoPor === (string) $user->getAuthIdentifier()
+                && (! $lugar->propuesto || $lugar->estado === 'pendiente_de_aprobacion'));
     }
 
     public function archivar(User $user, Lugar $lugar): bool
@@ -35,5 +37,10 @@ class LugarPolicy
     {
         return $user->rol === 'admin'
             && $lugar->estado === 'archivado';
+    }
+
+    public function revisar(User $user, Lugar $lugar): bool
+    {
+        return $user->rol === 'admin' && $lugar->estado === 'pendiente_de_aprobacion';
     }
 }

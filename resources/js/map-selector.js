@@ -7,6 +7,7 @@ const DEFAULT_CENTER = [24.1426, -110.3128];
 const DEFAULT_ZOOM = 8;
 
 function validCoordinate(value, minimum, maximum) {
+    if (value === '' || value === null || value === undefined) return false;
     const number = Number(value);
     return Number.isFinite(number) && number >= minimum && number <= maximum;
 }

@@ -284,9 +284,15 @@ function initializeDashboard() {
         placePreviewMaps.clear();
 
         cards.innerHTML = list.map(place => {
-            const meta = `<span class="status-pill status-${escapeHtml(place.estado)}">${escapeHtml(place.estado)}</span><span>${escapeHtml(place.tipo)}</span><span>${escapeHtml(place.municipio)}</span>`;
-            let actions = action('Editar', 'edit-place', place.id);
+            const status = place.estado === 'pendiente_de_aprobacion' ? 'Pendiente de aprobación' : place.estado;
+            const meta = `<span class="status-pill status-${escapeHtml(place.estado)}">${escapeHtml(status)}</span><span>${escapeHtml(place.tipo)}</span><span>${escapeHtml(place.municipio || '')}</span>`;
+            let actions = user.rol === 'admin' || !place.propuesto || place.estado === 'pendiente_de_aprobacion'
+                ? action('Editar', 'edit-place', place.id) : '';
             if (user.rol === 'admin') {
+                if (place.estado === 'pendiente_de_aprobacion') {
+                    actions += action('Aprobar', 'approve-place', place.id, 'primary');
+                    actions += action('Rechazar', 'reject-place', place.id, 'danger');
+                }
                 if (place.estado === 'activo') {
                     actions += action('Archivar', 'archive-place', place.id, 'danger');
                 }
@@ -326,7 +332,7 @@ function initializeDashboard() {
 
             return card({
                 title: place.nombre,
-                description: place.descripcion || place.direccion || 'Sin descripción registrada.',
+                description: `${place.descripcion || place.direccion || 'Sin descripción registrada.'}${place.motivoRechazo ? ` Motivo de rechazo: ${place.motivoRechazo}` : ''}`,
                 meta,
                 id: place.id,
                 actions,
@@ -1429,6 +1435,7 @@ function initializeDashboard() {
         const suggestions = picker.querySelector('[data-location-suggestions]');
         const selectedIds = new Set((picker.locationSelection || []).map(place => String(place.id)));
         const matches = cache.places
+            .filter(place => place.estado === 'activo')
             .filter(place => !selectedIds.has(String(place.id)))
             .filter(place => !query || `${place.nombre} ${place.municipio || ''} ${place.direccion || ''}`.toLocaleLowerCase().includes(query))
             .slice(0, 7);
@@ -1724,9 +1731,15 @@ function initializeDashboard() {
             return;
         }
 
-        if (['reject-article', 'reject-voluntariado'].includes(actionName)) {
+        if (['reject-article', 'reject-voluntariado', 'reject-place'].includes(actionName)) {
             rejectArticleId = id;
-            rejectResource = actionName === 'reject-voluntariado' ? 'voluntariado' : 'article';
+            rejectResource = actionName === 'reject-voluntariado' ? 'voluntariado' : actionName === 'reject-place' ? 'place' : 'article';
+            byId('rejectDialog').querySelector('h2').textContent = rejectResource === 'place'
+                ? 'Rechazar lugar' : rejectResource === 'voluntariado' ? 'Rechazar voluntariado' : 'Rechazar artículo';
+            byId('rejectDialog').querySelector('p').textContent = rejectResource === 'place'
+                ? 'El motivo se conservará con la propuesta.' : 'El motivo será enviado en una notificación.';
+            byId('rejectForm').querySelector('[type="submit"]').textContent = rejectResource === 'place'
+                ? 'Rechazar lugar' : 'Rechazar y notificar';
             byId('rejectReason').value = '';
             byId('rejectDialog').showModal();
             return;
@@ -1802,6 +1815,10 @@ function initializeDashboard() {
 
                 case 'approve-voluntariado':
                     await dashboardApi.approveVoluntariado(id);
+                    break;
+
+                case 'approve-place':
+                    await dashboardApi.approvePlace(id);
                     break;
 
                 case 'read-notification':
@@ -2405,14 +2422,16 @@ function initializeDashboard() {
         try {
             if (rejectResource === 'voluntariado') {
                 await dashboardApi.rejectVoluntariado(rejectArticleId, reason);
+            } else if (rejectResource === 'place') {
+                await dashboardApi.rejectPlace(rejectArticleId, reason);
             } else {
                 await dashboardApi.rejectArticle(rejectArticleId, reason);
             }
             byId('rejectDialog').close();
-            showNotice(rejectResource === 'voluntariado'
+            showNotice(rejectResource === 'place' ? 'Lugar rechazado; se guardó el motivo.' : rejectResource === 'voluntariado'
                 ? 'Voluntariado rechazado; se notificó al organizador.'
                 : 'Artículo rechazado; se notificó al autor.');
-            await loadResource(rejectResource === 'voluntariado' ? 'voluntariados' : 'articles');
+            await loadResource(rejectResource === 'place' ? 'places' : rejectResource === 'voluntariado' ? 'voluntariados' : 'articles');
         } catch (error) {
             showNotice(error.message, 'error');
         } finally {
@@ -2499,9 +2518,13 @@ function initializeDashboard() {
             root.querySelectorAll('[data-new="article"], [data-new="place"], [data-new="flora"]').forEach(button => {
                 button.hidden = !['admin', 'organizador'].includes(user.rol);
             });
+            root.querySelector('[data-new="place"]').hidden = user.rol !== 'admin' && !user.organizadorVerificado;
             await loadResource('articles');
             await Promise.all([loadResource('places'), loadResource('flora')]);
             await loadResource('voluntariados');
+            if (user.rol === 'admin' && new URLSearchParams(window.location.search).get('seccion') === 'places') {
+                root.querySelector('[data-section="places"]').click();
+            }
             const volunteerId = new URLSearchParams(window.location.search).get('voluntariado');
             if (volunteerId) {
                 activeSection = 'voluntariados';

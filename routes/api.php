@@ -129,6 +129,8 @@ Route::prefix('admin')
         Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
         Route::get('/voluntariados/organizadores', [AdminVoluntariadoController::class, 'organizadores']);
         Route::get('/lugares', [AdminLugarController::class, 'index']);
+        Route::patch('/lugares/{id}/aprobar', [AdminLugarController::class, 'aprobar']);
+        Route::patch('/lugares/{id}/rechazar', [AdminLugarController::class, 'rechazar']);
         Route::patch('/voluntariados/{id}/aprobar', [AdminVoluntariadoController::class, 'aprobar']);
         Route::patch('/voluntariados/{id}/rechazar', [AdminVoluntariadoController::class, 'rechazar']);
         Route::patch('/lugares/{id}/archivar', [AdminLugarController::class, 'archivar']);

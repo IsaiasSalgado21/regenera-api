@@ -33,7 +33,7 @@ class VoluntariadoPageController extends Controller
     {
         $query = Voluntariado::query()->where('estado', 'publicado');
 
-        $lugares = Lugar::orderBy('nombre')->get();
+        $lugares = Lugar::where('estado', 'activo')->orderBy('nombre')->get();
         $ahora = $this->horario->ahora();
         $voluntariados = $query->orderBy('fechaInicio', 'asc')->get()
             ->filter(fn (Voluntariado $voluntariado) => ($inicio = $this->horario->inicio($voluntariado))

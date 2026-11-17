@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Services\BajaCaliforniaSurBoundary;
+use App\Models\Lugar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,22 +11,26 @@ class StoreLugarRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Lugar::class) ?? false;
     }
 
     public function rules(): array
     {
+        $proposal = $this->user()?->rol === 'organizador';
+
         return [
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
-            'municipio' => ['required', 'string', 'max:100'],
-            'direccion' => ['nullable', 'string', 'max:255'],
-            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
-            'tipo' => ['required', Rule::in(['playa', 'parque', 'reserva', 'zona_urbana', 'otro'])],
+            'municipio' => [$proposal ? 'nullable' : 'required', 'string', 'max:100'],
+            'direccion' => [$proposal ? 'required' : 'nullable', 'string', 'max:255'],
+            'latitud' => [$proposal ? 'required' : 'nullable', 'numeric', 'between:-90,90'],
+            'longitud' => [$proposal ? 'required' : 'nullable', 'numeric', 'between:-180,180'],
+            'tipo' => [$proposal ? 'nullable' : 'required', Rule::in(['playa', 'parque', 'reserva', 'zona_urbana', 'otro'])],
             'imagen' => ['nullable', 'file', 'image', 'max:5120'],
             'estado' => ['prohibited'],
             'creadoPor' => ['prohibited'],
+            'propuesto' => ['prohibited'],
+            'motivoRechazo' => ['prohibited'],
         ];
     }
 
