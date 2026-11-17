@@ -197,12 +197,12 @@ function initializeDashboard() {
         });
     }
 
-    function card({ title, description, meta, id, actions = '', media = '', interactive = false }) {
+    function card({ title, description, meta, id, actions = '', media = '', interactive = false, avatar = '' }) {
         return `<article class="dashboard-card${interactive ? ' dashboard-card-interactive' : ''}" data-record-id="${escapeHtml(id)}"${interactive ? ` data-open-volunteer="${escapeHtml(id)}" tabindex="0" role="button" aria-label="Abrir dashboard de ${escapeHtml(title)}"` : ''}>
             ${media}
             <div class="dashboard-card-body">
                 <div class="dashboard-card-meta">${meta}</div>
-                <h3>${escapeHtml(title)}</h3>
+                <h3${avatar ? ' class="user-identity"' : ''}>${avatar}<span>${escapeHtml(title)}</span></h3>
                 <p>${escapeHtml(description)}</p>
             </div>
             <div class="dashboard-card-actions">${actions}</div>
@@ -417,7 +417,7 @@ function initializeDashboard() {
         const list = listPage('voluntariados', cache.voluntariados, ['titulo', 'categoria', 'estado', 'organizadorNombre']);
 
         byId('voluntariadoCards').innerHTML = list.map(voluntariado => {
-            const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span>Organiza: ${escapeHtml(voluntariado.organizadorNombre || 'No disponible')}</span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
+            const meta = `<span class="status-pill status-${escapeHtml(voluntariado.estado)}">${escapeHtml(voluntariado.estado)}</span><span>${escapeHtml(voluntariado.categoria)}</span><span class="user-identity">${window.RegeneraAvatar.markup(voluntariado.organizadorNombre, voluntariado.organizadorFoto)}<span>Organiza: ${escapeHtml(voluntariado.organizadorNombre || 'No disponible')}</span></span><span>${escapeHtml(voluntariado.fechaInicio || '')}</span>`;
             let actions = '';
             if (user.rol === 'admin') {
                 actions += action('Editar', 'edit-voluntariado', voluntariado.id);
@@ -549,10 +549,7 @@ function initializeDashboard() {
                         ? 'No asistió'
                         : eventoCancelado ? 'Voluntariado cancelado' : 'Pendiente';
             const nombre = participante.nombre || 'Usuario sin nombre';
-            const inicial = escapeHtml(nombre.trim().charAt(0).toLocaleUpperCase() || '?');
-            const avatar = typeof participante.foto === 'string' && participante.foto
-                ? `<img src="${escapeHtml(participante.foto)}" alt="" loading="lazy">`
-                : inicial;
+            const avatar = window.RegeneraAvatar.markup(nombre, participante.foto);
             const participantName = participante.perfilUrl
                 ? `<a href="${escapeHtml(participante.perfilUrl)}">${escapeHtml(nombre)}</a>`
                 : escapeHtml(nombre);
@@ -570,7 +567,7 @@ function initializeDashboard() {
                         ? `<span>Solicitud rechazada${solicitud.motivoRespuesta ? `: ${escapeHtml(solicitud.motivoRespuesta)}` : ''}</span>`
                         : '';
             return `<tr data-participant-row data-name="${escapeHtml(nombre.toLocaleLowerCase())}" data-email="${escapeHtml(participante.correo || '').toLocaleLowerCase()}" data-inscription="${escapeHtml(estadoInscripcion)}" data-attendance="${estadoAsistencia}">
-                <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${participantName}</strong>${participante.correo ? `<small>${escapeHtml(participante.correo)}</small>` : ''}</span></div></td>
+                <td><div class="volunteer-person">${avatar}<span><strong>${participantName}</strong>${participante.correo ? `<small>${escapeHtml(participante.correo)}</small>` : ''}</span></div></td>
                 <td>${formatDateTime(participante.fechaInscripcion)}</td>
                 <td><span class="volunteer-state volunteer-state-${escapeHtml(estadoInscripcion)}">${escapeHtml(estadoInscripcion)}</span></td>
                 <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${etiquetaAsistencia}</span></td>
@@ -605,9 +602,9 @@ function initializeDashboard() {
                 <div class="volunteer-detail-hero-content">
                     <div class="volunteer-detail-kicker"><span class="volunteer-status ${voluntariado.estado === 'publicado' ? 'is-active' : 'is-inactive'}"><i></i>${escapeHtml(voluntariado.estado || 'Sin estado')}</span><span>${escapeHtml(voluntariado.categoria || 'Voluntariado')}</span></div>
                     <h2>${escapeHtml(voluntariado.titulo)}</h2>
-                    <p class="volunteer-author">Organiza: ${escapeHtml(voluntariado.organizador?.nombre || voluntariado.organizadorNombre || 'No disponible')}</p>
+                    <p class="volunteer-author user-identity">${window.RegeneraAvatar.markup(voluntariado.organizador?.nombre || voluntariado.organizadorNombre, voluntariado.organizador?.foto || voluntariado.organizadorFoto)}<span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || voluntariado.organizadorNombre || 'No disponible')}</span></p>
                     <p>${escapeHtml(voluntariado.descripcion || 'Sin descripción disponible.')}</p>
-                    <div class="volunteer-hero-meta"><span>${symbol('calendario', '◷')} ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>${symbol('ubicacion', '⌖')} ${escapeHtml(lugar)}</span><span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
+                    <div class="volunteer-hero-meta"><span>${symbol('calendario', '◷')} ${escapeHtml(formatEventDate(voluntariado.fechaInicio))}${voluntariado.fechaFin && voluntariado.fechaFin !== voluntariado.fechaInicio ? ` — ${escapeHtml(formatEventDate(voluntariado.fechaFin))}` : ''} · ${escapeHtml(voluntariado.horaInicio || '—')}–${escapeHtml(voluntariado.horaFin || '—')}</span><span>${symbol('ubicacion', '⌖')} ${escapeHtml(lugar)}</span><span class="user-identity">${window.RegeneraAvatar.markup(voluntariado.organizador?.nombre, voluntariado.organizador?.foto)}<span>Organiza: ${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span></span><span>ID ${escapeHtml(voluntariado.id)}</span></div>
                     ${locationLinks ? `<div class="volunteer-detail-actions">${locationLinks}</div>` : ''}
                 </div>
             </header>
@@ -634,7 +631,7 @@ function initializeDashboard() {
                 <div class="volunteer-information-grid">
                     <section><h4>Actividad</h4><dl><dt>Título</dt><dd>${escapeHtml(voluntariado.titulo)}</dd><dt>Descripción</dt><dd>${escapeHtml(voluntariado.descripcion || 'Sin descripción')}</dd><dt>Categoría</dt><dd>${escapeHtml(voluntariado.categoria || '—')}</dd><dt>Identificador</dt><dd><code>${escapeHtml(voluntariado.id)}</code></dd></dl></section>
                     <section><h4>Fecha y lugar</h4><dl><dt>Inicio</dt><dd>${escapeHtml(formatEventDate(voluntariado.fechaInicio))} · ${escapeHtml(voluntariado.horaInicio || '—')}</dd><dt>Finalización</dt><dd>${escapeHtml(formatEventDate(voluntariado.fechaFin))} · ${escapeHtml(voluntariado.horaFin || '—')}</dd><dt>Lugar</dt><dd>${escapeHtml(lugar)}</dd><dt>Id del lugar</dt><dd><code>${escapeHtml(voluntariado.lugarId || '—')}</code></dd><dt>Coordenadas</dt><dd>${voluntariado.latitud != null && voluntariado.longitud != null ? `${escapeHtml(voluntariado.latitud)}, ${escapeHtml(voluntariado.longitud)}` : 'No disponibles'}</dd><dt>Cupo</dt><dd>${Number(estadisticas.cupo) || 0} personas</dd></dl></section>
-                    <section><h4>Organización</h4><dl><dt>Responsable</dt><dd>${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</dd><dt>Correo</dt><dd>${escapeHtml(voluntariado.organizador?.correo || '—')}</dd><dt>Estado</dt><dd>${escapeHtml(voluntariado.estado || '—')}</dd><dt>Creado</dt><dd>${escapeHtml(formatDateTime(voluntariado.creadoEn))}</dd><dt>Actualizado</dt><dd>${escapeHtml(formatDateTime(voluntariado.actualizadoEn))}</dd></dl></section>
+                    <section><h4>Organización</h4><dl><dt>Responsable</dt><dd><span class="user-identity">${window.RegeneraAvatar.markup(voluntariado.organizador?.nombre, voluntariado.organizador?.foto)}<span>${escapeHtml(voluntariado.organizador?.nombre || 'No disponible')}</span></span></dd><dt>Correo</dt><dd>${escapeHtml(voluntariado.organizador?.correo || '—')}</dd><dt>Estado</dt><dd>${escapeHtml(voluntariado.estado || '—')}</dd><dt>Creado</dt><dd>${escapeHtml(formatDateTime(voluntariado.creadoEn))}</dd><dt>Actualizado</dt><dd>${escapeHtml(formatDateTime(voluntariado.actualizadoEn))}</dd></dl></section>
                     <section><h4>Preparación</h4><div class="volunteer-detail-list"><strong>Requisitos</strong>${detailList(voluntariado.requisitos)}<strong>Materiales necesarios</strong>${detailList(voluntariado.materiales)}</div></section>
                 </div>
             </details>`;
@@ -754,6 +751,7 @@ function initializeDashboard() {
                 : '';
             return card({
                 title: usuario.nombre,
+                avatar: window.RegeneraAvatar.markup(usuario.nombre, usuario.fotoUrl),
                 description: `${usuario.correo}${usuario.fechaRegistro ? ` · Registro: ${new Date(usuario.fechaRegistro).toLocaleDateString('es-MX')}` : ''}`,
                 meta: `${meta}${verification}${birthRequest}`,
                 id: usuario.id,
@@ -939,7 +937,7 @@ function initializeDashboard() {
         const recent = root.querySelector('[data-gamification-admin-attempts]');
         recent.innerHTML = attempts.length
             ? attempts.map(attempt => `<tr>
-                <td><strong>${escapeHtml(attempt.usuarioNombre)}</strong><small>${escapeHtml(attempt.usuarioCorreo || '')}</small></td>
+                <td><span class="user-identity">${window.RegeneraAvatar.markup(attempt.usuarioNombre, attempt.usuarioFoto)}<span><strong>${escapeHtml(attempt.usuarioNombre)}</strong><small>${escapeHtml(attempt.usuarioCorreo || '')}</small></span></span></td>
                 <td>${escapeHtml(attempt.cuestionarioTitulo)}</td>
                 <td>${escapeHtml(attempt.estado)}</td>
                 <td>${attempt.puntuacion === null ? '—' : `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(attempt.puntuacion) || 0)}%`}</td>
@@ -965,7 +963,11 @@ function initializeDashboard() {
         try {
             const response = await dashboardApi.gamificationAttempt(attemptId);
             const attempt = response.data;
-            dialog.querySelector('[data-gamification-attempt-title]').textContent = `${attempt.cuestionarioTitulo} · ${attempt.usuarioNombre}`;
+            const title = dialog.querySelector('[data-gamification-attempt-title]');
+            const label = document.createElement('span');
+            label.textContent = `${attempt.cuestionarioTitulo} · ${attempt.usuarioNombre}`;
+            title.replaceChildren(window.RegeneraAvatar.create(attempt.usuarioNombre, attempt.usuarioFoto), label);
+            title.classList.add('user-identity');
             status.textContent = `Versión ${attempt.cuestionarioVersion} · ${attempt.estado}${attempt.puntuacion === null ? '' : ` · ${Number(attempt.puntuacion).toLocaleString('es-MX')}%`}`;
             answers.innerHTML = (attempt.preguntas || []).map((question, index) => `
                 <article class="gamification-attempt-answer ${question.correcta === true ? 'is-correct' : question.correcta === false ? 'is-incorrect' : 'is-unanswered'}">
@@ -2496,7 +2498,11 @@ function initializeDashboard() {
             }
 
             byId('dashboardTitle').textContent = user.rol === 'admin' ? 'Panel de administración' : 'Panel de organizador';
-            byId('dashboardWelcome').textContent = `Hola, ${user.nombre}. Administra el contenido de Regenera BCS.`;
+            const welcome = byId('dashboardWelcome');
+            const greeting = document.createElement('span');
+            greeting.textContent = `Hola, ${user.nombre}. Administra el contenido de Regenera BCS.`;
+            welcome.classList.add('user-identity');
+            welcome.replaceChildren(window.RegeneraAvatar.create(user.nombre, user.foto), greeting);
             root.querySelectorAll('[data-admin-only]').forEach(element => {
                 if (!element.classList.contains('dashboard-section')) {
                     element.hidden = user.rol !== 'admin';

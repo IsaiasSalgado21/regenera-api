@@ -58,7 +58,11 @@ if (root) {
                     && Number.isFinite(end) && end >= Date.now();
             }).sort((a, b) => Date.parse(a.inicioIso) - Date.parse(b.inicioIso));
             const proposals = data.misVoluntariados || [];
-            find('[data-volunteer-welcome]').textContent = `Hola, ${session.usuario.nombre}.`;
+            const welcome = find('[data-volunteer-welcome]');
+            const greeting = document.createElement('span');
+            greeting.textContent = `Hola, ${session.usuario.nombre}.`;
+            welcome.classList.add('user-identity');
+            welcome.replaceChildren(window.RegeneraAvatar.create(session.usuario.nombre, session.usuario.foto), greeting);
             find('[data-volunteer-summary]').textContent = `${upcoming.length} ${upcoming.length === 1 ? 'actividad próxima' : 'actividades próximas'}.`;
             render(upcoming, '[data-volunteer-activities]', '[data-volunteer-activities-empty]', false);
             render(proposals, '[data-volunteer-proposals]', '[data-volunteer-proposals-empty]', true);

@@ -14,6 +14,25 @@ class NotificationFeaturesTest extends TestCase
         $this->get('/perfil')->assertOk();
     }
 
+    public function test_navigation_uses_an_accessible_notification_bell_and_the_logo_links_home(): void
+    {
+        $html = $this->get('/notificaciones')->assertOk()->getContent();
+        $document = new \DOMDocument;
+        $document->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new \DOMXPath($document);
+
+        $this->assertSame(1, $xpath->query('//a[contains(concat(" ", normalize-space(@class), " "), " logo ") and @href="'.url('/').'"]')->length);
+        $this->assertSame(0, $xpath->query('//nav[contains(concat(" ", normalize-space(@class), " "), " nav ") or @id="mobileMenu"]/a[normalize-space(.)="Inicio"]')->length);
+        $buttons = $xpath->query('//button[@data-notification-toggle]');
+        $this->assertSame(2, $buttons->length);
+        foreach ($buttons as $button) {
+            $this->assertSame('Abrir notificaciones', $button->getAttribute('aria-label'));
+            $this->assertSame(1, $xpath->query('./svg[@aria-hidden="true"]', $button)->length);
+            $this->assertSame(1, $xpath->query('./span[@data-notification-badge]', $button)->length);
+            $this->assertStringNotContainsString('Notificaciones', $button->textContent);
+        }
+    }
+
     public function test_notification_endpoints_require_authentication(): void
     {
         $this->getJson('/api/notificaciones')->assertUnauthorized();

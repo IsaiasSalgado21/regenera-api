@@ -49,7 +49,7 @@ class VoluntariadoPageController extends Controller
             : [$id])->all();
         $organizadores = User::query()
             ->whereIn('_id', $storedOrganizadorIds)
-            ->get(['_id', 'nombre'])
+            ->get(['_id', 'nombre', 'foto', 'estado'])
             ->keyBy(fn (User $user) => (string) $user->_id);
         $voluntariados = $voluntariados->map(function ($v) use ($lugares, $organizadores) {
             $lugar = $lugares->firstWhere('_id', (string) $v->lugarId);
@@ -58,6 +58,8 @@ class VoluntariadoPageController extends Controller
                 'id' => (string) $v->_id,
                 'titulo' => $v->titulo,
                 'organizadorNombre' => $organizadores->get((string) $v->organizadorId)?->nombre,
+                'organizadorFoto' => $organizadores->get((string) $v->organizadorId)?->estado === 'activo'
+                    ? $this->gridFsImages->url($organizadores->get((string) $v->organizadorId)?->foto) : null,
                 'descripcion' => Str::limit(strip_tags($v->descripcion), 160),
                 'imagen' => $this->gridFsImages->url(
                     $this->gridFsImages->paths($v->imagenes, $v->imagen)[0] ?? null,
@@ -126,9 +128,12 @@ class VoluntariadoPageController extends Controller
             $voluntariado->categoria ?: $voluntariado->titulo,
         );
 
+        $organizador = User::find((string) $voluntariado->organizadorId);
+
         return view('voluntariados.show', [
             'voluntariado' => $voluntariado,
-            'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+            'organizadorNombre' => $organizador?->nombre,
+            'organizadorFoto' => $organizador?->estado === 'activo' ? $this->gridFsImages->url($organizador->foto) : null,
             'isOwner' => (bool) $isOwner,
             'isAdmin' => $isAdmin,
             'impactoCatalogo' => $this->impactos->catalogForCategory($voluntariado->categoria ?: $voluntariado->titulo),

@@ -108,8 +108,10 @@ function renderGroup(sectionSelector, listSelector, items, type) {
         const title = document.createElement('h3');
         title.textContent = item.titulo || 'Voluntariado sin título';
         const organizer = document.createElement('p');
-        organizer.className = 'volunteer-author';
-        organizer.textContent = `Organiza: ${item.organizadorNombre || 'No disponible'}`;
+        organizer.className = 'volunteer-author user-identity';
+        const organizerName = document.createElement('span');
+        organizerName.textContent = `Organiza: ${item.organizadorNombre || 'No disponible'}`;
+        organizer.append(window.RegeneraAvatar.create(item.organizadorNombre, item.organizadorFoto), organizerName);
         const description = document.createElement('p');
         description.textContent = item.descripcion || 'Sin descripción disponible.';
         const details = document.createElement('div');

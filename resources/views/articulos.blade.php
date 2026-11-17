@@ -54,7 +54,7 @@
                         <h2>{{ $articulo['titulo'] }}</h2>
                         <p>{{ $articulo['resumen'] }}</p>
                         <div class="article-library-byline">
-                            <span>{{ $articulo['autorNombre'] }}</span>
+                            <span class="user-identity">@include('components.user-avatar', ['name' => $articulo['autorNombre'], 'photo' => $articulo['autorFoto']])<span>{{ $articulo['autorNombre'] }}</span></span>
                             @if ($articulo['fecha'])
                                 <time datetime="{{ $articulo['fechaIso'] }}">{{ $articulo['fecha'] }}</time>
                             @endif

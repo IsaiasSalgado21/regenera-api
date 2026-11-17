@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notificacion;
 use App\Models\PushSubscription;
 use App\Models\User;
+use App\Services\GridFsImageService;
 use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,8 @@ use MongoDB\BSON\ObjectId;
 
 class NotificacionController extends Controller
 {
+    public function __construct(private readonly GridFsImageService $images) {}
+
     public function index(Request $request)
     {
         $usuario = $request->user();
@@ -184,25 +187,36 @@ class NotificacionController extends Controller
         $recipientIds = $currentUser->rol === 'admin'
             ? $notifications->pluck('usuarioId')->map(fn ($id) => (string) $id)->unique()->values()
             : collect();
-        $objectIds = $recipientIds
-            ->filter(fn (string $id) => preg_match('/^[a-f0-9]{24}$/i', $id))
-            ->map(fn (string $id) => new ObjectId($id))
+        $requesterIds = $notifications
+            ->filter(fn (Notificacion $notification) => $notification->tipo === 'solicitud_asistencia')
+            ->map(fn (Notificacion $notification) => (string) data_get($notification->datos, 'solicitanteId', ''))
+            ->filter();
+        $storedIds = $recipientIds->merge($requesterIds)->unique()
+            ->flatMap(fn (string $id) => preg_match('/^[a-f0-9]{24}$/i', $id) ? [$id, new ObjectId($id)] : [$id])
             ->all();
-        $recipients = $objectIds
-            ? User::query()->whereIn('_id', $objectIds)->get(['_id', 'nombre', 'correo', 'rol'])->keyBy(fn (User $user) => (string) $user->getAuthIdentifier())
+        $users = $storedIds
+            ? User::query()->whereIn('_id', $storedIds)->get(['_id', 'nombre', 'correo', 'rol', 'foto', 'estado'])->keyBy(fn (User $user) => (string) $user->getAuthIdentifier())
             : collect();
 
-        return $notifications->map(function (Notificacion $notification) use ($currentUser, $recipients): array {
+        return $notifications->map(function (Notificacion $notification) use ($currentUser, $users): array {
             $item = $this->present($notification);
             $item['esPropia'] = (string) $notification->usuarioId === (string) $currentUser->getAuthIdentifier();
 
             if ($currentUser->rol === 'admin') {
-                $recipient = $recipients->get((string) $notification->usuarioId);
+                $recipient = $users->get((string) $notification->usuarioId);
                 $item['destinatario'] = $recipient ? [
                     'id' => (string) $recipient->getAuthIdentifier(),
                     'nombre' => $recipient->nombre,
+                    'foto' => $this->images->url($recipient->foto),
                     'correo' => $recipient->correo,
                     'rol' => $recipient->rol,
+                ] : null;
+            }
+            if ($notification->tipo === 'solicitud_asistencia') {
+                $requester = $users->get((string) data_get($notification->datos, 'solicitanteId', ''));
+                $item['solicitante'] = $requester ? [
+                    'nombre' => $requester->nombre,
+                    'foto' => $requester->estado === 'activo' ? $this->images->url($requester->foto) : null,
                 ] : null;
             }
 

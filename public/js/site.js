@@ -67,7 +67,10 @@
         if (!user) return;
 
         function setUserLabel(userLabel) {
-            userLabel.textContent = user.nombre;
+            userLabel.classList.add('user-identity');
+            const name = document.createElement('span');
+            name.textContent = user.nombre;
+            userLabel.replaceChildren(window.RegeneraAvatar.create(user.nombre, user.foto), name);
             if (user.rol !== "organizador" || !user.organizadorVerificado) return;
 
             const badge = document.createElement("span");
@@ -249,6 +252,14 @@
             if (control?.tagName === "A") beginEnrollment(control);
             else if (control?.tagName === "BUTTON") void submitEnrollment(control);
         }
+    });
+
+    document.addEventListener('regenera:avatar-changed', event => {
+        document.querySelectorAll('[data-auth-user]').forEach(label => {
+            label.querySelector('.user-avatar')?.replaceWith(
+                window.RegeneraAvatar.create(event.detail.nombre, event.detail.foto),
+            );
+        });
     });
 
     currentUser()

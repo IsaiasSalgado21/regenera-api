@@ -1,0 +1,1 @@
+<span class="user-avatar" aria-hidden="true"><span>{{ mb_strtoupper(mb_substr(trim($name ?? ''), 0, 1)) ?: '?' }}</span>@if (! empty($photo))<img src="{{ $photo }}" alt="" loading="lazy">@endif</span>

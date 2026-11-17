@@ -156,6 +156,7 @@ class AuthController extends Controller
                 'id' => (string) $usuario->_id,
                 'nombre' => $usuario->nombre,
                 'correo' => $usuario->correo,
+                'foto' => $this->gridFsImages->url($usuario->foto),
                 'rol' => $usuario->rol,
                 'organizadorVerificado' => (bool) $usuario->organizadorVerificado,
                 'estado' => $usuario->estado,

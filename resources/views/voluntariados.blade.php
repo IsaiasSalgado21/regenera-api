@@ -96,7 +96,7 @@
                             <div class="volunteer-card-content">
                                 <span class="volunteer-category">{{ ucfirst(str_replace('-', ' ', $voluntariado['categoria'])) }}</span>
                                 <h3>{{ $voluntariado['titulo'] }}</h3>
-                                <p class="volunteer-author">Organiza: {{ $voluntariado['organizadorNombre'] ?: 'Organizador' }}</p>
+                                <p class="volunteer-author user-identity">@include('components.user-avatar', ['name' => $voluntariado['organizadorNombre'] ?: 'Organizador', 'photo' => $voluntariado['organizadorFoto']])<span>Organiza: {{ $voluntariado['organizadorNombre'] ?: 'Organizador' }}</span></p>
                                 <div class="volunteer-meta">
                                     <span>{{ $voluntariado['fecha'] }} · {{ $voluntariado['hora_inicio'] }}</span>
                                     <span>{{ $voluntariado['lugar'] ?: 'Lugar por confirmar' }}</span>

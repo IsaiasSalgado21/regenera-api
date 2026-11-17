@@ -103,7 +103,10 @@ function openFeature(marker, item, onSelect) {
     tooltip.appendChild(label);
     if (item.tipo === 'voluntariado' && item.organizadorNombre) {
         const organizer = document.createElement('small');
-        organizer.textContent = `Organiza: ${item.organizadorNombre}`;
+        organizer.className = 'user-identity';
+        const name = document.createElement('span');
+        name.textContent = `Organiza: ${item.organizadorNombre}`;
+        organizer.append(window.RegeneraAvatar.create(item.organizadorNombre, item.organizadorFoto), name);
         tooltip.appendChild(organizer);
     }
 

@@ -22,6 +22,8 @@
     </script>
 
     <title>@yield('title', 'Regenera BCS')</title>
+    <link rel="stylesheet" href="{{ asset('css/user-avatar.css') }}">
+    <script src="{{ asset('js/user-avatar.js') }}"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,20 +55,19 @@
             </a>
 
             <nav class="nav">
-                <a href="{{ url('/') }}">Inicio</a>
                 <a href="{{ url('/flora') }}">Flora y fauna</a>
                 <a href="{{ url('/voluntariados') }}">Voluntariados</a>
                 <a href="{{ route('learning.index') }}">Aprendizaje</a>
                 <a href="{{ route('mapa') }}">Mapa</a>
                 <a href="{{ url('/articulos') }}">Artículos</a>
                 <button type="button" class="notification-nav-button" data-notification-toggle
-                    aria-label="Abrir notificaciones" aria-expanded="false" hidden>
-                    <span aria-hidden="true">♧</span> Notificaciones
+                    aria-label="Abrir notificaciones" title="Notificaciones" aria-expanded="false" hidden>
+                    <svg class="notification-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>
                     <span class="notification-nav-badge" data-notification-badge hidden>0</span>
                 </button>
 
                 @auth
-                    <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}@if (Auth::user()->rol === 'organizador' && (bool) Auth::user()->organizadorVerificado) <span class="verified-organizer-mark" aria-label="Organizador verificado" title="Organizador verificado">✓</span>@endif</a>
+                    <a href="{{ url('/perfil') }}" class="user-nav user-identity" data-auth-user>@include('components.user-avatar', ['name' => Auth::user()->nombre, 'photo' => app(\App\Services\GridFsImageService::class)->url(Auth::user()->foto)])<span>{{ Auth::user()->nombre }}</span>@if (Auth::user()->rol === 'organizador' && (bool) Auth::user()->organizadorVerificado) <span class="verified-organizer-mark" aria-label="Organizador verificado" title="Organizador verificado">✓</span>@endif</a>
                     <a href="{{ url('/logout') }}" class="user-nav" data-auth-logout>Salir</a>
                 @else
                     <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
@@ -91,7 +92,6 @@
              MENÚ MÓVIL
         ========================== --}}
         <nav class="mobile-menu" id="mobileMenu">
-            <a href="{{ url('/') }}">Inicio</a>
             <a href="{{ url('/flora') }}">Flora y fauna</a>
             <a href="{{ url('/voluntariados') }}">Voluntariados</a>
             <a href="{{ route('learning.index') }}">Aprendizaje</a>
@@ -100,14 +100,14 @@
             <a href="{{ route('notifications.index') }}" class="user-nav" data-auth-required hidden>Centro de notificaciones</a>
 
             @auth
-                <a href="{{ url('/perfil') }}" class="user-nav" data-auth-user>{{ Auth::user()->nombre }}@if (Auth::user()->rol === 'organizador' && (bool) Auth::user()->organizadorVerificado) <span class="verified-organizer-mark" aria-label="Organizador verificado" title="Organizador verificado">✓</span>@endif</a>
+                <a href="{{ url('/perfil') }}" class="user-nav user-identity" data-auth-user>@include('components.user-avatar', ['name' => Auth::user()->nombre, 'photo' => app(\App\Services\GridFsImageService::class)->url(Auth::user()->foto)])<span>{{ Auth::user()->nombre }}</span>@if (Auth::user()->rol === 'organizador' && (bool) Auth::user()->organizadorVerificado) <span class="verified-organizer-mark" aria-label="Organizador verificado" title="Organizador verificado">✓</span>@endif</a>
                 <a href="{{ url('/logout') }}" class="user-nav" data-auth-logout>Salir</a>
             @else
                 <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
             @endauth
             <button type="button" class="notification-nav-button" data-notification-toggle
-                aria-label="Abrir notificaciones" aria-expanded="false" hidden>
-                <span aria-hidden="true">♧</span> Notificaciones
+                aria-label="Abrir notificaciones" title="Notificaciones" aria-expanded="false" hidden>
+                <svg class="notification-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>
                 <span class="notification-nav-badge" data-notification-badge hidden>0</span>
             </button>
         </nav>

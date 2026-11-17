@@ -67,8 +67,8 @@ if (drawer) {
                 <span class="notification-item-icon icon-${escapeHtml(item.icono)}" aria-hidden="true">${symbol(symbols.get(item.icono), Object.hasOwn(icon, item.icono) ? icon[item.icono] : 'i')}</span>
                 <span class="notification-item-content">
                     <strong>${escapeHtml(item.titulo)}</strong>
-                    <span>${escapeHtml(item.mensaje)}</span>
-                    ${item.destinatario ? `<small>Para: ${escapeHtml(item.destinatario.nombre)} · ${escapeHtml(item.destinatario.rol)}</small>` : ''}
+                    <span${item.solicitante ? ' class="user-identity"' : ''}>${item.solicitante ? window.RegeneraAvatar.markup(item.solicitante.nombre, item.solicitante.foto) : ''}<span>${escapeHtml(item.mensaje)}</span></span>
+                    ${item.destinatario ? `<small class="user-identity">${window.RegeneraAvatar.markup(item.destinatario.nombre, item.destinatario.foto)}<span>Para: ${escapeHtml(item.destinatario.nombre)} · ${escapeHtml(item.destinatario.rol)}</span></small>` : ''}
                     <time datetime="${escapeHtml(item.fechaCreacion)}">${escapeHtml(formatDate(item.fechaCreacion))}</time>
                 </span>
                 ${item.leida ? '' : '<span class="notification-unread-dot" aria-label="No leída"></span>'}

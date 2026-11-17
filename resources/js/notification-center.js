@@ -64,9 +64,9 @@ if (page) {
                         <h2>${escapeHtml(item.titulo)}</h2>
                         <span class="notification-read-state">${item.leida ? 'Leída' : 'No leída'}</span>
                     </div>
-                    <p>${escapeHtml(item.mensaje)}</p>
+                    <p${item.solicitante ? ' class="user-identity"' : ''}>${item.solicitante ? window.RegeneraAvatar.markup(item.solicitante.nombre, item.solicitante.foto) : ''}<span>${escapeHtml(item.mensaje)}</span></p>
                     <time datetime="${escapeHtml(item.fechaCreacion)}">${escapeHtml(formatDate(item.fechaCreacion))}</time>
-                    ${item.destinatario ? `<small>Destinatario: ${escapeHtml(item.destinatario.nombre)} (${escapeHtml(item.destinatario.correo)}) · ${escapeHtml(item.destinatario.rol)}</small>` : ''}
+                    ${item.destinatario ? `<small class="user-identity">${window.RegeneraAvatar.markup(item.destinatario.nombre, item.destinatario.foto)}<span>Destinatario: ${escapeHtml(item.destinatario.nombre)} (${escapeHtml(item.destinatario.correo)}) · ${escapeHtml(item.destinatario.rol)}</span></small>` : ''}
                     ${item.fechaLectura ? `<small>Leída: ${escapeHtml(formatDate(item.fechaLectura))}</small>` : ''}
                 </div>
                 <div class="notification-center-item-actions">

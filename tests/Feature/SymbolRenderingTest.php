@@ -44,6 +44,18 @@ class SymbolRenderingTest extends TestCase
         $this->assertStringContainsString('Cupo: 10', $html);
         $this->assertStringContainsString('query=24.15,-110.32', $html);
         $this->assertStringContainsString('/mapa?voluntariado=example', $html);
+        $this->assertStringContainsString('class="user-avatar"', $html);
+        $this->assertStringContainsString('Organiza: Equipo', $html);
+    }
+
+    public function test_user_avatar_renders_photo_and_escapes_the_fallback(): void
+    {
+        $withPhoto = view('components.user-avatar', ['name' => 'Ángel', 'photo' => 'https://example.test/avatar.png'])->render();
+        $this->assertStringContainsString('https://example.test/avatar.png', $withPhoto);
+        $this->assertStringContainsString('>Á</span>', $withPhoto);
+        $withoutPhoto = view('components.user-avatar', ['name' => '<usuario>', 'photo' => null])->render();
+        $this->assertStringContainsString('&lt;', $withoutPhoto);
+        $this->assertStringNotContainsString('<img', $withoutPhoto);
     }
 
     public function test_detail_displays_matching_material_symbols_and_keeps_custom_materials(): void

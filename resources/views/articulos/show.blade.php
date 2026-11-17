@@ -17,7 +17,7 @@
             <span class="article-reading-category">{{ $articulo->categoria ?: 'Artículo' }}</span>
             <h1>{{ $articulo->titulo }}</h1>
             <div class="article-reading-byline">
-                <span>Por {{ $autorNombre }}</span>
+                <span class="user-identity">@include('components.user-avatar', ['name' => $autorNombre, 'photo' => $autorFoto])<span>Por {{ $autorNombre }}</span></span>
                 @if ($articulo->fechaPublicacion)
                     <time datetime="{{ $articulo->fechaPublicacion->toIso8601String() }}">{{ $articulo->fechaPublicacion->timezone('America/Mazatlan')->format('d M Y') }}</time>
                 @endif

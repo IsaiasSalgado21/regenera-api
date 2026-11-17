@@ -37,6 +37,7 @@ class HomeController extends Controller
             ->limit(3)
             ->get()
             ->map(function ($voluntariado) {
+                $organizador = User::find((string) $voluntariado->organizadorId);
                 $lugar = null;
                 if ($voluntariado->lugarId) {
                     $lugar = \App\Models\Lugar::find($voluntariado->lugarId);
@@ -45,7 +46,8 @@ class HomeController extends Controller
                 return [
                     'id'         => (string) $voluntariado->_id,
                     'titulo'     => $voluntariado->titulo,
-                    'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+                    'organizadorNombre' => $organizador?->nombre,
+                    'organizadorFoto' => $organizador?->estado === 'activo' ? $this->gridFsImages->url($organizador->foto) : null,
                     'descripcion'=> $voluntariado->descripcion,
                     'imagen'     => $this->gridFsImages->url($voluntariado->imagen),
                     'categoria'  => $voluntariado->estado,

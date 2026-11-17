@@ -29,7 +29,7 @@ class ArticlePageController extends Controller
             : [$id])->all();
         $autores = User::query()
             ->whereIn('_id', $storedAutorIds)
-            ->get(['_id', 'nombre'])
+            ->get(['_id', 'nombre', 'foto', 'estado'])
             ->keyBy(fn (User $user) => (string) $user->_id);
         $articulos = $articulos->map(function (Articulo $a) use ($autores) {
             $imagenes = is_array($a->imagenes) && $a->imagenes
@@ -47,6 +47,8 @@ class ArticlePageController extends Controller
                 'fecha' => $a->fechaPublicacion?->format('d/m/Y'),
                 'fechaIso' => $a->fechaPublicacion?->toIso8601String(),
                 'autorNombre' => $autores->get((string) $a->autorId)?->nombre ?: 'Redacción Regenera BCS',
+                'autorFoto' => $autores->get((string) $a->autorId)?->estado === 'activo'
+                    ? $this->gridFsImages->url($autores->get((string) $a->autorId)?->foto) : null,
             ];
         });
 
@@ -90,6 +92,7 @@ class ArticlePageController extends Controller
             'articulo' => $articulo,
             'otros' => $otros,
             'autorNombre' => $autor?->nombre ?: 'Redacción Regenera BCS',
+            'autorFoto' => $autor?->estado === 'activo' ? $this->gridFsImages->url($autor->foto) : null,
             'parrafos' => $parrafos,
             'minutosLectura' => max(1, (int) ceil($palabras / 200)),
         ]);

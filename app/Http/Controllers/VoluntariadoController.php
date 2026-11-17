@@ -122,8 +122,10 @@ class VoluntariadoController extends Controller
     private function presentListItem(Voluntariado $voluntariado): array
     {
         $data = $voluntariado->toArray();
+        $organizador = User::find((string) $voluntariado->organizadorId);
         $data['id'] = (string) $voluntariado->_id;
-        $data['organizadorNombre'] = User::find((string) $voluntariado->organizadorId)?->nombre;
+        $data['organizadorNombre'] = $organizador?->nombre;
+        $data['organizadorFoto'] = $organizador?->estado === 'activo' ? $this->gridFsImages->url($organizador->foto) : null;
         $data['imagen'] = $this->gridFsImages->url($voluntariado->imagen);
         $data['inicioIso'] = $this->horario->inicio($voluntariado)?->toIso8601String();
         $data['finIso'] = $this->horario->fin($voluntariado)?->toIso8601String();
@@ -214,6 +216,7 @@ class VoluntariadoController extends Controller
         return response()->json([
             'success' => true,
             'voluntariado' => tap($voluntariado, function (Voluntariado $voluntariado): void {
+                $organizador = User::find((string) $voluntariado->organizadorId);
                 $voluntariado->imagen = $this->gridFsImages->url($voluntariado->imagen);
                 $voluntariado->setAttribute(
                     'finalizadoPorFecha',
@@ -221,7 +224,11 @@ class VoluntariadoController extends Controller
                 );
                 $voluntariado->setAttribute(
                     'organizadorNombre',
-                    User::find((string) $voluntariado->organizadorId)?->nombre,
+                    $organizador?->nombre,
+                );
+                $voluntariado->setAttribute(
+                    'organizadorFoto',
+                    $organizador?->estado === 'activo' ? $this->gridFsImages->url($organizador->foto) : null,
                 );
             }),
         ]);

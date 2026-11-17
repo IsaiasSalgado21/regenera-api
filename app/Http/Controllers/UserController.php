@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AccountProfile;
+use App\Services\GridFsImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly AccountProfile $profiles) {}
+    public function __construct(private readonly AccountProfile $profiles, private readonly GridFsImageService $images) {}
     public function index(): JsonResponse
     {
         $usuarios = User::query()->orderBy('nombre')->get();
@@ -238,6 +239,7 @@ class UserController extends Controller
             'nombre' => $usuario->nombre,
             'correo' => $usuario->correo,
             'foto' => $usuario->foto,
+            'fotoUrl' => $this->images->url($usuario->foto),
             'rol' => $usuario->rol,
             'organizadorVerificado' => (bool) $usuario->organizadorVerificado,
             'fechaRegistro' => $usuario->fechaRegistro?->toISOString(),

@@ -173,6 +173,7 @@ html[data-theme="dark"] .mobile-menu {
 }
 
 html[data-theme="dark"] .mobile-menu a,
+html[data-theme="dark"] .mobile-menu .notification-nav-button,
 html[data-theme="dark"] .menu-button {
     color: #e7eee9;
 }

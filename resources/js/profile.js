@@ -110,6 +110,7 @@ if (page) {
                 usuario.avatarConfig = response.data.usuario.avatarConfig;
                 usuario.foto = response.data.usuario.foto;
                 renderProfileAvatar(usuario);
+                document.dispatchEvent(new CustomEvent('regenera:avatar-changed', { detail: usuario }));
                 if (pendingAvatarReward && configuration.accessory === pendingAvatarReward.item) {
                     markAvatarRewardSeen(pendingAvatarReward.medal, usuario.id);
                     pendingAvatarReward = null;
@@ -223,7 +224,7 @@ if (page) {
         return `<article class="profile-list-item">
             <div class="profile-list-copy">
                 <h4>${title}</h4>
-                <p>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</p>
+                <p class="user-identity">${window.RegeneraAvatar.markup(volunteer.organizadorNombre, volunteer.organizadorFoto)}<span>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</span></p>
                 <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}${volunteer.lugar?.nombre ? ` · ${escapeHtml(volunteer.lugar.nombre)}` : ''}</p>
             </div>
             <div class="profile-activity-status"><span class="profile-item-status is-${status.kind}">${escapeHtml(status.label)}</span>${requestButton}</div>
@@ -362,7 +363,7 @@ if (page) {
                 ? volunteers.map(volunteer => `<article class="profile-list-item">
                     <div class="profile-list-copy">
                         <h4><a href="${appUrl(`/voluntariados/${encodeURIComponent(volunteer.id)}`)}">${escapeHtml(volunteer.titulo || 'Voluntariado')}</a></h4>
-                        <p>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</p>
+                        <p class="user-identity">${window.RegeneraAvatar.markup(volunteer.organizadorNombre, volunteer.organizadorFoto)}<span>Organiza: ${escapeHtml(volunteer.organizadorNombre || 'No disponible')}</span></p>
                         <p>${escapeHtml(formatDateTime(volunteer.fechaInicio, volunteer.horaInicio))}</p>
                     </div>
                     <span class="profile-item-status">${escapeHtml(volunteer.estado || 'Sin estado')}</span>
@@ -515,6 +516,7 @@ if (page) {
         if (result && currentUser) {
             currentUser.nombre = result.usuario.nombre;
             page.querySelector('[data-profile-name]').textContent = currentUser.nombre;
+            document.dispatchEvent(new CustomEvent('regenera:auth-changed', { detail: { user: currentUser } }));
             document.dispatchEvent(new CustomEvent('regenera:auth-changed', { detail: { user: currentUser } }));
         }
     });

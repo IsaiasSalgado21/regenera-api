@@ -22,7 +22,9 @@ export function createMapPanel({ panel, getUser, getAuthError, onEnrolled }) {
         addText(panel, 'p', type, 'map-panel-type');
         addText(panel, 'h2', item.titulo || item.nombre || 'Registro del mapa');
         if (item.tipo === 'voluntariado' && item.organizadorNombre) {
-            addText(panel, 'p', `Organiza: ${item.organizadorNombre}`);
+            const organizer = addText(panel, 'p', '', 'user-identity');
+            organizer.append(window.RegeneraAvatar.create(item.organizadorNombre, item.organizadorFoto));
+            addText(organizer, 'span', `Organiza: ${item.organizadorNombre}`);
         }
 
         if (item.tipo === 'lugar' && item.imagen) {

@@ -9,6 +9,7 @@ use App\Models\RespuestaCuestionario;
 use App\Models\User;
 use App\Services\CuestionarioService;
 use App\Services\GamificacionService;
+use App\Services\GridFsImageService;
 use Illuminate\Http\Request;
 
 class GamificacionController extends Controller
@@ -16,6 +17,7 @@ class GamificacionController extends Controller
     public function __construct(
         private readonly CuestionarioService $cuestionarios,
         private readonly GamificacionService $gamificacion,
+        private readonly GridFsImageService $images,
     ) {}
 
     public function cuestionarios(Request $request)
@@ -85,7 +87,7 @@ class GamificacionController extends Controller
         $quizzes = $versions->unique('slug')->filter(fn ($quiz) => $quiz->activo)->sortBy('titulo');
         $versionsByKey = $versions->keyBy(fn ($quiz) => $quiz->slug.':'.$quiz->version);
         $attemptsByQuiz = $attempts->groupBy('cuestionarioSlug');
-        $users = User::query()->get(['_id', 'nombre', 'correo'])->keyBy(fn ($user) => (string) $user->_id);
+        $users = User::query()->get(['_id', 'nombre', 'correo', 'foto'])->keyBy(fn ($user) => (string) $user->_id);
         $certifications = $events->where('tipo', 'certificacion')->pluck('usuarioId')->unique()->count();
 
         return response()->json([
@@ -115,6 +117,7 @@ class GamificacionController extends Controller
                         'id' => (string) $attempt->getKey(),
                         'usuarioId' => (string) $attempt->usuarioId,
                         'usuarioNombre' => $users->get((string) $attempt->usuarioId)?->nombre ?? 'Cuenta no disponible',
+                        'usuarioFoto' => $this->images->url($users->get((string) $attempt->usuarioId)?->foto),
                         'usuarioCorreo' => $users->get((string) $attempt->usuarioId)?->correo,
                         'cuestionarioSlug' => (string) $attempt->cuestionarioSlug,
                         'cuestionarioTitulo' => (string) ($versionsByKey->get($attempt->cuestionarioSlug.':'.$attempt->cuestionarioVersion)?->titulo ?? $attempt->cuestionarioSlug),
@@ -146,6 +149,7 @@ class GamificacionController extends Controller
             'data' => [
                 'id' => (string) $attempt->getKey(),
                 'usuarioNombre' => $user?->nombre ?? 'Cuenta no disponible',
+                'usuarioFoto' => $this->images->url($user?->foto),
                 'cuestionarioTitulo' => (string) $quiz->titulo,
                 'cuestionarioVersion' => (int) $quiz->version,
                 'estado' => (string) $attempt->estado,

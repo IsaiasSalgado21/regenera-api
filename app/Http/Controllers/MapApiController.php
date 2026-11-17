@@ -12,6 +12,7 @@ use App\Models\Voluntariado;
 use App\Services\FloraFaunaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use MongoDB\BSON\ObjectId;
 
 class MapApiController extends Controller
 {
@@ -90,9 +91,16 @@ class MapApiController extends Controller
             ->get(['voluntariadoId'])
             ->groupBy('voluntariadoId')
             ->map(fn ($inscripciones) => $inscripciones->count());
+        $organizadorIds = $voluntariados->pluck('organizadorId')->filter()
+            ->map(fn ($id) => (string) $id)->unique()
+            ->flatMap(fn (string $id) => preg_match('/^[a-f0-9]{24}$/i', $id) ? [$id, new ObjectId($id)] : [$id])
+            ->all();
+        $organizadores = User::query()->whereIn('_id', $organizadorIds)
+            ->get(['_id', 'nombre', 'foto', 'estado'])->keyBy(fn (User $user) => (string) $user->_id);
 
-        $data = $voluntariados->map(function (Voluntariado $voluntariado) use ($lugares, $inscripcionesPorVoluntariado) {
+        $data = $voluntariados->map(function (Voluntariado $voluntariado) use ($lugares, $inscripcionesPorVoluntariado, $organizadores) {
             $lugar = $lugares->get((string) $voluntariado->lugarId);
+            $organizador = $organizadores->get((string) $voluntariado->organizadorId);
             $hasOwnCoordinates = $this->hasCoordinates($voluntariado->latitud, $voluntariado->longitud);
             $cupo = (int) ($voluntariado->cupo ?? 0);
             $inscripcionesActivas = (int) $inscripcionesPorVoluntariado->get((string) $voluntariado->_id, 0);
@@ -107,7 +115,8 @@ class MapApiController extends Controller
                 'id' => (string) $voluntariado->_id,
                 'tipo' => 'voluntariado',
                 'titulo' => $voluntariado->titulo,
-                'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+                'organizadorNombre' => $organizador?->nombre,
+                'organizadorFoto' => $organizador?->estado === 'activo' ? $this->gridFsImages->url($organizador->foto) : null,
                 'organizadorId' => (string) $voluntariado->organizadorId,
                 'descripcion' => $voluntariado->descripcion,
                 'imagen' => $imageUrls[0] ?? null,

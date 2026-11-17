@@ -65,7 +65,7 @@
                             </span>
 
                             <h3>{{ $voluntariado['titulo'] }}</h3>
-                            <p class="volunteer-author">Organiza: {{ $voluntariado['organizadorNombre'] ?: 'Organizador' }}</p>
+                            <p class="volunteer-author user-identity">@include('components.user-avatar', ['name' => $voluntariado['organizadorNombre'] ?: 'Organizador', 'photo' => $voluntariado['organizadorFoto'] ?? null])<span>Organiza: {{ $voluntariado['organizadorNombre'] ?: 'Organizador' }}</span></p>
 
                             <div class="volunteer-meta">
                                 @if ($voluntariado['fecha'])

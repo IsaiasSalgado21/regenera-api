@@ -43,7 +43,7 @@
                     @endif
                 </div>
             @endif
-            <p class="volunteer-author">Organiza: {{ $organizadorNombre ?: 'Organizador' }}</p>
+            <p class="volunteer-author user-identity">@include('components.user-avatar', ['name' => $organizadorNombre ?: 'Organizador', 'photo' => $organizadorFoto ?? null])<span>Organiza: {{ $organizadorNombre ?: 'Organizador' }}</span></p>
             <p class="volunteer-detail-hero-description">{{ \Illuminate\Support\Str::limit($voluntariado->descripcion, 180) }}</p>
         </div>
         @if (count($voluntariado->imagenes ?? []))

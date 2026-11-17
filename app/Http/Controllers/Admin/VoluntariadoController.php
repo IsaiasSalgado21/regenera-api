@@ -206,6 +206,7 @@ class VoluntariadoController extends Controller
                     'organizador' => $organizador ? [
                         'id' => $organizadorId,
                         'nombre' => $organizador->nombre,
+                        'foto' => $this->gridFsImages->url($organizador->foto),
                         'correo' => $request->user()->rol === 'admin'
                             || $organizadorId === (string) $request->user()->getAuthIdentifier()
                             ? $organizador->correo
@@ -464,10 +465,13 @@ class VoluntariadoController extends Controller
 
     private function present(Voluntariado $voluntariado): array
     {
+        $organizador = User::find((string) $voluntariado->organizadorId);
+
         return [
             'id' => (string) $voluntariado->_id,
             'titulo' => $voluntariado->titulo,
-            'organizadorNombre' => User::find((string) $voluntariado->organizadorId)?->nombre,
+            'organizadorNombre' => $organizador?->nombre,
+            'organizadorFoto' => $organizador?->estado === 'activo' ? $this->gridFsImages->url($organizador->foto) : null,
             'iniciadoPorFecha' => $this->horario->inicio($voluntariado)?->lte($this->horario->ahora()) ?? false,
             'descripcion' => $voluntariado->descripcion,
             'categoria' => $voluntariado->categoria,

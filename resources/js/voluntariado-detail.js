@@ -532,7 +532,10 @@ if (detailCard) {
                 const row = document.createElement('div');
                 row.className = 'volunteer-owner-participant';
                 const identity = document.createElement('span');
-                identity.textContent = `${participant.nombre || 'Participante'}${participant.correo ? ` · ${participant.correo}` : ''}`;
+                identity.className = 'user-identity';
+                const name = document.createElement('span');
+                name.textContent = `${participant.nombre || 'Participante'}${participant.correo ? ` · ${participant.correo}` : ''}`;
+                identity.append(window.RegeneraAvatar.create(participant.nombre, participant.foto), name);
                 const attendance = document.createElement('span');
                 attendance.textContent = participant.asistencia?.confirmada
                     ? `Asistencia registrada (${participant.asistencia.metodo || 'manual'})`

@@ -459,6 +459,13 @@ html[data-theme="dark"] .map-filter-details summary {
     object-fit: cover;
 }
 
+.map-point-tooltip .user-avatar > img {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 50%;
+}
+
 .map-cluster-dot {
     display: grid;
     width: 42px;
