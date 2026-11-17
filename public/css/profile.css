@@ -104,6 +104,98 @@
     min-width: 0;
 }
 
+.profile-account-settings {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.profile-account-settings[hidden] {
+    display: none;
+}
+
+.profile-account-settings summary {
+    color: #164f3d;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.profile-account-settings form {
+    display: grid;
+    gap: .85rem;
+    margin-top: 1rem;
+    max-width: 440px;
+}
+
+.profile-account-settings label {
+    display: grid;
+    gap: .35rem;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.profile-account-settings input:not([type="checkbox"]),
+.profile-account-settings select,
+.profile-account-settings textarea {
+    border: 1px solid #b9c9bd;
+    border-radius: 8px;
+    padding: .7rem;
+    background: #fff;
+    color: #14201b;
+    font: inherit;
+}
+
+.profile-account-settings button {
+    justify-self: start;
+    border: 0;
+    border-radius: 999px;
+    padding: .7rem 1rem;
+    background: #164f3d;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.profile-account-settings .is-error {
+    color: #a23a2d;
+}
+
+html[data-theme="dark"] .profile-account-settings summary {
+    color: #c4e7d0;
+}
+
+html[data-theme="dark"] .profile-account-settings input:not([type="checkbox"]),
+html[data-theme="dark"] .profile-account-settings select,
+html[data-theme="dark"] .profile-account-settings textarea {
+    border-color: #53675b;
+    background: #192b22;
+    color: #eef5ef;
+}
+
+[data-profile-fields] {
+    display: grid;
+    gap: .55rem;
+}
+
+[data-profile-fields] fieldset {
+    border: 1px solid #b9c9bd;
+    border-radius: 8px;
+    display: grid;
+    gap: .55rem;
+    padding: 1rem;
+}
+
+[data-profile-fields] fieldset[hidden] {
+    display: none;
+}
+
+[data-profile-fields] label:has(input[type="checkbox"]) {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+}
+
 .profile-identity-main h2 {
     color: #14201b;
     font-size: clamp(1.4rem, 3vw, 1.9rem);

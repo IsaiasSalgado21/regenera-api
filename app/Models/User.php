@@ -36,6 +36,20 @@ class User extends Authenticatable
         'fechaRegistro',
         'estado',
         'recordatorioFrecuencia',
+        'correoSecundario',
+        'telefono',
+        'descripcion',
+        'ciudad',
+        'fechaNacimiento',
+        'genero',
+        'generoOtro',
+        'organizacion',
+        'enlacesSociales',
+        'privacidad',
+        'tutor',
+        'perfilCompleto',
+        'menorEdadMinima',
+        'solicitudFechaNacimiento',
     ];
 
     /**
@@ -46,6 +60,21 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'correo',
+        'correoSecundario',
+        'telefono',
+        'descripcion',
+        'ciudad',
+        'fechaNacimiento',
+        'genero',
+        'generoOtro',
+        'organizacion',
+        'enlacesSociales',
+        'privacidad',
+        'tutor',
+        'perfilCompleto',
+        'menorEdadMinima',
+        'solicitudFechaNacimiento',
     ];
 
     /**
@@ -60,6 +89,9 @@ class User extends Authenticatable
             'avatarConfig' => 'array',
             'organizadorVerificado' => 'boolean',
             'fechaRegistro' => 'datetime',
+            'privacidad' => 'boolean',
+            'perfilCompleto' => 'boolean',
+            'menorEdadMinima' => 'boolean',
         ];
     }
 }

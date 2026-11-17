@@ -34,7 +34,7 @@ async function request(method, path, data) {
         }
 
         const message = error.response?.status === 422
-            ? 'Revisa los campos del formulario e inténtalo de nuevo.'
+            ? Object.values(error.response?.data?.errors || {}).flat()[0] || 'Revisa los campos del formulario e inténtalo de nuevo.'
             : error.response?.status === 403
                 ? 'No tienes permiso para realizar esta acción.'
                 : error.response?.data?.message
@@ -67,6 +67,7 @@ export const dashboardApi = {
     gamificationStats: () => request('get', '/api/admin/gamificacion/estadisticas'),
     gamificationAttempt: attemptId => request('get', `/api/admin/gamification/intentos/${encodeURIComponent(attemptId)}`),
     saveUser: (id, data) => request(id ? 'put' : 'post', id ? `/api/admin/usuarios/${id}` : '/api/admin/usuarios', data),
+    reviewBirthDate: (id, decision, fecha) => request('patch', `/api/admin/usuarios/${id}/fecha-nacimiento`, { decision, fecha }),
     deleteUser: id => request('delete', `/api/admin/usuarios/${id}`),
     listArticles: () => request('get', '/api/articulos'),
     listPendingArticles: () => request('get', '/api/admin/articulos/pendientes'),

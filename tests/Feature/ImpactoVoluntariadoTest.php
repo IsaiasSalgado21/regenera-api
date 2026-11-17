@@ -18,7 +18,7 @@ class ImpactoVoluntariadoTest extends TestCase
 
     public function test_only_organizers_and_admins_can_open_the_impact_recording_route(): void
     {
-        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo']);
+        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
         $usuario->setAttribute('_id', '507f1f77bcf86cd799439012');
         Sanctum::actingAs($usuario);
 

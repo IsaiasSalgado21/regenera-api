@@ -51,6 +51,8 @@
                     <input type="email" id="{{ $authPrefix }}-register-correo" name="correo" autocomplete="email"
                         placeholder="nombre@correo.com" required>
 
+                    @include('auth.profile-fields', ['profilePrefix' => $authPrefix.'-register', 'profileBirth' => true])
+
                     <div class="auth-password-grid">
                         <div>
                             <label for="{{ $authPrefix }}-register-password">Contraseña</label>

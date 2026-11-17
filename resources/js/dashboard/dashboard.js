@@ -529,7 +529,7 @@ function initializeDashboard() {
                         ? `<span>Solicitud rechazada${solicitud.motivoRespuesta ? `: ${escapeHtml(solicitud.motivoRespuesta)}` : ''}</span>`
                         : '';
             return `<tr data-participant-row data-name="${escapeHtml(nombre.toLocaleLowerCase())}" data-email="${escapeHtml(participante.correo || '').toLocaleLowerCase()}" data-inscription="${escapeHtml(estadoInscripcion)}" data-attendance="${estadoAsistencia}">
-                <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${participantName}</strong><small>${escapeHtml(participante.correo || 'Sin correo')}</small></span></div></td>
+                <td><div class="volunteer-person"><span class="volunteer-avatar">${avatar}</span><span><strong>${participantName}</strong>${participante.correo ? `<small>${escapeHtml(participante.correo)}</small>` : ''}</span></div></td>
                 <td>${formatDateTime(participante.fechaInscripcion)}</td>
                 <td><span class="volunteer-state volunteer-state-${escapeHtml(estadoInscripcion)}">${escapeHtml(estadoInscripcion)}</span></td>
                 <td><span class="volunteer-state volunteer-state-${estadoAsistencia}">${etiquetaAsistencia}</span></td>
@@ -707,10 +707,13 @@ function initializeDashboard() {
             const verification = usuario.rol === 'organizador' && usuario.organizadorVerificado
                 ? '<span>Verificado</span>'
                 : '';
+            const birthRequest = usuario.solicitudFechaNacimiento?.estado === 'pendiente'
+                ? '<span>Solicitud de fecha pendiente</span>'
+                : '';
             return card({
                 title: usuario.nombre,
                 description: `${usuario.correo}${usuario.fechaRegistro ? ` · Registro: ${new Date(usuario.fechaRegistro).toLocaleDateString('es-MX')}` : ''}`,
-                meta: `${meta}${verification}`,
+                meta: `${meta}${verification}${birthRequest}`,
                 id: usuario.id,
                 actions: action('Editar', 'edit-user', usuario.id)
                     + action('Eliminar', 'delete-user', usuario.id, 'danger'),
@@ -1590,6 +1593,17 @@ function initializeDashboard() {
                             : 'Nuevo usuario';
         if (type === 'user') {
             form.elements.password.required = !record;
+            const section = form.querySelector('[data-admin-profile-section]');
+            section.hidden = !record;
+            const editor = form.querySelector('[data-admin-profile-editor]');
+            editor.hidden = true;
+            editor.querySelectorAll('input, select, textarea').forEach(field => { field.disabled = true; });
+            const request = record?.solicitudFechaNacimiento;
+            const pending = request?.estado === 'pendiente';
+            section.dataset.birthDate = pending ? request.fecha : '';
+            section.querySelector('[data-birth-request]').hidden = !pending;
+            section.querySelector('[data-birth-actions]').hidden = !pending;
+            section.querySelector('[data-birth-request]').textContent = pending ? `Fecha solicitada: ${request.fecha}` : '';
             byId('userForm').querySelector('[data-user-password-help]').textContent = record
                 ? '(déjala vacía para conservarla)'
                 : '(mínimo 8 caracteres)';
@@ -1619,6 +1633,14 @@ function initializeDashboard() {
                     field.checked = Boolean(value);
                 } else {
                     field.value = value ?? '';
+                }
+                if (type === 'user') {
+                    form.elements.enlacesSociales.value = (record.enlacesSociales || []).join('\n');
+                    const tutor = record.tutor || {};
+                    ['Nombre', 'Correo', 'Telefono', 'FechaNacimiento'].forEach(name => {
+                        form.elements[`tutor${name}`].value = tutor[name.charAt(0).toLowerCase() + name.slice(1)] || '';
+                    });
+                    form.elements.tutorAutorizacion.checked = Boolean(tutor.autorizacion);
                 }
             }
         }
@@ -2317,7 +2339,15 @@ function initializeDashboard() {
                 if (type === 'place') await dashboardApi.savePlace(id, payload);
                 if (type === 'flora') await dashboardApi.saveFlora(id, payload);
                 if (type === 'voluntariado') await dashboardApi.saveVoluntariado(id, payload);
-                if (type === 'user') await dashboardApi.saveUser(id, Object.fromEntries(payload.entries()));
+                if (type === 'user') {
+                    const data = Object.fromEntries(payload.entries());
+                    if (id && form.querySelector('[data-enable-profile]').checked) {
+                        data.datosPerfil = window.RegeneraProfileFields.values(form.querySelector('[data-profile-fields]'));
+                        data.datosPerfil.organizacion = form.elements.organizacion.value.trim();
+                        data.datosPerfil.enlacesSociales = form.elements.enlacesSociales.value.split('\n').map(value => value.trim()).filter(Boolean);
+                    }
+                    await dashboardApi.saveUser(id, data);
+                }
                 closeForm(type);
                 showNotice('Los cambios se guardaron correctamente.');
                 await loadResource(
@@ -2334,12 +2364,36 @@ function initializeDashboard() {
                     window.location.assign(`${destination.pathname}${destination.search}`);
                     return;
                 }
+
                 showNotice(error.message, 'error');
             } finally {
                 submit.disabled = false;
             }
         });
     }
+
+    byId('userForm').querySelector('[data-enable-profile]').addEventListener('change', event => {
+        const editor = byId('userForm').querySelector('[data-admin-profile-editor]');
+        editor.hidden = !event.target.checked;
+        editor.querySelectorAll('input, select, textarea').forEach(field => { field.disabled = !event.target.checked; });
+        if (event.target.checked) window.RegeneraProfileFields.update(editor.querySelector('[data-profile-fields]'));
+    });
+    byId('userForm').querySelectorAll('[data-review-birth]').forEach(button => {
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            try {
+                await dashboardApi.reviewBirthDate(byId('userForm').elements.id.value, button.dataset.reviewBirth,
+                    byId('userForm').querySelector('[data-admin-profile-section]').dataset.birthDate);
+                closeForm('user');
+                showNotice('Solicitud revisada.');
+                await loadResource('users');
+            } catch (error) {
+                showNotice(Object.values(error.data?.errors || {}).flat()[0] || error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
 
     byId('rejectForm').addEventListener('submit', async event => {
         event.preventDefault();

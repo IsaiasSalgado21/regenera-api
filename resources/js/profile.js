@@ -20,6 +20,13 @@ if (page) {
     const profileError = page.querySelector('[data-profile-error]');
     const gamificationSection = page.querySelector('[data-gamification-profile]');
     const avatarDialog = page.querySelector('[data-avatar-dialog]');
+    const accountSettings = page.querySelector('[data-account-settings]');
+    const nameForm = page.querySelector('[data-profile-name-form]');
+    const emailForm = page.querySelector('[data-profile-email-form]');
+    const passwordForm = page.querySelector('[data-profile-password-form]');
+    const detailsForm = page.querySelector('[data-profile-details-form]');
+    const birthForm = page.querySelector('[data-profile-birth-form]');
+    let currentUser = null;
     let pendingAvatarReward = null;
     const api = (path) => axios.get(apiUrl(path), { headers: headers() });
     const appUrl = path => `${appBaseUrl}${path}`;
@@ -396,6 +403,8 @@ if (page) {
 
     const showProfile = async () => {
         if (!sessionStorage.getItem('regenera_access_token')) {
+            currentUser = null;
+            accountSettings.hidden = true;
             accessMessage.hidden = false;
             accessMessage.innerHTML = `Inicia sesión para ver tu perfil personal. <a href="${appUrl('/login')}">Iniciar sesión</a>`;
             page.querySelector('[data-profile-identity]').hidden = true;
@@ -411,6 +420,34 @@ if (page) {
         try {
             const response = await api('/api/auth/me');
             const usuario = response.data.usuario;
+            currentUser = usuario;
+            if (usuario.perfilCompleto === false) {
+                window.location.assign(appUrl('/completar-perfil'));
+                return;
+            }
+            nameForm.elements.nombre.value = usuario.nombre || '';
+            emailForm.elements.correo.value = usuario.correo || '';
+            const fields = detailsForm.querySelector('[data-profile-fields]');
+            ['correoSecundario', 'ciudad', 'genero', 'generoOtro', 'telefono', 'descripcion'].forEach(name => {
+                fields.querySelector(`[name="${name}"]`).value = usuario[name] || '';
+            });
+            fields.querySelector('[name="privacidad"]').checked = Boolean(usuario.privacidad);
+            const tutor = usuario.tutor || {};
+            ['Nombre', 'Correo', 'Telefono', 'FechaNacimiento'].forEach(name => {
+                fields.querySelector(`[name="tutor${name}"]`).value = tutor[name.charAt(0).toLowerCase() + name.slice(1)] || '';
+            });
+            fields.querySelector('[name="tutorAutorizacion"]').checked = Boolean(tutor.autorizacion);
+            window.RegeneraProfileFields.update(fields, usuario.fechaNacimiento);
+            detailsForm.querySelector('[data-organizer-fields]').hidden = usuario.rol !== 'organizador';
+            detailsForm.elements.organizacion.value = usuario.organizacion || '';
+            detailsForm.elements.enlacesSociales.value = (usuario.enlacesSociales || []).join('\n');
+            page.querySelector('[data-profile-current-birth]').textContent = usuario.fechaNacimiento || 'No disponible';
+            const birthRequest = page.querySelector('[data-profile-birth-request]');
+            birthRequest.hidden = !usuario.solicitudFechaNacimiento;
+            birthRequest.textContent = usuario.solicitudFechaNacimiento
+                ? `Solicitud: ${usuario.solicitudFechaNacimiento.fecha} · ${usuario.solicitudFechaNacimiento.estado}`
+                : '';
+            accountSettings.hidden = false;
             const roleLabels = {
                 usuario: 'Usuario',
                 organizador: 'Organizador',
@@ -441,12 +478,101 @@ if (page) {
                 usuario.rol === 'organizador' ? loadOrganizerActivity() : Promise.resolve(),
             ]);
         } catch (error) {
+            currentUser = null;
+            accountSettings.hidden = true;
             profileError.hidden = false;
             profileError.textContent = error.response?.status === 401
                 ? 'Tu sesión expiró. Inicia sesión nuevamente para consultar tu perfil.'
                 : 'No se pudo cargar tu perfil. Intenta de nuevo más tarde.';
         }
     };
+
+    const submitAccountForm = async (form, path, status, payload) => {
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        status.textContent = '';
+        status.classList.remove('is-error');
+        try {
+            const response = await axios.patch(apiUrl(path), payload, { headers: headers() });
+            status.textContent = response.data.message;
+            return response.data;
+        } catch (error) {
+            status.classList.add('is-error');
+            status.textContent = Object.values(error.response?.data?.errors || {}).flat()[0]
+                || error.response?.data?.message || 'No se pudieron guardar los cambios.';
+            return null;
+        } finally {
+            button.disabled = false;
+        }
+    };
+
+    nameForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const result = await submitAccountForm(nameForm, '/api/auth/perfil',
+            page.querySelector('[data-profile-name-status]'), { nombre: nameForm.elements.nombre.value.trim() });
+        if (result && currentUser) {
+            currentUser.nombre = result.usuario.nombre;
+            page.querySelector('[data-profile-name]').textContent = currentUser.nombre;
+            document.dispatchEvent(new CustomEvent('regenera:auth-changed', { detail: { user: currentUser } }));
+        }
+    });
+    emailForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const result = await submitAccountForm(emailForm, '/api/auth/correo',
+            page.querySelector('[data-profile-email-status]'), {
+                correo: emailForm.elements.correo.value.trim(),
+                password_actual: emailForm.elements.password_actual.value,
+            });
+        if (result && currentUser) {
+            currentUser.correo = result.usuario.correo;
+            page.querySelector('[data-profile-email]').textContent = currentUser.correo;
+            emailForm.elements.correo.value = currentUser.correo;
+            emailForm.elements.password_actual.value = '';
+        }
+    });
+    passwordForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const result = await submitAccountForm(passwordForm, '/api/auth/contrasena',
+            page.querySelector('[data-profile-password-status]'), {
+                password_actual: passwordForm.elements.password_actual.value,
+                password: passwordForm.elements.password.value,
+                password_confirmation: passwordForm.elements.password_confirmation.value,
+            });
+        if (result) passwordForm.reset();
+    });
+    detailsForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!currentUser) return;
+        const payload = window.RegeneraProfileFields.values(detailsForm.querySelector('[data-profile-fields]'), currentUser.fechaNacimiento);
+        if (currentUser.rol === 'organizador') {
+            payload.organizacion = detailsForm.elements.organizacion.value.trim();
+            payload.enlacesSociales = detailsForm.elements.enlacesSociales.value.split('\n').map(value => value.trim()).filter(Boolean);
+        }
+        const result = await submitAccountForm(detailsForm, '/api/auth/detalles', page.querySelector('[data-profile-details-status]'), payload);
+        if (result) Object.assign(currentUser, result.usuario);
+    });
+    birthForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = birthForm.querySelector('button');
+        const status = page.querySelector('[data-profile-birth-status]');
+        button.disabled = true;
+        try {
+            const response = await axios.post(apiUrl('/api/auth/fecha-nacimiento'), { fechaNacimiento: birthForm.elements.fechaNacimiento.value }, { headers: headers() });
+            status.textContent = response.data.message;
+            const request = page.querySelector('[data-profile-birth-request]');
+            request.textContent = `Solicitud: ${birthForm.elements.fechaNacimiento.value} · pendiente`;
+            request.hidden = false;
+            birthForm.reset();
+        } catch (error) {
+            status.textContent = Object.values(error.response?.data?.errors || {}).flat()[0] || error.response?.data?.message || 'No se pudo enviar la solicitud.';
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    if (sessionStorage.getItem('regenera_access_token') && new URLSearchParams(window.location.search).get('push') === 'bienvenida') {
+        page.querySelector('[data-push-welcome]').hidden = false;
+    }
 
     page.addEventListener('click', event => {
         if (event.target.closest('[data-avatar-open]')) avatarDialog.showModal();

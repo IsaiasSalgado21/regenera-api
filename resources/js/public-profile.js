@@ -27,6 +27,16 @@ if (page) {
         const user = data.data;
         const avatar = page.querySelector('[data-public-avatar]');
         page.querySelector('[data-public-name]').textContent = user.nombre || 'Participante';
+        const extra = page.querySelector('[data-public-extra]');
+        const links = (user.enlacesSociales || []).filter(value => {
+            try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
+        });
+        if (user.descripcion || user.organizacion || links.length) {
+            extra.hidden = false;
+            extra.innerHTML = `${user.descripcion ? `<p>${escapeHtml(user.descripcion)}</p>` : ''}
+                ${user.organizacion ? `<p><strong>Organización:</strong> ${escapeHtml(user.organizacion)}</p>` : ''}
+                ${links.length ? `<ul>${links.map(link => `<li><a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link)}</a></li>`).join('')}</ul>` : ''}`;
+        }
         avatar.innerHTML = user.foto
             ? `<img src="${escapeHtml(user.foto)}" alt="Avatar de ${escapeHtml(user.nombre)}">`
             : renderAvatarMarkup({});

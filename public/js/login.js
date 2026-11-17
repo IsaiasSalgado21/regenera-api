@@ -135,6 +135,7 @@
         if (mode === 'register') {
             payload.nombre = String(values.get('nombre') || '').trim();
             payload.password_confirmation = String(values.get('password_confirmation') || '');
+            Object.assign(payload, window.RegeneraProfileFields.values(form.querySelector('[data-profile-fields]')));
             if (payload.password !== payload.password_confirmation) {
                 setMessage(message, 'Las contraseñas no coinciden.', 'error');
                 form.elements.password_confirmation.focus();
@@ -158,6 +159,14 @@
             setMessage(message, data.message || 'Acceso correcto.', 'success');
 
             const user = data.usuario || {};
+            if (user.perfilCompleto === false) {
+                window.location.assign(`${document.querySelector('meta[name="api-base-url"]').content.replace(/\/api\/?$/, '')}/completar-perfil`);
+                return;
+            }
+            if (mode === 'register') {
+                window.location.assign(`${document.querySelector('meta[name="api-base-url"]').content.replace(/\/api\/?$/, '')}/perfil?push=bienvenida`);
+                return;
+            }
             if (widget.closest('[data-auth-modal]')) {
                 const completedIntent = authIntent;
                 if (!modal.hidden) closeModal();

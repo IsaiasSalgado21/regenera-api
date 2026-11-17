@@ -532,7 +532,7 @@ if (detailCard) {
                 const row = document.createElement('div');
                 row.className = 'volunteer-owner-participant';
                 const identity = document.createElement('span');
-                identity.textContent = `${participant.nombre || 'Participante'} · ${participant.correo || 'Sin correo'}`;
+                identity.textContent = `${participant.nombre || 'Participante'}${participant.correo ? ` · ${participant.correo}` : ''}`;
                 const attendance = document.createElement('span');
                 attendance.textContent = participant.asistencia?.confirmada
                     ? `Asistencia registrada (${participant.asistencia.metodo || 'manual'})`

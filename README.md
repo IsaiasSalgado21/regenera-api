@@ -53,6 +53,35 @@ aparecen en el mapa público. Para proteger especies sensibles, sus zonas
 aproximadas solo se abren en el mapa de Regenera, no en Google Maps; los
 lugares relacionados se enlazan por separado.
 
+## Datos de la cuenta
+
+Desde el perfil se puede actualizar el nombre y, proporcionando la contraseña
+actual, cambiar el correo principal o la contraseña. El cambio de correo no
+envía una verificación. Al cambiar la contraseña se revocan los demás tokens de
+acceso, manteniendo el token actual.
+En el panel de una actividad, los organizadores no reciben los correos de
+otras personas inscritas; los administradores conservan acceso a ellos.
+
+El registro requiere fecha de nacimiento, ciudad, género y correo secundario
+distinto del principal. La edad mínima es 13 años. De los 13 a los 17 años se
+requieren los datos de un tutor adulto y una declaración de su autorización;
+no se verifica ni vincula una cuenta del tutor. Las cuentas anteriores deben
+completar estos datos antes de usar las funciones autenticadas. Si una cuenta
+existente declara menos de 13 años, se bloquea y debe contactar a
+Regenerabcs@mail.com.
+
+Los menores tienen privacidad obligatoria: su perfil público muestra únicamente
+nombre, avatar y medallas. Al cumplir 18 años la privacidad permanece activada
+hasta que la persona decida cambiarla. Con privacidad desactivada, también
+pueden mostrarse la descripción y, para organizadores, organización y hasta
+cinco enlaces sociales. Los correos, teléfono, ciudad, género, fecha de
+nacimiento y datos del tutor son privados. El titular solicita cambios de fecha
+de nacimiento y un administrador los aprueba o rechaza. Los administradores
+pueden editar datos y establecer una contraseña nueva; hacerlo revoca los
+tokens de la cuenta afectada. El correo secundario no habilita recuperación
+de acceso. Tras registrarse se ofrece activar push desde el perfil; depende
+del permiso del navegador y de la configuración del servidor.
+
 ## Progreso de medallas
 
 En el editor administrativo de cuestionarios, el identificador puede ser nuevo

@@ -56,6 +56,10 @@
         if (!response.ok) throw new Error("No se pudo verificar la sesión.");
 
         const data = await response.json();
+        if (data.usuario?.perfilCompleto === false
+            && window.location.pathname !== new URL(`${appBase}/completar-perfil`, window.location.origin).pathname) {
+            window.location.assign(`${appBase}/completar-perfil`);
+        }
         return data.usuario || null;
     }
 

@@ -36,7 +36,7 @@ class QuizQuestionTypesTest extends TestCase
 
     public function test_new_question_types_are_scored_and_resumed_with_the_original_version(): void
     {
-        $user = new User(['rol' => 'usuario', 'estado' => 'activo']);
+        $user = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
         $user->setAttribute('_id', 'test-user');
         Sanctum::actingAs($user);
         $quiz = [
@@ -83,7 +83,7 @@ class QuizQuestionTypesTest extends TestCase
 
     public function test_admin_can_save_new_types_and_reject_invalid_answers(): void
     {
-        $admin = new User(['rol' => 'admin', 'estado' => 'activo']);
+        $admin = new User(['rol' => 'admin', 'estado' => 'activo', 'perfilCompleto' => true]);
         $admin->setAttribute('_id', 'test-admin');
         $payload = [
             'slug' => 'nuevo', 'titulo' => 'Nuevo', 'descripcion' => 'Descripción',
@@ -119,7 +119,7 @@ class QuizQuestionTypesTest extends TestCase
 
     public function test_admin_statistics_include_each_current_quiz_and_historical_attempt_titles(): void
     {
-        $admin = new User(['rol' => 'admin', 'estado' => 'activo']);
+        $admin = new User(['rol' => 'admin', 'estado' => 'activo', 'perfilCompleto' => true]);
         $admin->setAttribute('_id', 'test-admin');
         $quiz = [
             'slug' => 'mar', 'version' => 1, 'titulo' => 'Título anterior',

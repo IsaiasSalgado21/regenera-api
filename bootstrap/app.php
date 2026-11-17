@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureAccountComplete;
 use App\Http\Middleware\OptionalSanctumAuthentication;
 use App\Http\Middleware\ResetSanctumGuard;
 use Illuminate\Foundation\Application;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: ResetSanctumGuard::class);
+        $middleware->api(append: EnsureAccountComplete::class);
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'auth.optional' => OptionalSanctumAuthentication::class,

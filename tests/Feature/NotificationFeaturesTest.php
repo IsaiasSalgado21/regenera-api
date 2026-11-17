@@ -39,7 +39,7 @@ class NotificationFeaturesTest extends TestCase
 
     public function test_admins_cannot_set_participant_reminder_preferences(): void
     {
-        $admin = new User(['rol' => 'admin']);
+        $admin = new User(['rol' => 'admin', 'perfilCompleto' => true]);
         $admin->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($admin);
 
@@ -50,7 +50,7 @@ class NotificationFeaturesTest extends TestCase
 
     public function test_invalid_reminder_frequency_is_rejected_for_non_admins(): void
     {
-        $user = new User(['rol' => 'usuario']);
+        $user = new User(['rol' => 'usuario', 'perfilCompleto' => true]);
         $user->setAttribute('_id', '507f1f77bcf86cd799439012');
         Sanctum::actingAs($user);
 

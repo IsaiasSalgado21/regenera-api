@@ -146,7 +146,7 @@ class SymbolRenderingTest extends TestCase
         DB::purge('mongodb');
 
         try {
-            $owner = new User(['rol' => 'usuario', 'estado' => 'activo']);
+            $owner = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
             $owner->setAttribute('_id', 'owner-test');
             $place = Lugar::create([
                 'nombre' => 'Lugar archivado',

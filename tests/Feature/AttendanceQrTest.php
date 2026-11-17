@@ -19,7 +19,7 @@ class AttendanceQrTest extends TestCase
 
     public function test_qr_attendance_does_not_accept_client_supplied_user_or_volunteer_ids(): void
     {
-        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo']);
+        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
         $usuario->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($usuario);
 
@@ -52,7 +52,7 @@ class AttendanceQrTest extends TestCase
         $this->patchJson($path, ['codigoAsistenciaActivo' => false])
             ->assertUnauthorized();
 
-        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo']);
+        $usuario = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
         $usuario->setAttribute('_id', '507f1f77bcf86cd799439012');
         Sanctum::actingAs($usuario);
 

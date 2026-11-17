@@ -272,7 +272,7 @@ class InscripcionCupoTest extends TestCase
 
     private function usuario(?string $id = null, string $rol = 'usuario'): User
     {
-        $usuario = new User(['rol' => $rol, 'estado' => 'activo']);
+        $usuario = new User(['rol' => $rol, 'estado' => 'activo', 'perfilCompleto' => true]);
         $usuario->setAttribute('_id', $id ?? $this->usuarioId());
         $usuario->nombre = 'Participante de prueba';
         $usuario->correo = bin2hex(random_bytes(6)).'@test.local';

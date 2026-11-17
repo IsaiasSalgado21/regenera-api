@@ -42,6 +42,70 @@
             <p class="profile-joined"><span>Miembro desde</span><strong data-profile-joined>—</strong><a data-profile-public-link hidden>Ver perfil público <span aria-hidden="true">↗</span></a></p>
         </section>
 
+        <section class="profile-panel profile-account-settings" data-account-settings hidden>
+            <details>
+                <summary>Editar datos de mi cuenta</summary>
+                <form data-profile-name-form>
+                    <label>Nombre
+                        <input name="nombre" type="text" maxlength="150" autocomplete="name" required>
+                    </label>
+                    <button type="submit">Guardar nombre</button>
+                    <p data-profile-name-status role="status" aria-live="polite"></p>
+                </form>
+                <form data-profile-email-form>
+                    <label>Correo electrónico
+                        <input name="correo" type="email" maxlength="255" autocomplete="email" required>
+                    </label>
+                    <label>Contraseña actual
+                        <input name="password_actual" type="password" autocomplete="current-password" required>
+                    </label>
+                    <button type="submit">Guardar correo</button>
+                    <p data-profile-email-status role="status" aria-live="polite"></p>
+                </form>
+            </details>
+            <details>
+                <summary>Datos personales y privacidad</summary>
+                <form data-profile-details-form>
+                    @include('auth.profile-fields', ['profilePrefix' => 'profile', 'profileBirth' => false])
+                    <div data-organizer-fields hidden>
+                        <label>Nombre de organización<input name="organizacion" maxlength="150"></label>
+                        <label>Enlaces sociales (uno por línea, hasta cinco)
+                            <textarea name="enlacesSociales" rows="5"></textarea>
+                        </label>
+                    </div>
+                    <button type="submit">Guardar datos</button>
+                    <p data-profile-details-status role="status" aria-live="polite"></p>
+                </form>
+            </details>
+            <details>
+                <summary>Solicitar cambio de fecha de nacimiento</summary>
+                <form data-profile-birth-form>
+                    <p>Fecha actual: <strong data-profile-current-birth></strong></p>
+                    <p>Un administrador revisará esta solicitud.</p>
+                    <p data-profile-birth-request hidden></p>
+                    <label>Nueva fecha de nacimiento<input name="fechaNacimiento" type="date" required></label>
+                    <button type="submit">Enviar solicitud</button>
+                    <p data-profile-birth-status role="status" aria-live="polite"></p>
+                </form>
+            </details>
+            <details>
+                <summary>Cambiar contraseña</summary>
+                <form data-profile-password-form>
+                    <label>Contraseña actual
+                        <input name="password_actual" type="password" autocomplete="current-password" required>
+                    </label>
+                    <label>Nueva contraseña
+                        <input name="password" type="password" autocomplete="new-password" minlength="8" required>
+                    </label>
+                    <label>Confirmar nueva contraseña
+                        <input name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required>
+                    </label>
+                    <button type="submit">Cambiar contraseña</button>
+                    <p data-profile-password-status role="status" aria-live="polite"></p>
+                </form>
+            </details>
+        </section>
+
         @include('profile.avatar-editor')
 
         <section class="profile-gamification" data-gamification-profile hidden aria-labelledby="gamificationHeading">
@@ -136,6 +200,7 @@
                 </section>
                 <section class="profile-setting-card">
                     <h3>Notificaciones push del navegador</h3>
+                    <p data-push-welcome hidden>Tu cuenta está lista. Si lo deseas, activa las notificaciones en este dispositivo.</p>
                     <p>Actívalas para recibir avisos aunque no tengas abierta la página. El navegador solicitará permiso solo cuando pulses el botón.</p>
                     <button type="button" class="profile-push-button" data-push-toggle>Activar notificaciones push</button>
                     <p class="profile-setting-status" data-profile-status role="status" aria-live="polite"></p>

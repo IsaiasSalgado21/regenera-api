@@ -6,11 +6,15 @@ use App\Models\Cuestionario;
 use App\Models\EventoGamificacion;
 use App\Models\User;
 use App\Services\GridFsImageService;
+use App\Services\AccountProfile;
 use Illuminate\Http\JsonResponse;
 
 class PublicProfileController extends Controller
 {
-    public function __construct(private readonly GridFsImageService $images) {}
+    public function __construct(
+        private readonly GridFsImageService $images,
+        private readonly AccountProfile $profiles,
+    ) {}
 
     public function show(string $id): JsonResponse
     {
@@ -56,6 +60,13 @@ class PublicProfileController extends Controller
                 'nombre' => (string) $user->nombre,
                 'foto' => $this->images->url($user->foto),
                 'medallas' => $medals,
+                ...($this->profiles->complete($user) && ! $this->profiles->minor($user) && ! $user->privacidad
+                    ? [
+                        'descripcion' => $user->descripcion,
+                        'organizacion' => $user->rol === 'organizador' ? $user->organizacion : null,
+                        'enlacesSociales' => $user->rol === 'organizador' ? ($user->enlacesSociales ?? []) : [],
+                    ]
+                    : []),
             ],
         ]);
     }

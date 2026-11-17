@@ -29,6 +29,7 @@
                 <p>Participante de Regenera BCS</p>
             </div>
         </section>
+        <section class="profile-panel" data-public-extra hidden></section>
         <section class="profile-panel public-profile-medals" data-public-profile-content hidden aria-labelledby="publicMedalsTitle">
             <div class="profile-panel-heading"><h3 id="publicMedalsTitle">Medallas obtenidas</h3></div>
             <div class="profile-medal-grid" data-public-medals></div>

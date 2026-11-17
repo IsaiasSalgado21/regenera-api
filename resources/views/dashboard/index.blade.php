@@ -510,6 +510,19 @@
                     <label>Estado<select name="estado" required><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></label>
                 </div>
                 <label class="dashboard-checkbox-label"><input name="organizadorVerificado" type="checkbox" value="1"> Organizador verificado</label>
+                <section data-admin-profile-section hidden>
+                    <p data-birth-request hidden></p>
+                    <div data-birth-actions hidden>
+                        <button class="button button-secondary" type="button" data-review-birth="aprobar">Aprobar fecha solicitada</button>
+                        <button class="button button-secondary" type="button" data-review-birth="rechazar">Rechazar solicitud</button>
+                    </div>
+                    <label class="dashboard-checkbox-label"><input type="checkbox" data-enable-profile> Editar datos personales</label>
+                    <div data-admin-profile-editor hidden>
+                        @include('auth.profile-fields', ['profilePrefix' => 'admin-user', 'profileBirth' => true])
+                        <label>Organización<input name="organizacion" maxlength="150"></label>
+                        <label>Enlaces sociales (uno por línea, hasta cinco)<textarea name="enlacesSociales" rows="5"></textarea></label>
+                    </div>
+                </section>
                 <div class="dashboard-form-actions">
                     <button class="button button-primary" type="submit">Guardar usuario</button>
                     <button class="button button-secondary" type="button" data-cancel="user">Cancelar</button>

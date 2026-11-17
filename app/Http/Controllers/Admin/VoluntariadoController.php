@@ -152,7 +152,7 @@ class VoluntariadoController extends Controller
         $organizador = $usuarios->get($organizadorId);
 
         $participantes = $inscripciones
-            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario, $voluntariado, $solicitudesAsistencia): array {
+            ->map(function (Inscripcion $inscripcion) use ($usuarios, $asistenciaPorUsuario, $voluntariado, $solicitudesAsistencia, $request): array {
                 $usuarioId = (string) $inscripcion->usuarioId;
                 $usuario = $usuarios->get($usuarioId);
                 $asistencia = $asistenciaPorUsuario->get($usuarioId);
@@ -163,7 +163,10 @@ class VoluntariadoController extends Controller
                     'id' => (string) $inscripcion->_id,
                     'usuarioId' => $usuarioId,
                     'nombre' => $usuario?->nombre,
-                    'correo' => $usuario?->correo,
+                    'correo' => $request->user()->rol === 'admin'
+                        || $usuarioId === (string) $request->user()->getAuthIdentifier()
+                        ? $usuario?->correo
+                        : null,
                     'foto' => $this->gridFsImages->url($usuario?->foto),
                     'perfilUrl' => $usuario ? route('profile.public', ['id' => $usuarioId]) : null,
                     'fechaInscripcion' => $inscripcion->fechaInscripcion?->toIso8601String(),
@@ -205,7 +208,10 @@ class VoluntariadoController extends Controller
                     'organizador' => $organizador ? [
                         'id' => $organizadorId,
                         'nombre' => $organizador->nombre,
-                        'correo' => $organizador->correo,
+                        'correo' => $request->user()->rol === 'admin'
+                            || $organizadorId === (string) $request->user()->getAuthIdentifier()
+                            ? $organizador->correo
+                            : null,
                     ] : null,
                 ],
                 'estadisticas' => [

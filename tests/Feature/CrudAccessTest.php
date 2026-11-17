@@ -39,7 +39,7 @@ class CrudAccessTest extends TestCase
 
     public function test_admin_routes_reject_authenticated_non_admin_users(): void
     {
-        $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false]);
+        $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false, 'perfilCompleto' => true]);
         $organizador->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($organizador);
 
@@ -52,7 +52,7 @@ class CrudAccessTest extends TestCase
 
     public function test_create_requests_reject_client_supplied_owner_and_state(): void
     {
-        $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false]);
+        $organizador = new User(['rol' => 'organizador', 'organizadorVerificado' => false, 'perfilCompleto' => true]);
         $organizador->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($organizador);
 
@@ -76,7 +76,7 @@ class CrudAccessTest extends TestCase
 
     public function test_place_and_flora_fauna_locations_must_be_inside_baja_california_sur(): void
     {
-        $admin = new User(['rol' => 'admin']);
+        $admin = new User(['rol' => 'admin', 'perfilCompleto' => true]);
         $admin->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($admin);
 
@@ -116,7 +116,7 @@ class CrudAccessTest extends TestCase
 
     public function test_image_upload_limits_are_enforced_for_articles_flora_and_volunteering(): void
     {
-        $admin = new User(['rol' => 'admin']);
+        $admin = new User(['rol' => 'admin', 'perfilCompleto' => true]);
         $admin->setAttribute('_id', '507f1f77bcf86cd799439011');
         Sanctum::actingAs($admin);
         $this->withHeader('Accept', 'application/json');

@@ -95,7 +95,7 @@ class ProfileProgressTest extends TestCase
 
     private function user(string $id): User
     {
-        $user = new User(['rol' => 'usuario', 'estado' => 'activo']);
+        $user = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
         $user->setAttribute('_id', $id);
 
         return $user;

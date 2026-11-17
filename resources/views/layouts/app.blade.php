@@ -125,6 +125,7 @@
             <script src="{{ asset('js/site.js') }}?v={{ filemtime(public_path('js/site.js')) }}"></script>
         @endif
         @if (file_exists(public_path('js/login.js')))
+            <script src="{{ asset('js/account-profile.js') }}?v={{ filemtime(public_path('js/account-profile.js')) }}"></script>
             <script src="{{ asset('js/login.js') }}?v={{ filemtime(public_path('js/login.js')) }}"></script>
         @endif
 

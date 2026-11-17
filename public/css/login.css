@@ -197,7 +197,9 @@
     margin-top: .55rem;
 }
 
-.auth-panel input {
+.auth-panel input:not([type="checkbox"]),
+.auth-panel select,
+.auth-panel textarea {
     background: #fff;
     border: 1px solid #dce4dc;
     border-radius: 10px;
@@ -215,10 +217,35 @@
     color: #a0aaa3;
 }
 
-.auth-panel input:focus {
+.auth-panel input:focus,
+.auth-panel select:focus,
+.auth-panel textarea:focus {
     background: #fff;
     border-color: var(--green-light, #2f8064);
     box-shadow: 0 0 0 3px rgb(47 128 100 / 13%);
+}
+
+.auth-panel [data-profile-fields] {
+    display: grid;
+    gap: .55rem;
+}
+
+.auth-panel [data-profile-fields] fieldset {
+    border: 1px solid #dce4dc;
+    border-radius: 10px;
+    display: grid;
+    gap: .55rem;
+    padding: 1rem;
+}
+
+.auth-panel [data-profile-fields] fieldset[hidden] {
+    display: none;
+}
+
+.auth-panel input[type="checkbox"] {
+    height: auto;
+    min-height: 0;
+    width: auto;
 }
 
 .auth-password-field {
@@ -425,6 +452,8 @@ html[data-theme="dark"] .auth-switch button.active {
 }
 
 html[data-theme="dark"] .auth-panel input,
+html[data-theme="dark"] .auth-panel select,
+html[data-theme="dark"] .auth-panel textarea,
 html[data-theme="dark"] .auth-password-field {
     background: #142019;
     border-color: #45594e;
@@ -432,7 +461,9 @@ html[data-theme="dark"] .auth-password-field {
 }
 
 html[data-theme="dark"] .auth-password-field:focus-within,
-html[data-theme="dark"] .auth-panel input:focus {
+html[data-theme="dark"] .auth-panel input:focus,
+html[data-theme="dark"] .auth-panel select:focus,
+html[data-theme="dark"] .auth-panel textarea:focus {
     border-color: #83c8a7;
 }
 

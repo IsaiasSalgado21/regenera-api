@@ -55,7 +55,13 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']);
+Route::middleware('auth:sanctum')->post('/auth/completar-perfil', [AuthController::class, 'completeProfile']);
 Route::middleware('auth:sanctum')->post('/auth/avatar', [AuthController::class, 'updateAvatar']);
+Route::middleware('auth:sanctum')->patch('/auth/perfil', [AuthController::class, 'updateProfile']);
+Route::middleware('auth:sanctum')->patch('/auth/detalles', [AuthController::class, 'updateDetails']);
+Route::middleware('auth:sanctum')->post('/auth/fecha-nacimiento', [AuthController::class, 'requestBirthDate']);
+Route::middleware(['auth:sanctum', 'throttle:6,1'])->patch('/auth/correo', [AuthController::class, 'updateEmail']);
+Route::middleware(['auth:sanctum', 'throttle:6,1'])->patch('/auth/contrasena', [AuthController::class, 'updatePassword']);
 
 Route::middleware('auth:sanctum')->post('/auth/logout', [AuthController::class, 'logout']);
 
@@ -117,6 +123,7 @@ Route::prefix('admin')
         Route::get('/usuarios', [UserController::class, 'index']);
         Route::post('/usuarios', [UserController::class, 'store']);
         Route::get('/usuarios/{id}', [UserController::class, 'show']);
+        Route::patch('/usuarios/{id}/fecha-nacimiento', [UserController::class, 'reviewBirthDate']);
         Route::put('/usuarios/{id}', [UserController::class, 'update']);
         Route::patch('/usuarios/{id}', [UserController::class, 'update']);
         Route::delete('/usuarios/{id}', [UserController::class, 'destroy']);
