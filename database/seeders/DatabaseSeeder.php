@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
             VoluntariadoActividadDemoSeeder::class,
             BitacoraImpactoDemoSeeder::class,
             GamificacionSeeder::class,
+            ComentarioSeeder::class,
+            ComentariosDemoSeeder::class,
         ]);
     }
 }

@@ -13,6 +13,12 @@ class ComentarioSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command?->warn('ComentarioSeeder omitido: no se ejecuta en producción.');
+
+            return;
+        }
+
         $voluntario = User::query()->where('rol', 'usuario')->first()
             ?? $this->crearUsuarioDemo(
                 'demo.comentarios.voluntario@regenerabcs.com',

@@ -2192,6 +2192,18 @@
     background: var(--white);
 }
 
+.comment-replies {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0 0 20px;
+    border-left: 3px solid #d5e4d8;
+    padding-left: 16px;
+}
+
+.comment-card--reply {
+    background: #f8fbf8;
+}
+
 .comment-card-heading,
 .comment-form-meta,
 .comment-actions {
@@ -2360,6 +2372,14 @@ html[data-theme="dark"] .comment-login {
     border-color: #35473d;
 }
 
+html[data-theme="dark"] .comment-replies {
+    border-color: #486553;
+}
+
+html[data-theme="dark"] .comment-card--reply {
+    background: #202f27;
+}
+
 html[data-theme="dark"] .comment-visibility--private {
     background: #294536;
     color: #d7eddd;
@@ -2391,6 +2411,11 @@ html[data-theme="dark"] .comment-skeleton {
 @media (max-width: 560px) {
     .volunteer-comments {
         padding: 18px;
+    }
+
+    .comment-replies {
+        margin-left: 8px;
+        padding-left: 12px;
     }
 
     .comment-card-heading {

@@ -120,7 +120,7 @@ if (section) {
             comment.puede_publicar
                 ? `<button type="button" class="button button-secondary" data-comment-action="publish" data-comment-id="${escapeHtml(comment.id)}">Publicar duda</button>`
                 : '',
-            comment.puede_moderar
+            comment.puede_moderar && !comment.parent_id
                 ? `<button type="button" class="button button-secondary" data-comment-action="reply" data-comment-id="${escapeHtml(comment.id)}">Responder</button>`
                 : '',
             comment.puede_eliminar
@@ -128,8 +128,12 @@ if (section) {
                 : '',
         ].filter(Boolean).join('');
 
+        const replies = (comment.respuestas || []).length
+            ? `<div class="comment-replies" role="group" aria-label="Respuestas a ${escapeHtml(comment.autor?.nombre || 'este comentario')}">${comment.respuestas.map(reply => renderComment(reply, true)).join('')}</div>`
+            : '';
+
         return `
-            <article class="comment-card" data-comment-id="${escapeHtml(comment.id)}">
+            <article class="comment-card${comment.isReply ? ' comment-card--reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
                 <header class="comment-card-heading">
                     <p class="comment-author">${escapeHtml(comment.autor?.nombre || 'Participante')} <span>· ${escapeHtml(roleLabel(comment.autor?.rol))}</span></p>
                     <time datetime="${escapeHtml(comment.created_at || '')}">${escapeHtml(dateLabel(comment.created_at))}</time>
@@ -138,17 +142,39 @@ if (section) {
                 <p class="comment-content">${escapeHtml(comment.contenido)}</p>
                 ${actions ? `<div class="comment-actions">${actions}</div>` : ''}
                 ${renderReplyForm(comment)}
+                ${replies}
             </article>
         `;
     }
 
+    function buildCommentTree() {
+        const byId = new Map(comments.map(comment => [
+            String(comment.id),
+            { ...comment, respuestas: [] },
+        ]));
+        const roots = [];
+
+        for (const comment of byId.values()) {
+            const parentId = comment.parent_id ? String(comment.parent_id) : null;
+            if (parentId && byId.has(parentId)) {
+                comment.isReply = true;
+                byId.get(parentId).respuestas.push(comment);
+            } else if (!parentId) {
+                roots.push(comment);
+            }
+        }
+
+        return roots;
+    }
+
     function renderComments() {
         comments.sort((first, second) => new Date(first.created_at) - new Date(second.created_at));
-        if (!comments.length) {
+        const roots = buildCommentTree();
+        if (!roots.length) {
             list.innerHTML = '<p class="comment-empty">Aún no hay comentarios.</p>';
             return;
         }
-        list.innerHTML = comments.map(renderComment).join('');
+        list.innerHTML = roots.map(comment => renderComment(comment)).join('');
     }
 
     function announceError(error, field = null) {

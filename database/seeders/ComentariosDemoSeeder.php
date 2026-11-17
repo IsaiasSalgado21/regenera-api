@@ -10,14 +10,15 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Uses three demo volunteer accounts and the owner of the selected activity.
- * It reuses a published activity with an organizer owner, or creates a demo
- * activity and organizer when none is suitable. Reruns are safe; to reset only
- * these samples, remove the contents listed in DUDAS, POSITIVOS, and RESPUESTAS.
+ * Uses three demo volunteer accounts and a dedicated demo organizer/activity.
+ * Reruns are safe; to reset only these samples, remove the contents listed in
+ * DUDAS, POSITIVOS, and RESPUESTAS.
  */
 class ComentariosDemoSeeder extends Seeder
 {
     public const PASSWORD = 'ComentariosDemo123!';
+
+    public const DEMO_VOLUNTEER_TITLE = 'DEMO: comentarios de voluntariado';
 
     public const DUDAS = [
         [
@@ -68,8 +69,6 @@ class ComentariosDemoSeeder extends Seeder
         ],
     ];
 
-    private const DEMO_VOLUNTEER_TITLE = 'DEMO: comentarios de voluntariado';
-
     private const DEMO_PLACE_NAME = 'Playa Balandra - demo comentarios';
 
     public function run(): void
@@ -81,17 +80,16 @@ class ComentariosDemoSeeder extends Seeder
         }
 
         $voluntarios = $this->crearVoluntariosDemo();
-        $contexto = $this->buscarContextoExistente();
+        $organizador = $this->crearOrganizadorDemo();
+        $voluntariado = $this->crearVoluntariadoDemo($organizador);
 
-        if ($contexto === null) {
-            $organizador = $this->crearOrganizadorDemo();
-            $voluntariado = $this->crearVoluntariadoDemo($organizador);
-        } else {
-            [$voluntariado, $organizador] = $contexto;
-        }
-
+        $dudas = [];
         foreach (self::DUDAS as $index => $duda) {
-            $this->crearComentario($voluntariado, $voluntarios[$index % count($voluntarios)], $duda);
+            $dudas[] = $this->crearComentario(
+                $voluntariado,
+                $voluntarios[$index % count($voluntarios)],
+                $duda,
+            );
         }
 
         foreach (self::POSITIVOS as $index => $contenido) {
@@ -102,8 +100,8 @@ class ComentariosDemoSeeder extends Seeder
             ]);
         }
 
-        $this->crearComentario($voluntariado, $organizador, self::RESPUESTAS[0]);
-        $this->crearComentario($voluntariado, $organizador, self::RESPUESTAS[1]);
+        $this->crearComentario($voluntariado, $organizador, self::RESPUESTAS[0], $dudas[0]);
+        $this->crearComentario($voluntariado, $organizador, self::RESPUESTAS[1], $dudas[1]);
 
         $this->command?->info('Se cargaron 5 dudas, 5 comentarios positivos y 2 respuestas demo.');
         $this->command?->info('Voluntariado: '.$voluntariado->titulo.' ('.$voluntariado->getKey().')');
@@ -112,75 +110,6 @@ class ComentariosDemoSeeder extends Seeder
         if ($organizador->correo === 'demo.comentarios.organizador@regenerabcs.com') {
             $this->command?->info('Organizador demo: '.$organizador->correo.' / '.self::PASSWORD);
         }
-    }
-
-    /**
-     * Reuses an existing published activity with an organizer owner, preferring
-     * the one with the most active registrations; otherwise it reuses the demo
-     * activity from a previous run.
-     *
-     * @return array{Voluntariado, User}|null
-     */
-    private function buscarContextoExistente(): ?array
-    {
-        $contenidosDemo = array_merge(
-            array_column(self::DUDAS, 'contenido'),
-            self::POSITIVOS,
-            array_column(self::RESPUESTAS, 'contenido'),
-        );
-        $comentarioDemo = Comentario::query()->whereIn('contenido', $contenidosDemo)->first();
-
-        if ($comentarioDemo !== null) {
-            $voluntariado = Voluntariado::query()->find($comentarioDemo->voluntariado_id);
-            $organizador = $voluntariado === null
-                ? null
-                : User::query()->find($voluntariado->organizadorId);
-
-            if ($voluntariado !== null && $organizador?->rol === 'organizador') {
-                return [$voluntariado, $organizador];
-            }
-        }
-
-        $voluntariados = Voluntariado::query()
-            ->where('estado', 'publicado')
-            ->orderByDesc('inscritosActivos')
-            ->get();
-
-        if ($voluntariados->isEmpty()) {
-            $voluntariados = Voluntariado::query()
-                ->orderByDesc('inscritosActivos')
-                ->get();
-        }
-
-        $demo = Voluntariado::query()
-            ->where('titulo', self::DEMO_VOLUNTEER_TITLE)
-            ->first();
-
-        if ($demo !== null) {
-            $organizador = User::query()->find($demo->organizadorId);
-            if ($organizador?->rol === 'organizador') {
-                return [$demo, $organizador];
-            }
-        }
-
-        foreach ($voluntariados as $voluntariado) {
-            $organizador = User::query()->find($voluntariado->organizadorId);
-            if ($organizador?->rol === 'organizador') {
-                return [$voluntariado, $organizador];
-            }
-        }
-
-        $voluntariado = Voluntariado::query()
-            ->where('titulo', self::DEMO_VOLUNTEER_TITLE)
-            ->first();
-        if ($voluntariado !== null) {
-            $organizador = User::query()->find($voluntariado->organizadorId);
-            if ($organizador?->rol === 'organizador') {
-                return [$voluntariado, $organizador];
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -241,7 +170,7 @@ class ComentariosDemoSeeder extends Seeder
             ],
         );
 
-        return Voluntariado::firstOrCreate(
+        return Voluntariado::updateOrCreate(
             ['titulo' => self::DEMO_VOLUNTEER_TITLE],
             [
                 'descripcion' => 'Jornada de limpieza costera para retirar residuos y cuidar el hábitat.',
@@ -263,9 +192,13 @@ class ComentariosDemoSeeder extends Seeder
         );
     }
 
-    private function crearComentario(Voluntariado $voluntariado, User $autor, array $data): Comentario
-    {
-        return Comentario::firstOrCreate(
+    private function crearComentario(
+        Voluntariado $voluntariado,
+        User $autor,
+        array $data,
+        ?Comentario $padre = null,
+    ): Comentario {
+        return Comentario::updateOrCreate(
             [
                 'voluntariado_id' => $voluntariado->getKey(),
                 'user_id' => $autor->getKey(),
@@ -274,6 +207,7 @@ class ComentariosDemoSeeder extends Seeder
             [
                 'es_privado' => $data['es_privado'],
                 'es_publicado' => $data['es_publicado'],
+                'parent_id' => $padre?->getKey(),
             ],
         );
     }

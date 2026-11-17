@@ -26,18 +26,53 @@ class ComentarioService
 
         if (! $puedeVerTodos) {
             $userIds = $this->idsCompatibles($user->getKey());
-            $query->where(function ($visibles) use ($userIds): void {
+            $publishedParentIds = Comentario::query()
+                ->whereIn('voluntariado_id', $voluntariadoIds)
+                ->where('es_privado', false)
+                ->where('es_publicado', true)
+                ->whereNull('parent_id')
+                ->get(['_id'])
+                ->flatMap(fn (Comentario $comentario) => $this->idsCompatibles($comentario->getKey()))
+                ->all();
+            $privateParentIds = Comentario::query()
+                ->whereIn('voluntariado_id', $voluntariadoIds)
+                ->whereIn('user_id', $userIds)
+                ->whereNull('parent_id')
+                ->get(['_id'])
+                ->flatMap(fn (Comentario $comentario) => $this->idsCompatibles($comentario->getKey()))
+                ->all();
+
+            $query->where(function ($visibles) use ($userIds, $publishedParentIds, $privateParentIds): void {
                 $visibles
                     ->where(function ($publicos): void {
                         $publicos
                             ->where('es_privado', false)
-                            ->where('es_publicado', true);
+                            ->where('es_publicado', true)
+                            ->whereNull('parent_id');
                     })
                     ->orWhere(function ($propios) use ($userIds): void {
                         $propios
                             ->where('es_privado', true)
-                            ->whereIn('user_id', $userIds);
+                            ->whereIn('user_id', $userIds)
+                            ->whereNull('parent_id');
                     });
+
+                if ($publishedParentIds !== []) {
+                    $visibles->orWhere(function ($respuestasPublicas) use ($publishedParentIds): void {
+                        $respuestasPublicas
+                            ->where('es_privado', false)
+                            ->where('es_publicado', true)
+                            ->whereIn('parent_id', $publishedParentIds);
+                    });
+                }
+
+                if ($privateParentIds !== []) {
+                    $visibles->orWhere(function ($respuestasPrivadas) use ($privateParentIds): void {
+                        $respuestasPrivadas
+                            ->where('es_privado', true)
+                            ->whereIn('parent_id', $privateParentIds);
+                    });
+                }
             });
         }
 
@@ -65,15 +100,22 @@ class ComentarioService
 
     public function responder(Comentario $comentarioPadre, User $organizador, string $contenido): Comentario
     {
+        if ($comentarioPadre->parent_id !== null) {
+            throw ValidationException::withMessages([
+                'comentario' => 'Solo se puede responder al comentario principal.',
+            ]);
+        }
+
         $esPrivado = (bool) $comentarioPadre->es_privado;
 
-        // A private question keeps its discussion private; public comments receive a public, published reply.
+        // Replies keep the parent privacy and publication status.
         return Comentario::create([
             'voluntariado_id' => $comentarioPadre->voluntariado_id,
             'user_id' => $organizador->getKey(),
+            'parent_id' => $comentarioPadre->getKey(),
             'contenido' => $contenido,
             'es_privado' => $esPrivado,
-            'es_publicado' => ! $esPrivado,
+            'es_publicado' => ! $esPrivado && (bool) $comentarioPadre->es_publicado,
         ])->load([
             'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol']),
             'voluntariado' => static fn ($voluntariados) => $voluntariados->select(['_id', 'organizadorId']),
@@ -98,9 +140,9 @@ class ComentarioService
 
     public function publicarDudaPrivada(Comentario $comentario): Comentario
     {
-        if (! (bool) $comentario->es_privado) {
+        if (! (bool) $comentario->es_privado || $comentario->parent_id !== null) {
             throw ValidationException::withMessages([
-                'comentario' => 'Solo se puede publicar una duda privada.',
+                'comentario' => 'Solo se puede publicar una duda privada principal.',
             ]);
         }
 
@@ -117,6 +159,9 @@ class ComentarioService
 
     public function eliminar(Comentario $comentario): void
     {
+        Comentario::query()
+            ->whereIn('parent_id', $this->idsCompatibles($comentario->getKey()))
+            ->delete();
         $comentario->delete();
     }
 

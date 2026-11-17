@@ -137,6 +137,7 @@ class ComentarioController extends Controller
 
         return [
             'id' => (string) $comentario->getKey(),
+            'parent_id' => $comentario->parent_id === null ? null : (string) $comentario->parent_id,
             'contenido' => $comentario->contenido,
             'es_privado' => (bool) $comentario->es_privado,
             'es_publicado' => (bool) $comentario->es_publicado,

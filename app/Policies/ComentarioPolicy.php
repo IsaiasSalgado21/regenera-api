@@ -20,10 +20,26 @@ class ComentarioPolicy
 
     public function view(User $user, Comentario $comentario): bool
     {
+        $padre = $comentario->parent_id === null ? null : $comentario->padre;
+
         return (
             ! (bool) $comentario->es_privado
             && (bool) $comentario->es_publicado
+            && (
+                $comentario->parent_id === null
+                || (
+                    $padre !== null
+                    && ! (bool) $padre->es_privado
+                    && (bool) $padre->es_publicado
+                )
+            )
         ) || (string) $comentario->user_id === (string) $user->getAuthIdentifier()
+            || (
+                (bool) $comentario->es_privado
+                && $comentario->parent_id !== null
+                && $padre !== null
+                && (string) $padre->user_id === (string) $user->getAuthIdentifier()
+            )
             || $this->esOrganizadorPropietario($user, $comentario)
             || $user->rol === 'admin';
     }
@@ -43,6 +59,7 @@ class ComentarioPolicy
     public function publicarDuda(User $user, Comentario $comentario): bool
     {
         return (bool) $comentario->es_privado
+            && $comentario->parent_id === null
             && $this->moderar($user, $comentario);
     }
 

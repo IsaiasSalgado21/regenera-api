@@ -6,7 +6,7 @@ El frontend usa Blade y JavaScript vanilla con Vite, no Vue ni React. La secció
 
 El estado es local al módulo. Después de crear, responder, ocultar, publicar o eliminar, la interfaz vuelve a pedir la lista para respetar los permisos y la visibilidad calculados por el servidor; no hace una recarga completa ni una actualización optimista.
 
-La colección MongoDB `comentarios` almacena `voluntariado_id`, `user_id`, `contenido`, `es_privado`, `es_publicado` y timestamps. No hay `parent_id`: las respuestas se guardan como comentarios separados, conservando la privacidad de la duda a la que responden. Los índices definidos son `voluntariado_id`, `user_id` y el compuesto `voluntariado_id + es_publicado`.
+La colección MongoDB `comentarios` almacena `voluntariado_id`, `user_id`, `contenido`, `es_privado`, `es_publicado`, `parent_id` opcional y timestamps. Las respuestas se guardan como comentarios separados referenciando el comentario padre; la interfaz las anida visualmente con sangría. Una respuesta privada hereda la privacidad del padre y es visible para el autor del comentario raíz y el organizador, incluso si luego se publica la pregunta. Solo se permite responder a comentarios raíz. Los índices incluyen `voluntariado_id`, `user_id`, `parent_id` y el compuesto `voluntariado_id + es_publicado`.
 
 La policy permite ver comentarios publicados y públicos, los propios privados, todos al organizador propietario y todos a admins. La lista de API presenta únicamente `autor.nombre` y `autor.rol`; no serializa correo, teléfono ni coordenadas.
 
@@ -42,6 +42,7 @@ Queda pendiente una revisión manual final con lector de pantalla y medición de
 | Guardar configuración | `PATCH /api/voluntariados/{id}/config-comentarios` | `{ "comentarios_por_defecto": "publico" }` o `privado` |
 
 Todas las rutas de comentarios requieren `auth:sanctum`. La API del proyecto responde `200` al eliminar y devuelve un mensaje; el frontend acepta esa respuesta.
+La lista incluye `parent_id` (`null` para comentarios raíz); el frontend agrupa las respuestas debajo del padre correspondiente.
 
 El formulario público de creación y el editor del dashboard muestran la configuración predeterminada a organizadores/admins. Ambos usan el endpoint dedicado después de guardar el voluntariado, ya que las validaciones de creación/edición general no aceptan actualmente ese campo.
 
@@ -50,10 +51,13 @@ El formulario público de creación y el editor del dashboard muestran la config
 En un entorno no productivo, ejecuta:
 
 ```powershell
+php artisan migrate
 php artisan db:seed --class=ComentariosDemoSeeder
 ```
 
-El seeder se protege en `production` y no se incluye en `DatabaseSeeder`. Usa cuentas de voluntarios deterministas, busca primero una actividad publicada (prefiere más inscritos) cuyo propietario sea organizador y conserva su propietario. Si no encuentra una actividad adecuada, crea una actividad demo y un organizador propietario. No cambia la contraseña de un propietario existente.
+El seeder se protege en `production`, está incluido en `DatabaseSeeder` y también puede ejecutarse por clase. Siempre crea o reutiliza la actividad dedicada **“DEMO: comentarios de voluntariado”** y crea/actualiza su organizador propietario y las cuentas demo. Así, estos comentarios no quedan mezclados con actividades reales. El seeder anterior `ComentarioSeeder` también omite su ejecución en producción.
+
+`php artisan db:seed` ejecuta además los otros seeders ya registrados en `DatabaseSeeder`; úsalo solo en entornos de desarrollo/prueba. La protección de los dos seeders de comentarios no convierte en seguros para producción a los demás seeders del proyecto.
 
 Los tres usuarios voluntarios que crea/actualiza son:
 
@@ -61,9 +65,9 @@ Los tres usuarios voluntarios que crea/actualiza son:
 - `demo.comentarios.voluntario02@regenerabcs.com`
 - `demo.comentarios.voluntario03@regenerabcs.com`
 
-Contraseña para las tres cuentas: `ComentariosDemo123!`. Si el seeder necesita crear la actividad, el organizador es `demo.comentarios.organizador@regenerabcs.com`, con la misma contraseña. El comando imprime el correo del propietario elegido; cuando reutiliza una actividad preexistente, su contraseña no se modifica y debe usarse la credencial ya configurada para esa cuenta.
+Contraseña para las cuatro cuentas: `ComentariosDemo123!`. El comando imprime el correo del organizador y el título/ID del voluntariado demo.
 
-La carga contiene 5 dudas (3 privadas/no publicadas y 2 públicas/publicadas), 5 comentarios positivos públicos y publicados, y 2 respuestas (una privada y otra pública): 12 documentos en total. Las claves de búsqueda de `firstOrCreate` hacen que repetir el comando no duplique esos documentos.
+La carga contiene 5 dudas (3 privadas/no publicadas y 2 públicas/publicadas), 5 comentarios positivos públicos y publicados, y 2 respuestas anidadas (una privada y otra pública): 12 documentos en total. Las claves de búsqueda de `updateOrCreate` hacen que repetir el comando no duplique esos documentos.
 
 Para quitar solo los ejemplos, elimina de `comentarios` los contenidos definidos en las constantes `DUDAS`, `POSITIVOS` y `RESPUESTAS` del seeder. Eliminar toda la colección borra también comentarios ajenos. `php artisan migrate:fresh --seed` es destructivo: úsalo solo en una base desechable y vuelve a ejecutar el comando demo después.
 
@@ -90,8 +94,8 @@ Usa dos cuentas distintas de voluntario y el propietario de la actividad indicad
 
 1. Inicia sesión como voluntario 01 y crea un comentario público. Confirma que aparece para voluntarios 01 y 02.
 2. Crea una duda privada; confirma que la ve el autor y el propietario, pero no voluntario 02.
-3. Como propietario organizador, responde a la duda privada; confirma que la respuesta también es privada y la ve el autor.
-4. Publica la duda resuelta y confirma que un segundo voluntario ahora la ve.
+3. Como propietario organizador, responde a la duda privada; confirma que la respuesta también es privada, aparece indentada bajo la duda y la ve el autor.
+4. Publica la duda resuelta y confirma que un segundo voluntario ve la pregunta; la respuesta privada sigue visible solo para su autor y el propietario.
 5. Oculta un comentario público; confirma que desaparece para voluntarios y permanece visible para el propietario.
 6. Elimina un comentario y confirma que ya no aparece ni para el autor ni para el propietario.
 7. Crea un voluntariado con `comentarios_por_defecto = privado`; confirma en el detalle que privacidad está marcada y deshabilitada.
@@ -102,7 +106,7 @@ Para automatizar estos recorridos en una iteración futura, primero debe elegirs
 
 ## Auditoría de rendimiento y seguridad
 
-- Los tres índices de la migración cubren el filtro por voluntariado/publicación y la rama por autor privado. El servicio ordena por `created_at`; el índice actual no incluye ese campo y una operación `$or` podría requerir ordenamiento adicional. El uso real y el coste deben confirmarse en el Mongo de pruebas con `explain("executionStats")`, por ejemplo sobre el filtro por `voluntariado_id` y `es_publicado`; no se pudo medir un plan real en esta inspección.
+- Los índices cubren `voluntariado_id`, `user_id`, `parent_id` y el filtro compuesto por voluntariado/publicación. El servicio ordena por `created_at`; los índices no incluyen ese campo y una operación `$or` podría requerir ordenamiento adicional. El uso real y el coste deben confirmarse en el Mongo de pruebas con `explain("executionStats")`; no se pudo medir un plan real en esta inspección.
 - No se encontró un `throttle` explícito en las rutas de comentarios (sí hay límites en otras rutas). Se recomienda acordar e implementar límites por usuario/IP para crear y responder antes de exponerlos a tráfico alto.
 - El controlador crea el recurso de respuesta con nombre/rol, sin correo/teléfono/coordenadas. Los tests ahora verifican que no aparezcan esos campos en la respuesta.
 - Las rutas requieren autenticación Sanctum y las acciones sensibles pasan por policy. El seeder demo retorna con advertencia en producción.

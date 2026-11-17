@@ -165,8 +165,9 @@ que ya se han utilizado, para que las nuevas categorías puedan reutilizarse.
 Todas las rutas de comentarios requieren `auth:sanctum`. La lista devuelve
 comentarios públicos publicados y las dudas privadas del autor; el organizador
 propietario y los administradores pueden consultar todos los comentarios del
-voluntariado. Las respuestas se guardan en la misma colección, sin relación
-padre: una respuesta a una duda privada permanece privada y no publicada.
+voluntariado. Las respuestas se guardan en la misma colección con una referencia
+`parent_id` al comentario respondido y se muestran anidadas. Una respuesta a una
+duda privada permanece privada y visible para su autor y el organizador.
 
 - `GET /api/voluntariados/{voluntariado}/comentarios`: lista en orden
   cronológico ascendente.

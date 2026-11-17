@@ -120,6 +120,9 @@ class ComentarioTest extends TestCase
         $autor = $this->crearUsuario('usuario');
         $comentario = $this->crearComentario($voluntariado, $autor, 'Comentario público', false, true);
         Sanctum::actingAs($owner);
+        $this->postJson('/api/comentarios/'.$comentario->getKey().'/responder', [
+            'contenido' => 'Respuesta pública',
+        ])->assertCreated();
 
         $this->patchJson('/api/comentarios/'.$comentario->getKey().'/visibilidad', [
             'es_publicado' => false,
@@ -143,7 +146,7 @@ class ComentarioTest extends TestCase
 
         $this->getJson($this->rutaComentarios($voluntariado))
             ->assertOk()
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_owner_organizer_can_publish_a_private_question(): void
@@ -203,20 +206,97 @@ class ComentarioTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_reply_to_private_comment_inherits_privacy(): void
+    public function test_private_reply_remains_visible_to_author_after_question_is_published(): void
     {
         $owner = $this->crearUsuario('organizador');
         $voluntariado = $this->crearVoluntariado($owner);
         $autor = $this->crearUsuario('usuario');
+        $otroVoluntario = $this->crearUsuario('usuario');
         $comentario = $this->crearComentario($voluntariado, $autor, 'Duda privada', true, false);
         Sanctum::actingAs($owner);
 
-        $this->postJson('/api/comentarios/'.$comentario->getKey().'/responder', [
+        $respuesta = $this->postJson('/api/comentarios/'.$comentario->getKey().'/responder', [
             'contenido' => 'Respuesta privada',
         ])->assertCreated()
             ->assertJsonPath('data.contenido', 'Respuesta privada')
+            ->assertJsonPath('data.parent_id', (string) $comentario->getKey())
             ->assertJsonPath('data.es_privado', true)
             ->assertJsonPath('data.es_publicado', false);
+
+        Sanctum::actingAs($autor);
+        $this->getJson($this->rutaComentarios($voluntariado))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment([
+                'id' => $respuesta->json('data.id'),
+                'parent_id' => (string) $comentario->getKey(),
+                'contenido' => 'Respuesta privada',
+            ]);
+
+        Sanctum::actingAs($otroVoluntario);
+        $this->getJson($this->rutaComentarios($voluntariado))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        Sanctum::actingAs($owner);
+        $this->patchJson('/api/comentarios/'.$comentario->getKey().'/publicar')
+            ->assertOk();
+
+        Sanctum::actingAs($autor);
+        $this->getJson($this->rutaComentarios($voluntariado))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $respuesta->json('data.id')]);
+
+        Sanctum::actingAs($otroVoluntario);
+        $this->getJson($this->rutaComentarios($voluntariado))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonMissing(['id' => $respuesta->json('data.id')]);
+    }
+
+    public function test_reply_cannot_be_nested_under_another_reply(): void
+    {
+        $owner = $this->crearUsuario('organizador');
+        $voluntariado = $this->crearVoluntariado($owner);
+        $autor = $this->crearUsuario('usuario');
+        $comentario = $this->crearComentario($voluntariado, $autor, 'Comentario raíz', false, true);
+        Sanctum::actingAs($owner);
+
+        $respuesta = $this->postJson('/api/comentarios/'.$comentario->getKey().'/responder', [
+            'contenido' => 'Primera respuesta',
+        ])->assertCreated();
+
+        $this->postJson('/api/comentarios/'.$respuesta->json('data.id').'/responder', [
+            'contenido' => 'Respuesta anidada no permitida',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('comentario');
+    }
+
+    public function test_public_reply_is_visible_to_other_volunteers_with_parent_reference(): void
+    {
+        $owner = $this->crearUsuario('organizador');
+        $voluntariado = $this->crearVoluntariado($owner);
+        $autor = $this->crearUsuario('usuario');
+        $otroVoluntario = $this->crearUsuario('usuario');
+        $comentario = $this->crearComentario($voluntariado, $autor, 'Pregunta pública', false, true);
+        Sanctum::actingAs($owner);
+
+        $respuesta = $this->postJson('/api/comentarios/'.$comentario->getKey().'/responder', [
+            'contenido' => 'Respuesta para todas las personas',
+        ])->assertCreated()
+            ->assertJsonPath('data.parent_id', (string) $comentario->getKey())
+            ->assertJsonPath('data.es_publicado', true);
+
+        Sanctum::actingAs($otroVoluntario);
+        $this->getJson($this->rutaComentarios($voluntariado))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment([
+                'id' => $respuesta->json('data.id'),
+                'parent_id' => (string) $comentario->getKey(),
+                'contenido' => 'Respuesta para todas las personas',
+            ]);
     }
 
     public function test_deleted_comment_is_removed_for_volunteer_and_organizer(): void
@@ -226,11 +306,15 @@ class ComentarioTest extends TestCase
         $autor = $this->crearUsuario('usuario');
         $comentario = $this->crearComentario($voluntariado, $autor, 'Comentario para eliminar', false, true);
         Sanctum::actingAs($owner);
+        $respuesta = $this->postJson('/api/comentarios/'.$comentario->getKey().'/responder', [
+            'contenido' => 'Respuesta que debe eliminarse con el padre',
+        ])->assertCreated();
 
         $this->deleteJson('/api/comentarios/'.$comentario->getKey())
             ->assertOk();
 
         $this->assertNull(Comentario::find($comentario->getKey()));
+        $this->assertNull(Comentario::find($respuesta->json('data.id')));
 
         Sanctum::actingAs($autor);
         $this->getJson($this->rutaComentarios($voluntariado))
@@ -252,6 +336,9 @@ class ComentarioTest extends TestCase
         $contenidosDemo = array_merge($comentariosPrincipales, array_column(ComentariosDemoSeeder::RESPUESTAS, 'contenido'));
 
         $this->seed(ComentariosDemoSeeder::class);
+        $voluntariadoDemo = Voluntariado::query()
+            ->where('titulo', ComentariosDemoSeeder::DEMO_VOLUNTEER_TITLE)
+            ->firstOrFail();
         $this->assertSame(5, Comentario::query()->whereIn('contenido', array_column(ComentariosDemoSeeder::DUDAS, 'contenido'))->count());
         $this->assertSame(5, Comentario::query()->whereIn('contenido', ComentariosDemoSeeder::POSITIVOS)->count());
         $this->assertSame(10, Comentario::query()->whereIn('contenido', $comentariosPrincipales)->count());
@@ -272,6 +359,20 @@ class ComentarioTest extends TestCase
                 ->count(),
         );
         $this->assertSame(12, Comentario::query()->whereIn('contenido', $contenidosDemo)->count());
+        $this->assertSame(
+            12,
+            Comentario::query()
+                ->whereIn('contenido', $contenidosDemo)
+                ->where('voluntariado_id', $voluntariadoDemo->getKey())
+                ->count(),
+        );
+        $preguntaPrivada = Comentario::query()
+            ->where('contenido', ComentariosDemoSeeder::DUDAS[0]['contenido'])
+            ->firstOrFail();
+        $respuestaPrivada = Comentario::query()
+            ->where('contenido', ComentariosDemoSeeder::RESPUESTAS[0]['contenido'])
+            ->firstOrFail();
+        $this->assertSame((string) $preguntaPrivada->getKey(), (string) $respuestaPrivada->parent_id);
 
         $this->seed(ComentariosDemoSeeder::class);
 
