@@ -1619,6 +1619,11 @@ function initializeDashboard() {
                 }
             }
         }
+        if (type === 'user') {
+            const fields = form.querySelector('[data-profile-fields]');
+            window.RegeneraProfileFields.setCity(fields, record.ciudad || '');
+            window.RegeneraProfileFields.setPhone(fields, record.telefono || '');
+        }
         if (type === 'flora') {
             form.elements.latitud.value = record.ubicacion?.latitud ?? '';
             form.elements.longitud.value = record.ubicacion?.longitud ?? '';
@@ -2378,7 +2383,11 @@ function initializeDashboard() {
         const editor = byId('userForm').querySelector('[data-admin-profile-editor]');
         editor.hidden = !event.target.checked;
         editor.querySelectorAll('input, select, textarea').forEach(field => { field.disabled = !event.target.checked; });
-        if (event.target.checked) window.RegeneraProfileFields.update(editor.querySelector('[data-profile-fields]'));
+        if (event.target.checked) {
+            const fields = editor.querySelector('[data-profile-fields]');
+            window.RegeneraProfileFields.updateCity(fields);
+            window.RegeneraProfileFields.update(fields);
+        }
     });
     byId('userForm').querySelectorAll('[data-review-birth]').forEach(button => {
         button.addEventListener('click', async () => {

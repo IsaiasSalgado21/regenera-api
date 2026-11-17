@@ -41,6 +41,7 @@ class AuthController extends Controller
         }
 
         $correo = strtolower(trim($request->correo));
+        $this->profiles->assertEmailAvailable($correo);
         $profile = $this->profiles->validate($request->all(), $correo);
 
         // Comprobar si el correo ya existe.
@@ -323,6 +324,7 @@ class AuthController extends Controller
         }
 
         $email = strtolower(trim($validated['correo']));
+        $this->profiles->assertEmailAvailable($email, $user);
         if ($email === strtolower((string) $user->correoSecundario)) {
             throw ValidationException::withMessages(['correo' => 'El correo principal debe ser distinto del secundario.']);
         }

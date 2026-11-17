@@ -18,6 +18,7 @@ function profileFields() {
         genero: { value: 'mujer' },
         generoOtro: { value: 'Otro' },
         telefono: { value: '' },
+        telefonoLada: { value: '+52' },
         privacidad: { checked: false, disabled: false },
         tutorNombre: { value: 'Tutor' },
         tutorCorreo: { value: 'tutor@example.com' },
@@ -69,4 +70,57 @@ test('construye el perfil sin descripción en el registro y conserva los datos d
     assert.equal(data.ciudad, 'La Paz');
     assert.equal(Object.hasOwn(data, 'descripcion'), false);
     assert.equal(data.tutor.autorizacion, true);
+});
+
+test('exige una sugerencia o permite guardar una localidad anterior en Otra localidad', () => {
+    const city = { value: '', disabled: false, setCustomValidity(value) { this.error = value; } };
+    const other = { value: '', required: false };
+    const container = { hidden: true };
+    const root = {
+        querySelector(selector) {
+            return { '[name="ciudad"]': city, '[name="ciudadOtra"]': other, '[data-other-city]': container }[selector];
+        },
+        querySelectorAll: () => [{ dataset: { cityOption: 'La Paz' } }, { dataset: { cityOption: 'Otra localidad' } }],
+    };
+    window.RegeneraProfileFields.setCity(root, 'Ejido anterior');
+    assert.equal(city.value, 'Otra localidad');
+    assert.equal(other.value, 'Ejido anterior');
+    assert.equal(other.required, true);
+    assert.equal(container.hidden, false);
+    city.value = 'Localidad desconocida';
+    window.RegeneraProfileFields.updateCity(root);
+    assert.match(city.error, /sugerencia/);
+    city.value = 'La Paz';
+    window.RegeneraProfileFields.updateCity(root);
+    assert.equal(city.error, '');
+    assert.equal(other.required, false);
+});
+
+test('muestra la lada mexicana en teléfonos anteriores de diez dígitos', () => {
+    const phone = { value: '' };
+    const code = { value: '', required: false };
+    const root = { querySelector: selector => selector === '[name="telefonoLada"]' ? code : phone };
+    window.RegeneraProfileFields.setPhone(root, '612 123 4567');
+    assert.equal(code.value, '+52');
+    assert.equal(phone.value, '6121234567');
+    window.RegeneraProfileFields.setPhone(root, '+12025550123');
+    assert.equal(code.value, '+1');
+    assert.equal(phone.value, '2025550123');
+    window.RegeneraProfileFields.setPhone(root, '+5491123456789');
+    assert.equal(code.value, '+54');
+    assert.equal(phone.value, '91123456789');
+    window.RegeneraProfileFields.setPhone(root, '+351912345678');
+    assert.equal(code.value, '+351');
+    assert.equal(phone.value, '912345678');
+    window.RegeneraProfileFields.setPhone(root, '');
+    assert.equal(code.value, '+52');
+});
+
+test('combina la lada y el número solamente cuando se proporciona teléfono', () => {
+    const { root, fields } = profileFields();
+    assert.equal(window.RegeneraProfileFields.values(root).telefono, '');
+    fields.telefono.value = '612 123 4567';
+    assert.equal(window.RegeneraProfileFields.values(root).telefono, '+52612 123 4567');
+    fields.telefonoLada.value = '+1';
+    assert.equal(window.RegeneraProfileFields.values(root).telefono, '+1612 123 4567');
 });

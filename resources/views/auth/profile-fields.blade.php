@@ -3,7 +3,20 @@
     <input id="{{ $profilePrefix }}-secondary" name="correoSecundario" type="email" maxlength="255" aria-describedby="{{ $profilePrefix }}-secondary-help" required>
     <small id="{{ $profilePrefix }}-secondary-help" class="profile-field-help">Se reservará para recuperar tu cuenta cuando esta función esté disponible.</small>
     <label for="{{ $profilePrefix }}-city">Ciudad en la que resides</label>
-    <input id="{{ $profilePrefix }}-city" name="ciudad" maxlength="150" required>
+    <div class="profile-city-picker" data-city-picker>
+        <input id="{{ $profilePrefix }}-city" name="ciudad" maxlength="150" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ $profilePrefix }}-cities" aria-describedby="{{ $profilePrefix }}-city-help" required>
+        <button type="button" class="profile-city-toggle" data-city-toggle aria-label="Mostrar localidades" tabindex="-1"><span aria-hidden="true">▾</span></button>
+        <div id="{{ $profilePrefix }}-cities" class="profile-city-options" data-city-options role="listbox" aria-label="Localidades de Baja California Sur" hidden>
+            @foreach (['La Paz', 'Cabo San Lucas', 'San José del Cabo', 'San José Viejo', 'Ciudad Constitución', 'Ciudad Insurgentes', 'Loreto', 'Santa Rosalía', 'Guerrero Negro', 'Mulegé', 'Vizcaíno', 'Todos Santos', 'El Pescadero', 'Los Barriles', 'La Ribera', 'Santiago', 'Miraflores', 'San Bartolo', 'Bahía Asunción', 'Bahía Tortugas', 'San Ignacio', 'Puerto San Carlos', 'Puerto López Mateos', 'Otra localidad'] as $city)
+                <button type="button" id="{{ $profilePrefix }}-city-option-{{ $loop->index }}" class="profile-city-option" data-city-option="{{ $city }}" role="option" aria-selected="false" tabindex="-1">{{ $city }}</button>
+            @endforeach
+        </div>
+    </div>
+    <small id="{{ $profilePrefix }}-city-help" class="profile-field-help">Selecciona una localidad de Baja California Sur o elige «Otra localidad».</small>
+    <div data-other-city hidden>
+        <label for="{{ $profilePrefix }}-city-other">Escribe tu localidad</label>
+        <input id="{{ $profilePrefix }}-city-other" name="ciudadOtra" maxlength="150">
+    </div>
     @if ($profileBirth ?? true)
         @if ($profileBirthParts ?? false)
             <span class="profile-field-label" id="{{ $profilePrefix }}-birth-label">Fecha de nacimiento</span>
@@ -25,7 +38,12 @@
                     </select>
                 </label>
                 <label for="{{ $profilePrefix }}-birth-year">Año
-                    <input id="{{ $profilePrefix }}-birth-year" type="number" min="1" max="9999" step="1" placeholder="AAAA" autocomplete="bday-year" data-birth-year required>
+                    <select id="{{ $profilePrefix }}-birth-year" autocomplete="bday-year" data-birth-year required>
+                        <option value="">Año</option>
+                        @for ($year = now()->year - 13; $year >= 1920; $year--)
+                            <option value="{{ $year }}">{{ $year }}</option>
+                        @endfor
+                    </select>
                 </label>
                 <input type="hidden" name="fechaNacimiento" data-birth-date>
             </div>
@@ -46,8 +64,26 @@
         <label for="{{ $profilePrefix }}-gender-other">Otro género (opcional)</label>
         <input id="{{ $profilePrefix }}-gender-other" name="generoOtro" maxlength="100">
     </div>
-    <label for="{{ $profilePrefix }}-phone">Teléfono (opcional)</label>
-    <input id="{{ $profilePrefix }}-phone" name="telefono" type="tel" autocomplete="tel" maxlength="40">
+    <div class="profile-phone-fields">
+        <div class="profile-phone-country" data-phone-country>
+            <span class="profile-phone-country-label" id="{{ $profilePrefix }}-phone-code-label">Lada</span>
+            <input name="telefonoLada" type="hidden" value="+52">
+            <button type="button" class="profile-phone-country-toggle" data-phone-country-toggle aria-label="Lada: México +52" aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ $profilePrefix }}-phone-countries">
+                <span class="profile-phone-flag" data-phone-country-flag aria-hidden="true"></span>
+                <span data-phone-country-value>+52</span>
+                <span aria-hidden="true">▾</span>
+            </button>
+            <div id="{{ $profilePrefix }}-phone-countries" class="profile-phone-country-menu" data-phone-country-menu role="dialog" aria-label="Selecciona una lada" hidden>
+                <input type="search" data-phone-country-search aria-label="Buscar país o lada" placeholder="Buscar país o lada" autocomplete="off">
+                <div data-phone-country-options role="listbox" aria-label="Países y ladas"></div>
+                <p data-phone-country-empty hidden>No se encontraron países.</p>
+            </div>
+        </div>
+        <label for="{{ $profilePrefix }}-phone">Teléfono (opcional)
+            <input id="{{ $profilePrefix }}-phone" name="telefono" type="tel" autocomplete="tel-national" maxlength="24" pattern="[0-9\s\(\)\.\-]+" placeholder="612 123 4567" aria-describedby="{{ $profilePrefix }}-phone-help">
+        </label>
+    </div>
+    <small id="{{ $profilePrefix }}-phone-help" class="profile-field-help">Puedes cambiar la lada si tu número es de otro país.</small>
     @if ($profileDescription ?? true)
         <label for="{{ $profilePrefix }}-description">Descripción (opcional)</label>
         <textarea id="{{ $profilePrefix }}-description" name="descripcion" maxlength="1000"></textarea>

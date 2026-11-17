@@ -6,9 +6,41 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use MongoDB\BSON\Regex;
 
 class AccountProfile
 {
+    public function assertEmailAvailable(string $email, ?User $user = null, string $field = 'correo'): void
+    {
+        $pattern = new Regex('^\s*'.preg_quote(strtolower(trim($email)), '/').'\s*$', 'i');
+        $matches = User::query()->where(function ($query) use ($pattern) {
+            $query->where('correo', $pattern)->orWhere('correoSecundario', $pattern);
+        })->get(['_id']);
+        if ($matches->contains(fn ($match) => ! $user || (string) $match->getKey() !== (string) $user->getKey())) {
+            throw ValidationException::withMessages([$field => 'Este correo ya está asociado a otra cuenta.']);
+        }
+    }
+
+    private function normalizePhone(?string $phone): ?string
+    {
+        if ($phone === null || trim($phone) === '') {
+            return null;
+        }
+        $phone = trim($phone);
+        if (! preg_match('/^\+?[0-9\s().-]+$/', $phone)) {
+            return null;
+        }
+        $digits = preg_replace('/\D/', '', $phone);
+        if (! str_starts_with($phone, '+')) {
+            if (strlen($digits) !== 10) {
+                return null;
+            }
+            $digits = '52'.$digits;
+        }
+        return preg_match('/^[1-9][0-9]{6,14}$/', $digits) ? '+'.$digits : null;
+    }
+
     public function validate(array $input, string $email, ?User $user = null): array
     {
         $validator = Validator::make($input, [
@@ -68,6 +100,24 @@ class AccountProfile
         });
         $data = $validator->validate();
         $data['correoSecundario'] = strtolower(trim($data['correoSecundario']));
+        $this->assertEmailAvailable($data['correoSecundario'], $user, 'correoSecundario');
+        if (! empty($data['telefono'])) {
+            $phone = $this->normalizePhone($data['telefono']);
+            if ($phone === null && $data['telefono'] !== $user?->telefono) {
+                throw ValidationException::withMessages(['telefono' => 'Escribe un teléfono válido con lada internacional, por ejemplo +52.']);
+            }
+            if ($phone !== null) {
+                foreach (User::query()->select(['_id', 'telefono'])->whereNotNull('telefono')->cursor() as $existing) {
+                    if ((! $user || (string) $existing->getKey() !== (string) $user->getKey())
+                        && $this->normalizePhone($existing->telefono) === $phone) {
+                        throw ValidationException::withMessages(['telefono' => 'Este teléfono ya está asociado a otra cuenta.']);
+                    }
+                }
+                $data['telefono'] = $phone;
+            }
+        } elseif (array_key_exists('telefono', $data)) {
+            $data['telefono'] = null;
+        }
         $data['ciudad'] = trim($data['ciudad']);
         $data['generoOtro'] = $data['genero'] === 'otro' ? ($data['generoOtro'] ?? null) : null;
         $data['enlacesSociales'] = array_values($data['enlacesSociales'] ?? []);

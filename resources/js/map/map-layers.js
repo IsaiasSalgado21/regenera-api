@@ -33,8 +33,12 @@ const layerGroups = {
         zones: L.featureGroup(),
     },
 };
+const markers = new Map();
+let selectedMarker = null;
+let activeMap = null;
 
 export function addMapLayers(map) {
+    activeMap = map;
     Object.values(layerGroups).forEach(group => {
         group.points.addTo(map);
         group.zones.addTo(map);
@@ -45,13 +49,13 @@ function markerLabel(item) {
     return item.titulo || item.nombre || 'Registro del mapa';
 }
 
-function makeIcon(item) {
+function makeIcon(item, selected = false) {
     const allowedTypes = ['voluntariado', 'lugar', 'flora', 'fauna'];
     const type = item.tipo === 'voluntariado' && item.lleno
         ? 'lleno'
         : (allowedTypes.includes(item.tipo) ? item.tipo : 'lugar');
     const iconElement = document.createElement('span');
-    iconElement.className = `map-marker-icon map-marker-icon--${type}`;
+    iconElement.className = `map-marker-icon map-marker-icon--${type}${selected ? ' map-marker-icon--selected' : ''}`;
     iconElement.setAttribute('aria-hidden', 'true');
     const image = document.createElement('img');
     image.className = 'ui-symbol ui-symbol--map';
@@ -73,6 +77,20 @@ function makeIcon(item) {
     });
 
     return icon;
+}
+
+function selectMarker(layer, marker, item) {
+    if (selectedMarker) {
+        activeMap.removeLayer(selectedMarker.marker);
+        selectedMarker.marker.setIcon(makeIcon(selectedMarker.item));
+        selectedMarker.marker.setZIndexOffset(0);
+        layerGroups[selectedMarker.layer].points.addLayer(selectedMarker.marker);
+    }
+    layerGroups[layer].points.removeLayer(marker);
+    selectedMarker = { marker, item, layer };
+    marker.setIcon(makeIcon(item, true));
+    marker.setZIndexOffset(1000);
+    marker.addTo(activeMap);
 }
 
 function openFeature(marker, item, onSelect) {
@@ -110,8 +128,13 @@ function openFeature(marker, item, onSelect) {
 export function setLayerData(layer, items, onSelect) {
     const groups = layerGroups[layer];
     if (!groups) return;
+    if (selectedMarker && selectedMarker.layer === layer) {
+        activeMap.removeLayer(selectedMarker.marker);
+        selectedMarker = null;
+    }
     groups.points.clearLayers();
     groups.zones.clearLayers();
+    markers.set(layer, new Map());
 
     items.forEach(item => {
         const lat = Number(item.lat);
@@ -136,9 +159,22 @@ export function setLayerData(layer, items, onSelect) {
             keyboard: true,
             alt: markerLabel(item),
         });
-        openFeature(marker, item, onSelect);
+        openFeature(marker, item, selected => {
+            selectMarker(layer, marker, selected);
+            onSelect(selected);
+        });
         groups.points.addLayer(marker);
+        markers.get(layer).set(String(item.id), { marker, item });
     });
+}
+
+export function focusMapFeature(map, layer, id) {
+    const entry = markers.get(layer)?.get(String(id));
+    const group = layerGroups[layer]?.points;
+    if (!entry || !group) return false;
+    selectMarker(layer, entry.marker, entry.item);
+    map.setView(entry.marker.getLatLng(), entry.item.zona_aproximada ? 10 : 17);
+    return true;
 }
 
 export function setLayerVisible(map, layer, visible) {
@@ -149,6 +185,10 @@ export function setLayerVisible(map, layer, visible) {
         if (visible && !map.hasLayer(group)) group.addTo(map);
         if (!visible && map.hasLayer(group)) map.removeLayer(group);
     });
+    if (selectedMarker?.layer === layer) {
+        if (visible && !map.hasLayer(selectedMarker.marker)) selectedMarker.marker.addTo(map);
+        if (!visible && map.hasLayer(selectedMarker.marker)) map.removeLayer(selectedMarker.marker);
+    }
 }
 
 export function fitMapToResults(map, allItems) {

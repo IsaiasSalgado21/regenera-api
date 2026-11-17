@@ -57,6 +57,7 @@ class UserController extends Controller
         $validated['correo'] = strtolower(trim($validated['correo']));
         $validated['perfilCompleto'] = false;
 
+        $this->profiles->assertEmailAvailable($validated['correo']);
         $usuario = User::create($validated);
 
         return response()->json([
@@ -124,6 +125,7 @@ class UserController extends Controller
         }
         if (isset($validated['correo'])) {
             $validated['correo'] = strtolower(trim($validated['correo']));
+            $this->profiles->assertEmailAvailable($validated['correo'], $usuario);
         }
 
         if ($request->has('datosPerfil')) {

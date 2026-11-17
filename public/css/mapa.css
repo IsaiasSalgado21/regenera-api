@@ -331,6 +331,12 @@
     background: #b26a12;
 }
 
+.map-marker-icon--selected {
+    outline: 4px solid #fff;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 9px #164f3d, 0 3px 14px rgba(0, 0, 0, .6);
+}
+
 .map-marker-icon--flora {
     background: #3b7c42;
 }

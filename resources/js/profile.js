@@ -431,6 +431,8 @@ if (page) {
             ['correoSecundario', 'ciudad', 'genero', 'generoOtro', 'telefono', 'descripcion'].forEach(name => {
                 fields.querySelector(`[name="${name}"]`).value = usuario[name] || '';
             });
+            window.RegeneraProfileFields.setCity(fields, usuario.ciudad || '');
+            window.RegeneraProfileFields.setPhone(fields, usuario.telefono || '');
             fields.querySelector('[name="privacidad"]').checked = Boolean(usuario.privacidad);
             const tutor = usuario.tutor || {};
             ['Nombre', 'Correo', 'Telefono', 'FechaNacimiento'].forEach(name => {

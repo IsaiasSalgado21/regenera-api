@@ -2,7 +2,7 @@ import L from 'leaflet';
 import { bajaCaliforniaSurBoundary, bajaCaliforniaSurBounds } from '../geo/baja-california-sur';
 import { fetchCurrentUser, fetchMapLayer } from './map-api.js';
 import { initializeMapFilters } from './map-filters.js';
-import { addMapLayers, fitMapToResults, setLayerData, setLayerVisible } from './map-layers.js';
+import { addMapLayers, fitMapToResults, focusMapFeature, setLayerData, setLayerVisible } from './map-layers.js';
 import { createMapPanel } from './map-panel.js';
 
 const layerNames = ['voluntariados', 'lugares', 'flora-fauna'];
@@ -205,7 +205,10 @@ if (mapElement) {
             }
             return;
         }
-        map.setView([selected.lat, selected.lng], selected.zona_aproximada ? 10 : 14);
+        if (!focusMapFeature(map, focusedLayer, focusedId)) {
+            showFeedback(focusedLayer, 'La ubicación solicitada no se puede mostrar en el mapa.', 'empty');
+            return;
+        }
         showFeature(selected);
     });
 }
