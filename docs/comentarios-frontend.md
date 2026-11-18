@@ -8,7 +8,7 @@ El estado es local al módulo. Después de crear, responder, ocultar, publicar o
 
 La colección MongoDB `comentarios` almacena `voluntariado_id`, `user_id`, `contenido`, `es_privado`, `es_publicado`, `parent_id` opcional y timestamps. Las respuestas se guardan como comentarios separados referenciando el comentario padre; la interfaz las anida visualmente con sangría. Una respuesta privada hereda la privacidad del padre y es visible para el autor del comentario raíz y el organizador, incluso si luego se publica la pregunta. Solo se permite responder a comentarios raíz. Los índices incluyen `voluntariado_id`, `user_id`, `parent_id` y el compuesto `voluntariado_id + es_publicado`.
 
-La policy permite ver comentarios publicados y públicos, los propios privados, todos al organizador propietario y todos a admins. La lista de API presenta únicamente `autor.nombre` y `autor.rol`; no serializa correo, teléfono ni coordenadas.
+La policy permite ver comentarios publicados y públicos, los propios privados, todos al organizador propietario y todos a admins. La API presenta `autor.nombre`, `autor.rol` y `autor.foto` (URL de avatar o `null`); no serializa correo, teléfono ni coordenadas. El frontend reutiliza el avatar común del sitio y muestra la inicial cuando el usuario no tiene foto.
 
 ## Interfaz, autenticación y permisos
 

@@ -47,6 +47,7 @@ class ComentarioTest extends TestCase
         $owner = $this->crearUsuario('organizador');
         $voluntariado = $this->crearVoluntariado($owner);
         $autor = $this->crearUsuario('usuario');
+        $autor->forceFill(['foto' => 'avatars/voluntario.png'])->save();
         $otro = $this->crearUsuario('usuario');
         $this->crearComentario($voluntariado, $autor, 'Privado de otra persona', true, false);
         $this->crearComentario($voluntariado, $autor, 'Comentario público', false, true);
@@ -57,6 +58,8 @@ class ComentarioTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.contenido', 'Comentario público')
+            ->assertJsonPath('data.0.autor.foto', route('imagenes.mostrar', ['path' => 'avatars/voluntario.png']))
+            ->assertJsonMissingPath('data.0.autor.password')
             ->assertJsonMissingPath('data.0.autor.correo')
             ->assertJsonMissingPath('data.0.autor.telefono')
             ->assertJsonMissingPath('data.0.autor.latitud')

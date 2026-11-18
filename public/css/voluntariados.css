@@ -2214,6 +2214,13 @@
     gap: 10px;
 }
 
+.comment-author-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+}
+
 .comment-author {
     margin: 0;
     font-weight: 700;

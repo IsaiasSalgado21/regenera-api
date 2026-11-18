@@ -107,6 +107,10 @@ if (section) {
     }
 
     function renderComment(comment) {
+        const authorName = comment.autor?.nombre || 'Participante';
+        const avatar = window.RegeneraAvatar?.markup
+            ? window.RegeneraAvatar.markup(authorName, comment.autor?.foto)
+            : `<span class="user-avatar" aria-hidden="true"><span>${escapeHtml(Array.from(authorName.trim())[0]?.toLocaleUpperCase() || '?')}</span></span>`;
         const privateBadge = comment.es_privado
             ? '<span class="comment-visibility comment-visibility--private"><span aria-hidden="true">🔒</span> Duda privada</span>'
             : '';
@@ -135,7 +139,10 @@ if (section) {
         return `
             <article class="comment-card${comment.isReply ? ' comment-card--reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
                 <header class="comment-card-heading">
-                    <p class="comment-author">${escapeHtml(comment.autor?.nombre || 'Participante')} <span>· ${escapeHtml(roleLabel(comment.autor?.rol))}</span></p>
+                    <div class="comment-author-identity">
+                        ${avatar}
+                        <p class="comment-author">${escapeHtml(authorName)} <span>· ${escapeHtml(roleLabel(comment.autor?.rol))}</span></p>
+                    </div>
                     <time datetime="${escapeHtml(comment.created_at || '')}">${escapeHtml(dateLabel(comment.created_at))}</time>
                 </header>
                 <div class="comment-card-badges">${privateBadge}${hiddenBadge}</div>

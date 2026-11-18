@@ -20,7 +20,7 @@ class ComentarioService
         $query = Comentario::query()
             ->whereIn('voluntariado_id', $voluntariadoIds)
             ->with([
-                'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol']),
+                'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol', 'foto']),
                 'voluntariado' => static fn ($voluntariados) => $voluntariados->select(['_id', 'organizadorId']),
             ]);
 
@@ -93,7 +93,7 @@ class ComentarioService
             'es_privado' => $esPrivado,
             'es_publicado' => ! $esPrivado,
         ])->load([
-            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol']),
+            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol', 'foto']),
             'voluntariado' => static fn ($voluntariados) => $voluntariados->select(['_id', 'organizadorId']),
         ]);
     }
@@ -117,7 +117,7 @@ class ComentarioService
             'es_privado' => $esPrivado,
             'es_publicado' => ! $esPrivado && (bool) $comentarioPadre->es_publicado,
         ])->load([
-            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol']),
+            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol', 'foto']),
             'voluntariado' => static fn ($voluntariados) => $voluntariados->select(['_id', 'organizadorId']),
         ]);
     }
@@ -133,7 +133,7 @@ class ComentarioService
         $comentario->update(['es_publicado' => $esPublicado]);
 
         return $comentario->fresh([
-            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol']),
+            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol', 'foto']),
             'voluntariado' => static fn ($voluntariados) => $voluntariados->select(['_id', 'organizadorId']),
         ]);
     }
@@ -152,7 +152,7 @@ class ComentarioService
         ]);
 
         return $comentario->fresh([
-            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol']),
+            'user' => static fn ($usuarios) => $usuarios->select(['_id', 'nombre', 'rol', 'foto']),
             'voluntariado' => static fn ($voluntariados) => $voluntariados->select(['_id', 'organizadorId']),
         ]);
     }

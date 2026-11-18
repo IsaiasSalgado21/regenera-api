@@ -201,6 +201,43 @@ La guía de componentes, carga de datos demo, pruebas manuales y auditorías de
 accesibilidad/rendimiento/seguridad está en
 [docs/comentarios-frontend.md](docs/comentarios-frontend.md).
 
+## Despliegue en Railway
+
+Configura estas variables en el servicio de Railway; no copies secretos al
+repositorio:
+
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `APP_KEY` (genera una llave exclusiva para producción y guárdala en Railway)
+- `APP_URL` (URL pública del servicio)
+- `DB_CONNECTION=mongodb`
+- `DB_URI` (URI de MongoDB)
+- `DB_DATABASE` (nombre de la base de datos)
+- `LOG_CHANNEL=stderr`
+
+Genera una `APP_KEY` exclusiva para producción con
+`php artisan key:generate --show` y guárdala como variable de Railway; no la
+subas al repositorio. El build instala las dependencias de producción con
+`composer install --no-dev --optimize-autoloader`.
+
+El comando de inicio del `Procfile` es:
+
+```sh
+php artisan serve --host=0.0.0.0 --port=$PORT
+```
+
+Configura `/up` como healthcheck.
+
+Después de confirmar que las variables apuntan a la base correcta, ejecuta las
+migraciones con:
+
+```sh
+railway run php artisan migrate --force
+```
+
+No ejecutes seeders de demostración en producción: pueden crear cuentas y
+datos de prueba. Haz un respaldo de la base antes de aplicar migraciones.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

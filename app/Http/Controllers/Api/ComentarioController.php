@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Voluntariado;
 use App\Services\AuditoriaService;
 use App\Services\ComentarioService;
+use App\Services\GridFsImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,6 +19,7 @@ class ComentarioController extends Controller
     public function __construct(
         private readonly ComentarioService $comentarios,
         private readonly AuditoriaService $auditoria,
+        private readonly GridFsImageService $gridFsImages,
     ) {}
 
     public function index(Request $request, Voluntariado $voluntariado): JsonResponse
@@ -145,6 +147,7 @@ class ComentarioController extends Controller
             'autor' => [
                 'nombre' => $autor?->nombre,
                 'rol' => $autor?->rol,
+                'foto' => $this->gridFsImages->url($autor?->foto),
             ],
             'puede_moderar' => $usuario->can('moderar', $comentario),
             'puede_publicar' => $usuario->can('publicarDuda', $comentario),

@@ -25,6 +25,7 @@ use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoluntariadoController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/imagen/{path}', [GridFsImageController::class, 'mostrarImagen'])
@@ -39,23 +40,22 @@ Route::get('/ping', function () {
         DB::connection('mongodb')->command(['ping' => 1]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'MongoDB está conectado correctamente.',
+            'status' => 'ok',
         ]);
 
     } catch (Exception $e) {
+        Log::error('MongoDB health check failed.', ['exception' => $e]);
 
         return response()->json([
-            'success' => false,
-            'message' => 'No se pudo conectar con MongoDB.',
-            'error' => $e->getMessage(),
+            'status' => 'error',
+            'message' => 'Servicio no disponible',
         ], 500);
     }
 });
 
-Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->get('/auth/me', [AuthController::class, 'me']);
 Route::middleware('auth:sanctum')->post('/auth/completar-perfil', [AuthController::class, 'completeProfile']);
