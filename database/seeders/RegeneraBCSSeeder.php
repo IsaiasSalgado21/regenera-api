@@ -128,79 +128,135 @@ class RegeneraBCSSeeder extends Seeder
         $fechaReforestacion = now()->addDays(14)->startOfDay();
         $fechaEducacion = now()->addDays(21)->startOfDay();
 
-        $limpieza = Voluntariado::firstOrCreate(
+        $limpieza = Voluntariado::query()->firstOrNew(
             ['titulo' => 'Jornada de limpieza de Playa Balandra'],
-            [
-                'descripcion' => 'Jornada comunitaria de recolección de residuos y cuidado de la zona costera.',
+        );
+        if (! $limpieza->exists) {
+            $limpieza->fill([
                 'lugarId' => (string) $playaBalandra->_id,
                 'organizadorId' => (string) $organizador->_id,
-                'fechaInicio' => $fechaLimpieza->copy()->setTime(8, 0),
-                'fechaFin' => $fechaLimpieza->copy()->setTime(12, 0),
-                'horaInicio' => '08:00',
-                'horaFin' => '12:00',
                 'cupo' => 30,
-                'requisitos' => [
-                    'Llevar agua para consumo personal',
-                    'Usar ropa cómoda y protección solar',
-                    'Seguir las indicaciones del organizador',
-                ],
-                'materiales' => [
-                    'Guantes reutilizables',
-                    'Bolsas para residuos',
-                    'Pinzas recolectoras',
-                ],
                 'imagen' => null,
                 'estado' => 'publicado',
-            ]
-        );
+            ]);
+        }
+        $limpieza->fill([
+            'descripcion' => <<<'CONTENT'
+Balandra es un Área de Protección de Flora y Fauna que alberga manglares, dunas costeras, playas, arrecifes rocosos y vegetación del desierto. La acumulación de residuos puede afectar la calidad del entorno, la fauna y los ecosistemas costeros.
 
-        $reforestacion = Voluntariado::firstOrCreate(
-            ['titulo' => 'Jornada de reforestación comunitaria'],
-            [
-                'descripcion' => 'Actividad de plantación y cuidado de vegetación apropiada para la región.',
+En esta jornada, las personas voluntarias participarán en la recolección manual de residuos sólidos en las zonas autorizadas para la actividad. Se busca fomentar la responsabilidad ambiental, reducir la presencia de basura y promover hábitos que ayuden a conservar las playas.
+
+Los residuos recolectados deberán concentrarse en el punto de acopio previamente establecido para su disposición adecuada. La actividad se realizará sin extraer plantas, alterar dunas, ingresar a zonas restringidas ni molestar a la fauna silvestre. No se deben manipular residuos peligrosos, objetos punzocortantes ni animales muertos.
+
+Objetivo: contribuir a mantener limpias las zonas costeras y fomentar la participación ciudadana en la conservación ambiental. La realización de esta propuesta dentro del área protegida requiere la coordinación y autorización correspondientes; este registro no implica que Regenera BCS cuente con ellas.
+CONTENT,
+            'fechaInicio' => $fechaLimpieza->copy()->setTime(8, 0),
+            'fechaFin' => $fechaLimpieza->copy()->setTime(12, 0),
+            'horaInicio' => '08:00',
+            'horaFin' => '12:00',
+            'requisitos' => [
+                'Llevar agua suficiente para mantenerse hidratado',
+                'Usar ropa cómoda y calzado cerrado adecuado',
+                'Llevar gorra o sombrero y protección solar',
+                'Seguir las indicaciones de los responsables',
+                'Respetar las zonas delimitadas para la actividad',
+            ],
+            'materiales' => [
+                'Guantes reutilizables',
+                'Bolsas resistentes para residuos',
+                'Pinzas recolectoras',
+                'Agua para hidratación',
+            ],
+        ]);
+        $limpieza->save();
+
+        $reforestacion = Voluntariado::query()
+            ->where('titulo', 'Jornada de reforestación comunitaria')
+            ->first();
+        if (! $reforestacion) {
+            $reforestacion = Voluntariado::query()->firstOrNew(
+                ['titulo' => 'Jornada de restauración de vegetación urbana'],
+            );
+        }
+        if (! $reforestacion->exists) {
+            $reforestacion->fill([
                 'lugarId' => (string) $parque->_id,
                 'organizadorId' => (string) $organizador->_id,
-                'fechaInicio' => $fechaReforestacion->copy()->setTime(7, 30),
-                'fechaFin' => $fechaReforestacion->copy()->setTime(11, 30),
-                'horaInicio' => '07:30',
-                'horaFin' => '11:30',
                 'cupo' => 25,
-                'requisitos' => [
-                    'Llevar agua',
-                    'Usar ropa adecuada para trabajo al aire libre',
-                ],
-                'materiales' => [
-                    'Guantes de jardinería',
-                    'Palas',
-                    'Plantas adecuadas para la región',
-                ],
                 'imagen' => null,
                 'estado' => 'publicado',
-            ]
-        );
+            ]);
+        }
+        $reforestacion->titulo = 'Jornada de restauración de vegetación urbana';
+        $reforestacion->fill([
+            'descripcion' => <<<'CONTENT'
+Los espacios verdes urbanos contribuyen al bienestar de la comunidad, ofrecen refugio a distintas especies y ayudan a mejorar las condiciones ambientales de las ciudades.
 
-        $educacion = Voluntariado::firstOrCreate(
+En esta actividad, las personas voluntarias participarán en labores comunitarias de mantenimiento y cuidado de áreas verdes, con actividades como limpieza del espacio, retiro de residuos y apoyo en el acondicionamiento de zonas destinadas a vegetación.
+
+Cualquier plantación deberá realizarse únicamente cuando exista autorización del responsable del espacio y se cuente con especies adecuadas para las condiciones locales. Se dará prioridad a la vegetación nativa y adaptada al clima árido de Baja California Sur. No se plantarán mangles en este contexto urbano, no se introducirán especies exóticas ni se recolectarán plantas silvestres; esta actividad urbana no constituye restauración ecológica de un ecosistema natural.
+
+Objetivo: promover la participación comunitaria en el cuidado de espacios verdes urbanos y fomentar el conocimiento de la vegetación regional.
+CONTENT,
+            'fechaInicio' => $fechaReforestacion->copy()->setTime(7, 30),
+            'fechaFin' => $fechaReforestacion->copy()->setTime(11, 30),
+            'horaInicio' => '07:30',
+            'horaFin' => '11:30',
+            'requisitos' => [
+                'Llevar agua suficiente',
+                'Usar ropa cómoda y calzado cerrado',
+                'Llevar gorra y protección solar',
+                'Seguir las indicaciones del responsable',
+            ],
+            'materiales' => [
+                'Guantes de trabajo',
+                'Bolsas para residuos',
+                'Herramientas manuales, únicamente si son proporcionadas por los organizadores',
+                'Agua para hidratación',
+            ],
+        ]);
+        $reforestacion->save();
+
+        $educacion = Voluntariado::query()->firstOrNew(
             ['titulo' => 'Taller de educación ambiental costera'],
-            [
-                'descripcion' => 'Actividad educativa sobre residuos, ecosistemas costeros y participación ciudadana.',
+        );
+        if (! $educacion->exists) {
+            $educacion->fill([
                 'lugarId' => (string) $malecon->_id,
                 'organizadorId' => (string) $organizador->_id,
-                'fechaInicio' => $fechaEducacion->copy()->setTime(9, 0),
-                'fechaFin' => $fechaEducacion->copy()->setTime(11, 0),
-                'horaInicio' => '09:00',
-                'horaFin' => '11:00',
                 'cupo' => 40,
-                'requisitos' => [
-                    'Interés en el cuidado del medio ambiente',
-                ],
-                'materiales' => [
-                    'Libreta para notas',
-                    'Pluma o lápiz',
-                ],
                 'imagen' => null,
                 'estado' => 'publicado',
-            ]
-        );
+            ]);
+        }
+        $educacion->fill([
+            'descripcion' => <<<'CONTENT'
+Las costas de Baja California Sur albergan ecosistemas de gran importancia ecológica, como manglares, playas, humedales y ambientes marinos que sostienen una amplia diversidad de especies.
+
+En este taller, las personas participantes conocerán las características de los ecosistemas costeros, la importancia de la biodiversidad regional y los principales problemas ambientales que afectan a las playas y zonas marinas.
+
+Se abordarán temas como la contaminación por residuos, la conservación de manglares, la protección de la fauna marina y las prácticas de turismo responsable. También se compartirán acciones cotidianas que pueden contribuir a reducir el impacto ambiental de las actividades humanas. Es un taller comunitario y no se presenta como capacitación oficial de CONANP ni de otra institución.
+
+Objetivo: fortalecer los conocimientos ambientales y promover hábitos responsables para la conservación de los ecosistemas costeros.
+CONTENT,
+            'fechaInicio' => $fechaEducacion->copy()->setTime(9, 0),
+            'fechaFin' => $fechaEducacion->copy()->setTime(11, 0),
+            'horaInicio' => '09:00',
+            'horaFin' => '11:00',
+            'requisitos' => [
+                'No se requieren conocimientos previos',
+                'Llevar libreta y lápiz si se desea tomar apuntes',
+                'Llegar puntualmente',
+                'Participar respetando las indicaciones del taller',
+            ],
+            'materiales' => [
+                'Material educativo',
+                'Libreta',
+                'Lápiz',
+                'Recursos visuales de apoyo',
+            ],
+        ]);
+        $educacion->save();
 
         $fechaCupoLleno = now()->addDays(28)->startOfDay();
         $cupoLleno = Voluntariado::firstOrCreate(
@@ -220,13 +276,6 @@ class RegeneraBCSSeeder extends Seeder
                 'estado' => 'publicado',
             ]
         );
-
-        DB::purge('mongodb');
-        DB::reconnect('mongodb');
-
-        $this->replaceImage($limpieza, 'limpieza-playa.png', 'voluntariados');
-        $this->replaceImage($reforestacion, 'reforestacion-manglar.png', 'voluntariados');
-        $this->replaceImage($educacion, 'limpieza-playa.png', 'voluntariados');
 
         /*
         |--------------------------------------------------------------------------
@@ -291,6 +340,19 @@ class RegeneraBCSSeeder extends Seeder
         $this->syncActiveCupo($reforestacion);
         $this->syncActiveCupo($educacion);
         $this->syncActiveCupo($cupoLleno);
+
+        DB::purge('mongodb');
+        DB::reconnect('mongodb');
+
+        if (empty($limpieza->imagen) && empty($limpieza->imagenes)) {
+            $this->replaceImage($limpieza, 'limpieza-playa.png', 'voluntariados');
+        }
+        if (empty($reforestacion->imagen) && empty($reforestacion->imagenes)) {
+            $this->replaceImage($reforestacion, 'reforestacion-manglar.png', 'voluntariados');
+        }
+        if (empty($educacion->imagen) && empty($educacion->imagenes)) {
+            $this->replaceImage($educacion, 'limpieza-playa.png', 'voluntariados');
+        }
 
         /*
         |--------------------------------------------------------------------------

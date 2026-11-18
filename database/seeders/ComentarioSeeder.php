@@ -19,19 +19,19 @@ class ComentarioSeeder extends Seeder
             return;
         }
 
-        $voluntario = User::query()->where('rol', 'usuario')->first()
-            ?? $this->crearUsuarioDemo(
-                'demo.comentarios.voluntario@regenerabcs.com',
-                'Voluntario Demo Comentarios',
-                'usuario',
-            );
-        $organizador = User::query()->where('rol', 'organizador')->first()
-            ?? $this->crearUsuarioDemo(
-                'demo.comentarios.organizador@regenerabcs.com',
-                'Organizador Demo Comentarios',
-                'organizador',
-            );
-        $voluntariado = Voluntariado::query()->first()
+        $voluntario = $this->crearUsuarioDemo(
+            'demo.comentarios.voluntario@regenerabcs.com',
+            'Voluntario Demo Comentarios',
+            'usuario',
+        );
+        $organizador = $this->crearUsuarioDemo(
+            'demo.comentarios.organizador@regenerabcs.com',
+            'Organizador Demo Comentarios',
+            'organizador',
+        );
+        $voluntariado = Voluntariado::query()
+            ->where('titulo', 'DEMO: comentarios de voluntariado')
+            ->first()
             ?? $this->crearVoluntariadoDemo($organizador);
 
         $ejemplos = [
@@ -86,19 +86,21 @@ class ComentarioSeeder extends Seeder
 
     private function crearVoluntariadoDemo(User $organizador): Voluntariado
     {
-        return Voluntariado::create([
-            'titulo' => 'DEMO: comentarios de voluntariado',
-            'descripcion' => 'Actividad de prueba para validar comentarios públicos, privados y ocultos.',
-            'categoria' => 'Conservación',
-            'organizadorId' => (string) $organizador->getKey(),
-            'fechaInicio' => now()->addDays(7),
-            'fechaFin' => now()->addDays(7),
-            'horaInicio' => '08:00',
-            'horaFin' => '10:00',
-            'cupo' => 10,
-            'requisitos' => [],
-            'materiales' => [],
-            'estado' => 'publicado',
-        ]);
+        return Voluntariado::firstOrCreate(
+            ['titulo' => 'DEMO: comentarios de voluntariado'],
+            [
+                'descripcion' => 'Actividad de prueba para validar comentarios públicos, privados y ocultos.',
+                'categoria' => 'Conservación',
+                'organizadorId' => (string) $organizador->getKey(),
+                'fechaInicio' => now()->addDays(7),
+                'fechaFin' => now()->addDays(7),
+                'horaInicio' => '08:00',
+                'horaFin' => '10:00',
+                'cupo' => 10,
+                'requisitos' => [],
+                'materiales' => [],
+                'estado' => 'publicado',
+            ],
+        );
     }
 }
