@@ -23,7 +23,7 @@ class RegeneraCatalogSeeder extends Seeder
         $this->seedSpecies($catalog, $imagePaths, $places);
         $this->seedArticles($catalog, $imagePaths);
 
-        $this->command?->info('Catálogo inicial: 10 lugares, 10 especies y 6 artículos verificados sin sobrescribir registros existentes.');
+        $this->command?->info('Catálogo inicial: 10 lugares, 10 especies y 6 artículos; fichas de especies sincronizadas por nombre científico.');
     }
 
     private function storeImages(array $catalog): array
@@ -133,22 +133,31 @@ class RegeneraCatalogSeeder extends Seeder
                 $sources[] = $this->imageCredit($catalog[$species['image']]);
             }
 
-            FloraFauna::query()->firstOrCreate(
-                ['nombreCientifico' => $species['scientificName']],
-                [
-                    'nombre' => $species['name'],
-                    'nombreCientifico' => $species['scientificName'],
-                    'creadoPor' => null,
-                    'tipo' => $species['type'],
-                    'descripcion' => $species['description'],
-                    'habitat' => $species['habitat'],
-                    'estado' => 'publicado',
-                    'imagenes' => $species['image'] === null ? [] : [$imagePaths[$species['image']]],
-                    'ubicacion' => ['nombre' => 'Baja California Sur; distribución general.'],
-                    'lugaresRelacionados' => $relatedPlaces,
-                    'fuenteInformacion' => $sources,
-                ],
-            );
+            $record = FloraFauna::query()->firstOrNew([
+                'nombreCientifico' => $species['scientificName'],
+            ]);
+            $attributes = [
+                'nombre' => $species['name'],
+                'nombreCientifico' => $species['scientificName'],
+                'tipo' => $species['type'],
+                'descripcion' => $species['description'],
+                'habitat' => $species['habitat'],
+                'estadoConservacion' => $species['conservation'],
+                'ubicacion' => ['nombre' => $species['location']],
+                'lugaresRelacionados' => $relatedPlaces,
+                'fuenteInformacion' => $sources,
+            ];
+
+            if (! $record->exists) {
+                $attributes['creadoPor'] = null;
+                $attributes['estado'] = 'publicado';
+            }
+            if (! $record->exists || empty($record->imagenes)) {
+                $attributes['imagenes'] = $species['image'] === null ? [] : [$imagePaths[$species['image']]];
+            }
+
+            $record->fill($attributes);
+            $record->save();
         }
     }
 
@@ -508,114 +517,144 @@ class RegeneraCatalogSeeder extends Seeder
                 'scientificName' => 'Pachycereus pringlei',
                 'type' => 'flora',
                 'image' => 'cardon',
-                'description' => 'Categoría: Cactácea. El cardón es una de las plantas más representativas del paisaje desértico de Baja California Sur. Es una cactácea columnar de gran tamaño, con tallos que pueden ramificarse y almacenar agua. Forma parte de los matorrales sarcocaule y proporciona recursos y espacios de refugio para distintos organismos del ecosistema. Importancia ecológica: sus flores y frutos son aprovechados por distintos animales, mientras que su estructura forma parte del hábitat de la fauna local.',
-                'habitat' => 'Zonas áridas, laderas, planicies y matorrales desérticos de la península de Baja California.',
-                'relatedPlaces' => ['Área de Protección de Flora y Fauna Balandra'],
-                'source' => 'CONANP, Programa de Manejo del Área de Protección de Flora y Fauna Balandra: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=9',
-                'reference' => 'Referencia botánica: https://commons.wikimedia.org/wiki/Category:Pachycereus_pringlei',
+                'description' => 'El cardón es una cactácea columnar arborescente propia de los ambientes áridos de la península. Sus tallos almacenan agua y su porte forma parte del paisaje del desierto sudcaliforniano.'."\n\n".
+                    'Sus flores y frutos aportan recursos a distintos animales, y la estructura de la planta ofrece refugio. EncicloVida registra ejemplares en Baja California Sur, incluidos los municipios de La Paz y Mulegé.',
+                'habitat' => 'Matorral sarcocaule, planicies y laderas áridas de Baja California y Baja California Sur.',
+                'location' => 'Distribución endémica de México; registros de EncicloVida en La Paz y Mulegé, Baja California Sur.',
+                'conservation' => null,
+                'relatedPlaces' => [],
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/144024-pachycereus-pringlei',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/144024/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
-                'name' => 'Pitaya agria',
+                'name' => 'Pitaya agria / Pitaya de Baja California',
                 'scientificName' => 'Stenocereus gummosus',
                 'type' => 'flora',
                 'image' => 'pitaya-agria',
-                'description' => 'Categoría: Cactácea. La pitaya agria es una cactácea nativa de ambientes áridos de la península de Baja California. Presenta tallos carnosos y ramificados que le permiten almacenar agua y adaptarse a periodos de escasa precipitación. Sus frutos forman parte de los recursos naturales utilizados por la fauna y de la biodiversidad vegetal regional. Importancia ecológica: participa en las redes ecológicas del desierto mediante sus flores, frutos y estructura vegetal.',
-                'habitat' => 'Matorrales desérticos, planicies y zonas áridas de Baja California Sur.',
-                'relatedPlaces' => ['Área de Protección de Flora y Fauna Balandra'],
-                'source' => 'CONANP, Programa de Manejo de Balandra; documentación botánica regional.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Stenocereus_gummosus',
+                'description' => 'La pitaya agria, también llamada pitaya de Baja California, es una cactácea suculenta endémica de México. Sus tallos carnosos son una adaptación a la disponibilidad limitada de agua en los ambientes áridos.'."\n\n".
+                    'Sus flores y frutos participan en las interacciones ecológicas del matorral desértico. EncicloVida registra ejemplares en Baja California Sur, incluidos La Paz y Los Cabos.',
+                'habitat' => 'Matorral desértico, planicies y laderas áridas de la península de Baja California.',
+                'location' => 'Endémica de México; registros de EncicloVida en La Paz y Los Cabos, Baja California Sur.',
+                'conservation' => null,
+                'relatedPlaces' => [],
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/144034-stenocereus-gummosus',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/144034/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Lomboy',
                 'scientificName' => 'Jatropha cinerea',
                 'type' => 'flora',
                 'image' => 'lomboy',
-                'description' => 'Categoría: Arbusto. El lomboy es un arbusto característico de ambientes áridos de la península de Baja California. Sus hojas y ramas presentan adaptaciones a las condiciones de calor y disponibilidad limitada de agua. Es un componente de la vegetación del matorral sarcocaule sudcaliforniano. Importancia ecológica: forma parte de la comunidad vegetal nativa y contribuye a la diversidad estructural del matorral.',
-                'habitat' => 'Planicies, laderas y matorrales de zonas áridas.',
+                'description' => 'El lomboy es un arbusto del paisaje árido peninsular, adaptado a condiciones de poca disponibilidad de agua. Su nombre común se conserva en esta ficha para el taxón Jatropha cinerea.'."\n\n".
+                    'Forma parte de la vegetación del matorral desértico de Baja California Sur. Los registros de EncicloVida incluyen localidades en los municipios de La Paz y Los Cabos.',
+                'habitat' => 'Matorral desértico, planicies y laderas áridas de la península de Baja California.',
+                'location' => 'Distribución peninsular; registros de EncicloVida en La Paz y Los Cabos, Baja California Sur.',
+                'conservation' => null,
                 'relatedPlaces' => [],
-                'source' => 'Documentación botánica regional y estudios ambientales de SEMARNAT.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Jatropha_cinerea',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/148914-jatropha-cinerea',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/148914/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Torote colorado',
                 'scientificName' => 'Bursera microphylla',
                 'type' => 'flora',
                 'image' => 'torote-colorado',
-                'description' => 'Categoría: Árbol o arbusto. El torote colorado es una especie característica de las zonas desérticas del noroeste de México. Su tronco y ramas pueden presentar formas irregulares y retorcidas, adaptadas a las condiciones ambientales de regiones secas. Forma parte de las comunidades vegetales del matorral sarcocaule de Baja California Sur. Importancia ecológica: contribuye a la diversidad vegetal y a la estructura de los ecosistemas áridos.',
-                'habitat' => 'Laderas rocosas, planicies y matorrales desérticos.',
-                'relatedPlaces' => ['Área de Protección de Flora y Fauna Balandra'],
-                'source' => 'CONANP, Programa de Manejo de Balandra.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Bursera_microphylla',
+                'description' => 'Bursera microphylla es un árbol o arbusto de zonas áridas y forma parte de comunidades de matorral desértico. Esta ficha corresponde a esa especie; no debe confundirse con Bursera exequielii, un taxón distinto descrito en Baja California Sur.'."\n\n".
+                    'Los registros de EncicloVida incluyen ejemplares de Bursera microphylla en Baja California Sur, incluido el municipio de Loreto. No se asigna un sitio protegido sin respaldo geográfico específico.',
+                'habitat' => 'Matorral desértico, planicies y laderas áridas; registros regionales de Baja California Sur.',
+                'location' => 'Registros de EncicloVida para Bursera microphylla en Loreto, Baja California Sur; sin vínculo a un sitio protegido específico.',
+                'conservation' => null,
+                'relatedPlaces' => [],
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/155000-bursera-microphylla',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/155000/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Palo Adán',
                 'scientificName' => 'Fouquieria diguetii',
                 'type' => 'flora',
                 'image' => 'palo-adan',
-                'description' => 'Categoría: Arbusto o árbol pequeño. El palo Adán es una planta característica de la vegetación desértica de Baja California Sur. Presenta ramas alargadas y espinosas y está adaptado a las condiciones de aridez. Es una especie representativa de los paisajes de matorral de la región. Importancia ecológica: forma parte de la vegetación nativa y contribuye a la diversidad de los ecosistemas terrestres.',
-                'habitat' => 'Zonas áridas, laderas y planicies desérticas.',
+                'description' => 'El palo Adán es una planta leñosa de ambientes áridos de la península de Baja California. Sus ramas espinosas y su adaptación a periodos secos forman parte de los rasgos descritos para esta especie.'."\n\n".
+                    'EncicloVida reconoce el nombre común Palo Adán para Fouquieria diguetii y registra ejemplares en Baja California Sur, incluido el municipio de Comondú. No se atribuye una categoría de riesgo sin respaldo específico.',
+                'habitat' => 'Ambientes áridos, matorral desértico, planicies y laderas de la península de Baja California.',
+                'location' => 'Registros de EncicloVida en Comondú, Baja California Sur; sin coordenadas de distribución general.',
+                'conservation' => null,
                 'relatedPlaces' => [],
-                'source' => 'Documentación botánica regional; CONANP.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Fouquieria_diguetii',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/172177-fouquieria-diguetii',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/172177/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Tiburón ballena',
                 'scientificName' => 'Rhincodon typus',
                 'type' => 'fauna',
                 'image' => 'tiburon-ballena',
-                'description' => 'Categoría: Fauna marina. El tiburón ballena es el pez más grande del mundo. A pesar de sus dimensiones, se alimenta principalmente mediante filtración de organismos pequeños presentes en el agua. La Bahía de La Paz es conocida por su presencia estacional y por las actividades reguladas de observación de esta especie. Alimentación: plancton y pequeños organismos filtrados del agua. Importancia ecológica: es una especie emblemática de la biodiversidad marina y un referente para la educación ambiental y el turismo responsable.',
-                'habitat' => 'Aguas tropicales y templadas cálidas; zonas costeras y oceánicas.',
+                'description' => 'El tiburón ballena es un pez de gran tamaño que se alimenta por filtración de plancton y otros organismos pequeños. La filtración le permite obtener alimento mientras se desplaza por el agua.'."\n\n".
+                    'En Baja California Sur su presencia estacional está documentada en la Bahía de La Paz. La observación debe respetar las disposiciones y medidas de manejo aplicables. La categoría mexicana registrada es Amenazada (A); no equivale a una categoría global de la UICN.',
+                'habitat' => 'Aguas tropicales y templadas cálidas, en zonas costeras y oceánicas.',
+                'location' => 'Distribución marina amplia; presencia estacional documentada en la Bahía de La Paz. Sin coordenadas puntuales asignadas.',
+                'conservation' => 'Amenazada (A)',
                 'relatedPlaces' => [],
-                'source' => 'CONABIO y autoridades ambientales mexicanas.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Rhincodon_typus',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/30263-rhincodon-typus',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/30263/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Ballena gris',
                 'scientificName' => 'Eschrichtius robustus',
                 'type' => 'fauna',
                 'image' => 'ballena-gris',
-                'description' => 'Categoría: Mamífero marino. La ballena gris realiza una migración estacional de larga distancia entre las zonas de alimentación del norte del Pacífico y las lagunas de reproducción de la península de Baja California. Las lagunas sudcalifornianas son importantes para el nacimiento y crianza de sus ballenatos. Alimentación: principalmente pequeños organismos bentónicos en sus zonas de alimentación. Importancia ecológica: es una especie emblemática de los ecosistemas marinos y de los procesos migratorios del Pacífico.',
-                'habitat' => 'Aguas del Pacífico norte y lagunas costeras de Baja California Sur durante su temporada reproductiva.',
+                'description' => 'La ballena gris es un cetáceo migratorio que se desplaza entre áreas de alimentación del Pacífico norte y lagunas costeras de la península de Baja California. En Baja California Sur, las lagunas San Ignacio y Ojo de Liebre son importantes para su reproducción y crianza.'."\n\n".
+                    'La ficha distingue la categoría mexicana Protección especial (Pr) de cualquier evaluación global o de subpoblación de la UICN. Los lugares relacionados representan ambientes usados en su ciclo reproductivo, no puntos exactos de avistamiento.',
+                'habitat' => 'Pacífico norte durante la migración y lagunas costeras de Baja California Sur durante reproducción y crianza.',
+                'location' => 'Migratoria del Pacífico norte; registros y ambientes reproductivos en Laguna San Ignacio, Ojo de Liebre y El Vizcaíno.',
+                'conservation' => 'Sujeta a protección especial (Pr)',
                 'relatedPlaces' => [
                     'Laguna San Ignacio',
                     'Complejo Lagunar Ojo de Liebre',
                     'Reserva de la Biosfera El Vizcaíno',
                 ],
-                'source' => 'CONANP, Reserva de la Biosfera El Vizcaíno: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=64',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Eschrichtius_robustus',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/34616-eschrichtius-robustus',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/34616/consulta-registros.json?coleccion=snib&formato=json; CONANP, Reserva de la Biosfera El Vizcaíno: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=64; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Lobo marino de California',
                 'scientificName' => 'Zalophus californianus',
                 'type' => 'fauna',
                 'image' => 'lobo-marino',
-                'description' => 'Categoría: Mamífero marino. El lobo marino de California es un mamífero marino que habita costas e islas del Pacífico y del Golfo de California. Se reúne en colonias sobre playas rocosas e islotes, donde descansa, se reproduce y cuida a sus crías. Es una de las especies más reconocibles de la fauna marina de Baja California Sur. Alimentación: peces y otros organismos marinos. Importancia ecológica: forma parte de las cadenas alimenticias marinas y es un indicador de la biodiversidad costera.',
-                'habitat' => 'Costas rocosas, islas e islotes del Golfo de California.',
+                'description' => 'El lobo marino de California es un mamífero marino que forma colonias en costas rocosas e islas. Se alimenta de peces y otros organismos marinos y forma parte de las redes tróficas costeras.'."\n\n".
+                    'El programa de conservación del Archipiélago de Espíritu Santo documenta una colonia reproductora en el complejo insular. EncicloVida registra la categoría mexicana Protección especial (Pr).',
+                'habitat' => 'Costas rocosas, islas e islotes del Pacífico y del Golfo de California.',
+                'location' => 'Distribución en costas e islas del Pacífico y Golfo de California; colonia reproductora documentada en el Archipiélago de Espíritu Santo.',
+                'conservation' => 'Sujeta a protección especial (Pr)',
                 'relatedPlaces' => ['Parque Nacional Zona Marina del Archipiélago de Espíritu Santo'],
-                'source' => 'CONABIO y CONANP.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Zalophus_californianus',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/33659-zalophus-californianus',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/33659/consulta-registros.json?coleccion=snib&formato=json; CONANP, Zona marina del Archipiélago de Espíritu Santo: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=183; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Tortuga golfina',
                 'scientificName' => 'Lepidochelys olivacea',
                 'type' => 'fauna',
                 'image' => 'tortuga-golfina',
-                'description' => 'Categoría: Reptil marino. La tortuga golfina es una tortuga marina que utiliza playas tropicales y subtropicales para anidar. Las hembras depositan sus huevos en nidos excavados en la arena, por lo que las condiciones de las playas son fundamentales para su reproducción. La contaminación, la iluminación artificial y la alteración del hábitat pueden afectar su ciclo reproductivo. Alimentación: diversos invertebrados y otros organismos marinos. Importancia ecológica: participa en los ecosistemas marinos y costeros; su conservación depende también de la protección de las playas.',
-                'habitat' => 'Aguas marinas tropicales y subtropicales; playas de anidación.',
+                'description' => 'La tortuga golfina es una tortuga marina que utiliza playas para anidar. La iluminación artificial, la alteración de las playas, la contaminación y la captura incidental son amenazas que pueden afectar a la especie.'."\n\n".
+                    'EncicloVida muestra la categoría En peligro de extinción (P) en sus registros asociados. Se deja sin categoría en esta ficha hasta cotejar el registro taxonómico exacto con el anexo oficial vigente de la NOM-059; no se asigna una playa de anidación específica.',
+                'habitat' => 'Aguas marinas tropicales y subtropicales; playas utilizadas para anidación.',
+                'location' => 'Distribución marina tropical y subtropical; no se asigna una localidad o playa de anidación específica en Baja California Sur.',
+                'conservation' => null,
                 'relatedPlaces' => [],
-                'source' => 'CONANP, PROFEPA y NOM-059-SEMARNAT. No se asigna categoría de conservación ni un sitio específico de anidación.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Lepidochelys_olivacea',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/27179-lepidochelys-olivacea',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/27179/consulta-registros.json?coleccion=snib&formato=json; categoría pendiente de cotejo en DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
             [
                 'name' => 'Ballena azul',
                 'scientificName' => 'Balaenoptera musculus',
                 'type' => 'fauna',
                 'image' => 'ballena-azul',
-                'description' => 'Categoría: Mamífero marino. La ballena azul es el animal más grande conocido. Es un mamífero marino que se alimenta principalmente de kril mediante un sistema de filtración. Las aguas del Golfo de California forman parte de regiones importantes para la presencia estacional de grandes cetáceos. Alimentación: principalmente kril. Importancia ecológica: contribuye al funcionamiento de los ecosistemas marinos y al transporte de nutrientes en el océano. No se afirman avistamientos permanentes.',
-                'habitat' => 'Océanos abiertos y zonas de alimentación estacionales.',
+                'description' => 'La ballena azul es el animal más grande conocido y se alimenta filtrando agua para capturar kril y otros organismos pequeños. Sus desplazamientos conectan áreas oceánicas de alimentación.'."\n\n".
+                    'En México se distribuye en el Pacífico norte y el Golfo de California; EncicloVida incluye registros en el Golfo. La categoría mexicana es Protección especial (Pr), distinta de una evaluación global de la UICN.',
+                'habitat' => 'Océano abierto del Pacífico norte y zonas de alimentación estacionales del Golfo de California.',
+                'location' => 'Distribución en el Pacífico norte y el Golfo de California; EncicloVida registra ejemplares en Baja California Sur.',
+                'conservation' => 'Sujeta a protección especial (Pr)',
                 'relatedPlaces' => [],
-                'source' => 'CONABIO y CONANP.',
-                'reference' => 'Referencia: https://commons.wikimedia.org/wiki/Category:Balaenoptera_musculus',
+                'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/34367-balaenoptera-musculus',
+                'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/34367/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
         ];
     }

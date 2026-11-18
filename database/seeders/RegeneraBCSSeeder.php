@@ -298,50 +298,66 @@ class RegeneraBCSSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        $mangleRojo = FloraFauna::firstOrCreate(
-            ['nombre' => 'Mangle Rojo'],
-            [
-                'creadoPor' => new ObjectId((string) $organizador->_id),
-                'nombreCientifico' => 'Rhizophora mangle',
-                'tipo' => 'flora',
-                'descripcion' => 'Árbol halófito crucial para la protección de la línea de costa y esteros de BCS.',
-                'habitat' => 'Esteros y zonas intermareales costeras',
-                'estadoConservacion' => 'Protección especial',
-                'estado' => 'publicado',
-                'imagenes' => [],
-                'ubicacion' => [
-                    'nombre' => 'Ensenada de La Paz',
-                    'latitud' => 24.142,
-                    'longitud' => -110.315,
-                ],
-                'lugaresRelacionados' => [new ObjectId((string) $playaBalandra->_id)],
-                'fuenteInformacion' => 'CONABIO / Ecosistemas de BCS',
-            ]
-        );
+        $mangleRojo = FloraFauna::query()->firstOrNew([
+            'nombreCientifico' => 'Rhizophora mangle',
+        ]);
+        if (! $mangleRojo->exists) {
+            $mangleRojo->creadoPor = new ObjectId((string) $organizador->_id);
+            $mangleRojo->estado = 'publicado';
+            $mangleRojo->imagenes = [];
+        }
+        $mangleRojo->fill([
+            'nombre' => 'Mangle rojo',
+            'nombreCientifico' => 'Rhizophora mangle',
+            'tipo' => 'flora',
+            'descripcion' => 'El mangle rojo es un árbol de manglar adaptado a ambientes salinos e intermareales. Sus raíces aéreas ayudan a retener sedimentos y forman una estructura compleja en la franja costera.'."\n\n".
+                'En Baja California Sur, los manglares conectan ambientes terrestres y marinos y ofrecen refugio y zonas de crianza para organismos costeros. Su conservación depende de mantener íntegros los humedales y la calidad del agua.',
+            'habitat' => 'Manglares, esteros y zonas intermareales salobres o salinas de las costas.',
+            'estadoConservacion' => 'Amenazada (A)',
+            'ubicacion' => [
+                'nombre' => 'Distribución costera tropical y subtropical; presencia documentada en Baja California Sur. No se asigna un sitio puntual.',
+            ],
+            'lugaresRelacionados' => [],
+            'fuenteInformacion' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/166804-rhizophora-mangle; DOF, NOM-059 (14-11-2019): https://dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
+        ]);
+        $mangleRojo->save();
 
-        $tortugaNegra = FloraFauna::firstOrCreate(
-            ['nombre' => 'Tortuga Negra'],
-            [
-                'creadoPor' => new ObjectId((string) $organizador->_id),
-                'nombreCientifico' => 'Chelonia agassizii',
-                'tipo' => 'fauna',
-                'descripcion' => 'Especie marina emblemática que habita en las bahías y zonas costeras del estado.',
-                'habitat' => 'Aguas costeras y bahías protegidas',
-                'estadoConservacion' => 'en_peligro',
-                'estado' => 'publicado',
-                'imagenes' => [],
-                'ubicacion' => [
-                    'nombre' => 'Bahía de La Paz',
-                    'latitud' => 24.200,
-                    'longitud' => -110.350,
-                ],
-                'lugaresRelacionados' => [new ObjectId((string) $playaBalandra->_id)],
-                'fuenteInformacion' => 'Programa de Conservación de Tortugas Marinas',
-            ]
-        );
+        $tortugasNegras = FloraFauna::query()
+            ->whereIn('nombreCientifico', ['Chelonia agassizii', 'Chelonia mydas'])
+            ->get();
+        if ($tortugasNegras->count() > 1) {
+            throw new \RuntimeException('Hay más de un registro para la tortuga negra; resuelve la duplicidad antes de sembrar.');
+        }
 
-        $this->replaceImages($mangleRojo, 'manglar-rojo.png', 'flora-fauna');
-        $this->replaceImages($tortugaNegra, 'tortuga-negra.png', 'flora-fauna');
+        $tortugaNegra = $tortugasNegras->first()
+            ?? FloraFauna::query()->firstOrNew(['nombre' => 'Tortuga Negra']);
+        if (! $tortugaNegra->exists) {
+            $tortugaNegra->creadoPor = new ObjectId((string) $organizador->_id);
+            $tortugaNegra->estado = 'publicado';
+            $tortugaNegra->imagenes = [];
+        }
+        $tortugaNegra->fill([
+            'nombre' => 'Tortuga negra o prieta',
+            'nombreCientifico' => 'Chelonia mydas',
+            'tipo' => 'fauna',
+            'descripcion' => 'La tortuga negra o prieta es la forma del Pacífico oriental de la tortuga verde, una tortuga marina que consume principalmente pastos marinos y algas. El nombre Chelonia agassizii se ha usado para esta forma, pero EncicloVida lo registra como sinónimo de Chelonia mydas; su reconocimiento como especie independiente es controvertido.'."\n\n".
+                'En el Pacífico mexicano, la tortuga negra tiene importancia ecológica y cultural. Esta ficha no señala una playa de anidación ni un punto de observación específico en Baja California Sur.',
+            'habitat' => 'Aguas marinas tropicales y subtropicales del Pacífico oriental; zonas costeras y áreas con pastos marinos y algas.',
+            'estadoConservacion' => 'En peligro de extinción (P)',
+            'ubicacion' => [
+                'nombre' => 'Distribución marina del Pacífico oriental; no se asigna una playa o localidad puntual de Baja California Sur.',
+            ],
+            'lugaresRelacionados' => [],
+            'fuenteInformacion' => 'EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/27176-chelonia-mydas; CONANP PACE (2019): https://www.gob.mx/conanp/documentos/programa-de-accion-para-la-conservacion-de-la-especie-tortuga-verde-negra-chelonia-mydas',
+        ]);
+        $tortugaNegra->save();
+
+        if (empty($mangleRojo->imagenes)) {
+            $this->replaceImages($mangleRojo, 'manglar-rojo.png', 'flora-fauna');
+        }
+        if (empty($tortugaNegra->imagenes)) {
+            $this->replaceImages($tortugaNegra, 'tortuga-negra.png', 'flora-fauna');
+        }
 
         /*
         |--------------------------------------------------------------------------
