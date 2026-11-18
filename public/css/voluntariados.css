@@ -356,6 +356,16 @@
     box-shadow: 0 24px 70px rgb(0 0 0 / 20%);
 }
 
+.volunteer-cancel-dialog[open] {
+    left: 50%;
+    margin: 0;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    position: fixed;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .volunteer-cancel-dialog::backdrop {
     background: rgb(12 25 19 / 58%);
     backdrop-filter: blur(4px);
@@ -423,6 +433,24 @@
     border-color: #a83d38;
     background: #a83d38;
     color: #fff;
+}
+
+@media (max-width: 520px) {
+    .volunteer-cancel-dialog {
+        max-width: none;
+        padding: 20px;
+        width: calc(100vw - 32px);
+    }
+
+    .volunteer-cancel-dialog-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .volunteer-cancel-dialog-actions .button {
+        justify-content: center;
+        width: 100%;
+    }
 }
 
 .volunteer-owner-participant {

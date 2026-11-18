@@ -67,4 +67,32 @@ class VoluntarioPanelTest extends TestCase
         $this->assertSame('inscrita', $data['misInscripciones'][0]['estadoInscripcion']);
         $this->assertSame((string) $published->getKey(), $data['misInscripciones'][0]['id']);
     }
+
+    public function test_first_time_user_can_enroll_without_completing_the_suggested_quiz(): void
+    {
+        $userId = '507f1f77bcf86cd799439031';
+        $organizerId = '507f1f77bcf86cd799439032';
+        $user = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
+        $user->setAttribute('_id', $userId);
+        $volunteer = Voluntariado::create([
+            'titulo' => 'Actividad disponible',
+            'estado' => 'publicado',
+            'organizadorId' => new ObjectId($organizerId),
+            'fechaInicio' => '2099-01-01',
+            'fechaFin' => '2099-01-01',
+            'horaInicio' => '09:00',
+            'horaFin' => '11:00',
+            'cupo' => 10,
+            'inscritosActivos' => 0,
+            'reservasCupo' => [],
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/inscripciones', [
+            'voluntariadoId' => (string) $volunteer->getKey(),
+        ])->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('inscripcion.estado', 'inscrita')
+            ->assertJsonPath('cuestionarioSugerido', 'seguridad-limpieza');
+    }
 }

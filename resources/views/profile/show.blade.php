@@ -199,10 +199,28 @@
                     </form>
                 </section>
                 <section class="profile-setting-card">
-                    <h3>Notificaciones push del navegador</h3>
+                    <h3>Notificaciones push</h3>
                     <p data-push-welcome hidden>Tu cuenta está lista. Si lo deseas, activa las notificaciones en este dispositivo.</p>
-                    <p>Actívalas para recibir avisos aunque no tengas abierta la página. El navegador solicitará permiso solo cuando pulses el botón.</p>
-                    <button type="button" class="profile-push-button" data-push-toggle>Activar notificaciones push</button>
+                    <p>Push de todas las notificaciones en este dispositivo.</p>
+                    <button type="button" class="profile-push-toggle" data-push-toggle role="switch"
+                        aria-label="Notificaciones push en este dispositivo" aria-checked="false">
+                        <span class="profile-push-switch-track" aria-hidden="true"><span></span></span>
+                        <span data-push-toggle-label>Activar push</span>
+                    </button>
+                    <div class="profile-push-sound-settings">
+                        <label for="pushSound">Sonido</label>
+                        <div class="profile-push-sound-control">
+                            <select id="pushSound" data-push-sound aria-label="Sonido de notificaciones">
+                                <option value="bell">Campana</option>
+                                <option value="double">Doble tono</option>
+                                <option value="soft">Tono suave</option>
+                                <option value="none">Sin sonido</option>
+                            </select>
+                            <button type="button" class="profile-push-sound-preview" data-push-sound-preview
+                                aria-label="Probar sonido" title="Probar sonido">▶</button>
+                        </div>
+                    </div>
+                    <p class="profile-push-sound-note">Con la página cerrada se usa el sonido de Brave y del sistema.</p>
                     <p class="profile-setting-status" data-profile-status role="status" aria-live="polite"></p>
                 </section>
             </div>

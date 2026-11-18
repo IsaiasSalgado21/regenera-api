@@ -209,6 +209,7 @@ html[data-theme="dark"] :is(
     .attendance-code-form,
     .notification-panel,
     .notification-drawer,
+    .notification-toast,
     .notification-popover,
     .flora-detail-stage,
     .flora-stage-data,
@@ -421,8 +422,37 @@ html[data-theme="dark"] .notification-drawer-header {
 
 html[data-theme="dark"] .notification-drawer-header h2,
 html[data-theme="dark"] .notification-drawer-close,
-html[data-theme="dark"] .notification-item-content strong {
+html[data-theme="dark"] .notification-item-content strong,
+html[data-theme="dark"] .notification-toast-title,
+html[data-theme="dark"] .notification-toast-link {
     color: #b7e5d1;
+}
+
+html[data-theme="dark"] .notification-toast {
+    border-color: #456653;
+    border-left-color: #69b68f;
+    background: #1b2822;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .notification-toast-message,
+html[data-theme="dark"] .notification-toast-close {
+    color: #b3c2b9;
+}
+
+html[data-theme="dark"] .notification-toast-close:hover,
+html[data-theme="dark"] .notification-toast-close:focus-visible {
+    background: #294536;
+    color: #e7eee9;
+}
+
+html[data-theme="dark"] .notification-drawer-close {
+    border-color: #456653;
+    background: #22362b;
+}
+
+html[data-theme="dark"] .notification-drawer-close:hover {
+    background: #294536;
 }
 
 html[data-theme="dark"] .notification-item.is-unread,

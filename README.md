@@ -31,6 +31,7 @@ Las notificaciones internas se conservan en el centro de notificaciones. Para ha
 4. Programa `php artisan schedule:run` cada minuto en el servidor. En desarrollo puedes usar `php artisan schedule:work` para que se envíen los recordatorios programados.
 
 Cada usuario activa las push desde su perfil; el permiso del navegador solo se solicita al pulsar el botón de activación. Los usuarios no administradores pueden elegir no recibir recordatorios, recibirlos un día y una hora antes, o recibir uno diario antes del inicio.
+En el perfil también se puede elegir y previsualizar un tono para las notificaciones recibidas mientras la página está abierta; esa preferencia se guarda en el dispositivo. Con la página cerrada, el sonido de una push lo controla el navegador y el sistema operativo; la plataforma web no permite seleccionar desde el sitio un sonido personalizado para ese caso.
 
 ## Símbolos de la interfaz
 

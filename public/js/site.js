@@ -189,14 +189,22 @@
             if (!response.ok) {
                 const error = new Error(data.message || 'No se pudo registrar la inscripción.');
                 error.status = response.status;
-                error.data = data;
                 throw error;
             }
 
             button.textContent = 'Inscripción registrada';
             button.removeAttribute('aria-busy');
-            if (message) message.textContent = data.message || 'Inscripción registrada correctamente.';
             clearEnrollmentReturnFlag();
+            if (message) {
+                message.textContent = data.message || 'Inscripción registrada correctamente.';
+                if (data.cuestionarioSugerido) {
+                    const quizLink = document.createElement('a');
+                    const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+                    quizLink.href = learningUrl(data.cuestionarioSugerido, returnPath);
+                    quizLink.textContent = 'Cuestionario de seguridad (opcional)';
+                    message.append(document.createElement('br'), quizLink);
+                }
+            }
             document.dispatchEvent(new CustomEvent('regenera:inscription-created', {
                 detail: {
                     voluntariadoId: volunteerId,
@@ -205,13 +213,6 @@
             }));
         } catch (error) {
             console.error('No se pudo completar la inscripción.', error);
-            if (error.data?.code === 'cuestionario_seguridad_requerido') {
-                window.location.assign(learningUrl(
-                    error.data.cuestionario || 'seguridad-limpieza',
-                    `${window.location.pathname}${window.location.search}${window.location.hash}`,
-                ));
-                return;
-            }
             if (message) message.textContent = error.message || 'No se pudo completar la inscripción.';
             if (error.status === 401) {
                 sessionStorage.removeItem('regenera_access_token');
@@ -323,12 +324,17 @@
 
     menuButton.addEventListener("click", function (event) {
         event.stopPropagation();
-        mobileMenu.classList.toggle("active");
+        const isOpen = !mobileMenu.classList.contains("active");
+        mobileMenu.classList.toggle("active", isOpen);
+        menuButton.setAttribute("aria-expanded", String(isOpen));
+        menuButton.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
     });
 
     document.addEventListener("click", function (event) {
         if (!mobileMenu.contains(event.target) && event.target !== menuButton) {
             mobileMenu.classList.remove("active");
+            menuButton.setAttribute("aria-expanded", "false");
+            menuButton.setAttribute("aria-label", "Abrir menú");
         }
     });
 })();

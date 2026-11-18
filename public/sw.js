@@ -1,3 +1,11 @@
+self.addEventListener('install', event => {
+    event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', event => {
     let payload = {};
     try {
@@ -12,8 +20,14 @@ self.addEventListener('push', event => {
         data: { url: payload.url || '/notificaciones' },
         icon: '/img/logo.svg',
         badge: '/img/logo.svg',
+        silent: false,
     };
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil(Promise.all([
+        self.registration.showNotification(title, options),
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+            clients.forEach(client => client.postMessage({ type: 'regenera:notifications-updated' }));
+        }),
+    ]));
 });
 
 self.addEventListener('notificationclick', event => {
