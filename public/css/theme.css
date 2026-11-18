@@ -425,6 +425,15 @@ html[data-theme="dark"] .notification-item-content strong {
     color: #b7e5d1;
 }
 
+html[data-theme="dark"] .notification-drawer-close {
+    border-color: #456653;
+    background: #22362b;
+}
+
+html[data-theme="dark"] .notification-drawer-close:hover {
+    background: #294536;
+}
+
 html[data-theme="dark"] .notification-item.is-unread,
 html[data-theme="dark"] .notification-item.priority-normal,
 html[data-theme="dark"] .notification-item.priority-high,

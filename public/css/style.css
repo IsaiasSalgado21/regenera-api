@@ -67,6 +67,13 @@ button {
     z-index: 100;
 }
 
+.topbar-actions {
+    align-items: center;
+    display: flex;
+    flex: none;
+    gap: 0.3rem;
+}
+
 .logo {
     display: flex;
     align-items: center;

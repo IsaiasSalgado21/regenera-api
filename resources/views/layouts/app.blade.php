@@ -74,10 +74,17 @@
                 @endauth
             </nav>
 
-            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Cambiar a modo oscuro" aria-pressed="false" title="Cambiar tema">
-                <span aria-hidden="true" data-theme-icon>☾</span>
-            </button>
-            <button class="menu-button" id="menuButton" aria-label="Abrir menú">☰</button>
+            <div class="topbar-actions">
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Cambiar a modo oscuro" aria-pressed="false" title="Cambiar tema">
+                    <span aria-hidden="true" data-theme-icon>☾</span>
+                </button>
+                <button type="button" class="notification-nav-button mobile-notification-toggle" data-notification-toggle
+                    aria-label="Abrir notificaciones" title="Notificaciones" aria-expanded="false" hidden>
+                    <svg class="notification-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>
+                    <span class="notification-nav-badge" data-notification-badge hidden>0</span>
+                </button>
+                <button class="menu-button" id="menuButton" aria-label="Abrir menú" aria-controls="mobileMenu" aria-expanded="false">☰</button>
+            </div>
         </header>
 
         <section class="auth-modal" data-auth-modal hidden aria-hidden="true">
@@ -105,11 +112,6 @@
             @else
                 <a href="{{ route('login') }}" class="user-nav" data-auth-login>Iniciar sesión</a>
             @endauth
-            <button type="button" class="notification-nav-button" data-notification-toggle
-                aria-label="Abrir notificaciones" title="Notificaciones" aria-expanded="false" hidden>
-                <svg class="notification-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>
-                <span class="notification-nav-badge" data-notification-badge hidden>0</span>
-            </button>
         </nav>
 
         @include('components.notifications-drawer')

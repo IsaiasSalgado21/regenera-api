@@ -323,12 +323,17 @@
 
     menuButton.addEventListener("click", function (event) {
         event.stopPropagation();
-        mobileMenu.classList.toggle("active");
+        const isOpen = !mobileMenu.classList.contains("active");
+        mobileMenu.classList.toggle("active", isOpen);
+        menuButton.setAttribute("aria-expanded", String(isOpen));
+        menuButton.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
     });
 
     document.addEventListener("click", function (event) {
         if (!mobileMenu.contains(event.target) && event.target !== menuButton) {
             mobileMenu.classList.remove("active");
+            menuButton.setAttribute("aria-expanded", "false");
+            menuButton.setAttribute("aria-label", "Abrir menú");
         }
     });
 })();

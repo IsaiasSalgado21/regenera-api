@@ -5,6 +5,8 @@ import { loadForCompleteProfile } from './notification-access';
 const drawer = document.querySelector('[data-notification-drawer]');
 if (drawer) {
     const toggles = [...document.querySelectorAll('[data-notification-toggle]')];
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuButton = document.getElementById('menuButton');
     const list = drawer.querySelector('[data-notification-list]');
     const status = drawer.querySelector('[data-notification-status]');
     const recipientFilters = drawer.querySelector('[data-notification-recipient-filters]');
@@ -120,13 +122,13 @@ if (drawer) {
         }
     }
 
-    function setOpen(open) {
+    function setOpen(open, focusReturnTarget = document.activeElement) {
         drawer.hidden = !open;
         document.querySelector('[data-notification-close].notification-drawer-backdrop').hidden = !open;
         toggles.forEach(toggle => toggle.setAttribute('aria-expanded', String(open)));
         document.body.classList.toggle('notification-drawer-open', open);
         if (open) {
-            lastFocused = document.activeElement;
+            lastFocused = focusReturnTarget;
             drawer.focus();
             load();
         } else {
@@ -134,7 +136,12 @@ if (drawer) {
         }
     }
 
-    toggles.forEach(toggle => toggle.addEventListener('click', () => setOpen(true)));
+    toggles.forEach(toggle => toggle.addEventListener('click', () => {
+        if (mobileMenu?.classList.contains('active')) {
+            menuButton?.click();
+        }
+        setOpen(true);
+    }));
     document.querySelectorAll('[data-notification-close]').forEach(button => {
         button.addEventListener('click', () => setOpen(false));
     });
