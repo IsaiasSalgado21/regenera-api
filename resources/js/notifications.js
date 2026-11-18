@@ -62,7 +62,15 @@ if (drawer) {
         if (!bell) return;
         const bounds = bell.getBoundingClientRect();
         toastContainer.style.top = `${Math.ceil(bounds.bottom + 8)}px`;
+        if (window.innerWidth <= 480) {
+            toastContainer.style.left = '8px';
+            toastContainer.style.right = '8px';
+            toastContainer.style.width = 'auto';
+            return;
+        }
+        toastContainer.style.left = 'auto';
         toastContainer.style.right = `${Math.max(8, Math.ceil(window.innerWidth - bounds.right))}px`;
+        toastContainer.style.width = 'min(340px, calc(100vw - 1rem))';
     }
 
     function showToast(notification) {
