@@ -17,6 +17,7 @@ function initializeQuizAdmin() {
     const identifierStatus = root.querySelector('[data-quiz-identifier-status]');
     const submitButton = root.querySelector('[data-quiz-submit]');
     const formError = root.querySelector('[data-quiz-form-error]');
+    const guideCounter = root.querySelector('[data-guide-counter]');
     let activeQuizzes = [];
     let medals = [];
     let identifierEdited = false;
@@ -281,6 +282,7 @@ function initializeQuizAdmin() {
         form.elements.titulo.value = quiz?.titulo || '';
         form.elements.descripcion.value = quiz?.descripcion || '';
         form.elements.guia.value = quiz?.guia || '';
+        updateGuideCounter();
         form.elements.minimoAprobacion.value = quiz?.minimoAprobacion ?? 75;
         form.elements.puntosAprobacion.value = quiz?.puntosAprobacion ?? 20;
         form.elements.requiereOrganizadorVerificado.checked = Boolean(quiz?.requiereOrganizadorVerificado);
@@ -301,6 +303,10 @@ function initializeQuizAdmin() {
             : 'Nuevo cuestionario';
         form.hidden = false;
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function updateGuideCounter() {
+        guideCounter.textContent = `${form.elements.guia.value.length.toLocaleString('es-MX')} / 2.000 caracteres`;
     }
 
     function renderMedalOptions(selectedMedal) {
@@ -362,6 +368,7 @@ function initializeQuizAdmin() {
         updateIdentifierState();
     });
     form.elements.requiereOrganizadorVerificado.addEventListener('change', updateIdentifierState);
+    form.elements.guia.addEventListener('input', updateGuideCounter);
 
     function updateMedalDescription() {
         const medal = medals.find(item => item.slug === form.elements.medallaSlug.value);

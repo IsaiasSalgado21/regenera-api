@@ -1,5 +1,6 @@
 import '../css/learning.css';
 import '../css/quiz-list.css';
+import { renderStudyGuide } from './learning-guide';
 import { createQuizPager } from './quiz-list';
 
 const page = document.querySelector('[data-learning-page]');
@@ -83,9 +84,14 @@ function initializeLearning() {
             if (course.guia) {
                 const guide = document.createElement('details');
                 guide.className = 'learning-course-guide';
-                appendText(guide, 'summary', '', 'Guía de estudio');
-                appendText(guide, 'p', '', course.guia);
+                appendText(guide, 'summary', '', 'Consultar guía de estudio');
+                const content = document.createElement('div');
+                content.className = 'learning-guide-content';
+                renderStudyGuide(content, course.guia);
+                guide.append(content);
                 card.append(guide);
+            } else {
+                appendText(card, 'p', 'learning-course-guide-unavailable', 'Guía de estudio no disponible por el momento.');
             }
 
             const meta = document.createElement('p');

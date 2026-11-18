@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Models\Cuestionario;
 use App\Models\IntentoCuestionario;
 use App\Models\User;
+use App\Services\EvaluacionCuestionario;
+use Database\Seeders\GamificacionSeeder;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
+use RuntimeException;
 use Tests\TestCase;
 
 class QuizQuestionTypesTest extends TestCase
@@ -154,5 +157,122 @@ class QuizQuestionTypesTest extends TestCase
         $this->assertSame(2, $data['totalIntentos']);
         $this->assertSame(1, $data['totalAprobados']);
         $this->assertContains('Título anterior', array_column($data['intentosRecientes'], 'cuestionarioTitulo'));
+    }
+
+    public function test_seeded_quizzes_have_study_guides_valid_answers_and_idempotent_activation(): void
+    {
+        app(GamificacionSeeder::class)->run();
+
+        $quizzes = Cuestionario::query()->orderBy('slug')->get();
+        $this->assertCount(4, $quizzes);
+        $expectedQuestionIds = [
+            'economia-circular' => ['jerarquia', 'organicos', 'bolsas'],
+            'organizacion-responsable' => ['autoridades', 'destino-residuos', 'refugio-pesquero'],
+            'restauracion-entorno' => ['carbono-azul', 'dunas', 'playero-rojizo'],
+            'seguridad-limpieza' => ['equipo', 'residuo-peligroso', 'tambor', 'nido-tortuga'],
+        ];
+        $singleChoiceAnswers = [];
+        $evaluator = new EvaluacionCuestionario;
+
+        foreach ($quizzes as $quiz) {
+            $this->assertSame(2, (int) $quiz->version);
+            $this->assertSame($expectedQuestionIds[$quiz->slug], array_column($quiz->preguntas, 'id'));
+            $this->assertNotEmpty($quiz->guia);
+            $this->assertLessThanOrEqual(2000, mb_strlen($quiz->guia));
+            $this->assertNotEmpty($quiz->preguntas);
+
+            foreach ($quiz->preguntas as $question) {
+                $type = $question['tipo'] ?? 'unica';
+                $this->assertContains($type, ['unica', 'multiple', 'verdadero_falso']);
+                $this->assertNotEmpty($question['texto']);
+                $this->assertNotEmpty($question['explicacion']);
+
+                if ($type === 'multiple') {
+                    $this->assertNotEmpty($question['respuestasCorrectas']);
+                    $answer = $question['respuestasCorrectas'];
+                } else {
+                    $this->assertGreaterThanOrEqual(2, count($question['opciones']));
+                    if ($type === 'verdadero_falso') {
+                        $this->assertCount(2, $question['opciones']);
+                    }
+                    $answer = $question['respuestaCorrecta'];
+                    if ($type === 'unica') {
+                        $singleChoiceAnswers[] = $answer;
+                    }
+                }
+
+                $feedback = $evaluator->evaluarRespuesta($question, $answer);
+                $this->assertTrue($feedback['correcta'], $question['id']);
+            }
+        }
+
+        $this->assertGreaterThan(1, count(array_unique($singleChoiceAnswers)));
+        Cuestionario::where('slug', 'seguridad-limpieza')->update(['activo' => false]);
+        app(GamificacionSeeder::class)->run();
+        $this->assertFalse((bool) Cuestionario::where('slug', 'seguridad-limpieza')->firstOrFail()->activo);
+        $this->assertCount(4, Cuestionario::query()->get());
+    }
+
+    public function test_seeder_reports_conflicts_without_overwriting_admin_edits_or_attempt_history(): void
+    {
+        app(GamificacionSeeder::class)->run();
+        $quiz = Cuestionario::where('slug', 'seguridad-limpieza')->firstOrFail();
+        $quiz->update(['titulo' => 'Edición administrativa']);
+        $attempt = IntentoCuestionario::create([
+            'usuarioId' => 'historical-user',
+            'cuestionarioSlug' => 'seguridad-limpieza',
+            'cuestionarioVersion' => (int) $quiz->version,
+            'estado' => 'en_progreso',
+        ]);
+
+        try {
+            app(GamificacionSeeder::class)->run();
+            $this->fail('Se esperaba un conflicto de contenido.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('No se sobrescribió', $exception->getMessage());
+        }
+
+        $this->assertSame('Edición administrativa', $quiz->fresh()->titulo);
+        $this->assertNotNull(IntentoCuestionario::find($attempt->getKey()));
+    }
+
+    public function test_catalog_exposes_guide_before_attempt_and_hides_answers_until_submission(): void
+    {
+        $user = new User(['rol' => 'usuario', 'estado' => 'activo', 'perfilCompleto' => true]);
+        $user->setAttribute('_id', 'guide-user');
+        Cuestionario::create([
+            'slug' => 'guia-previa',
+            'version' => 1,
+            'titulo' => 'Guía previa',
+            'descripcion' => 'Descripción',
+            'guia' => "## Conceptos\nEstudia antes de responder.",
+            'audiencia' => ['usuario'],
+            'minimoAprobacion' => 50,
+            'puntosAprobacion' => 0,
+            'activo' => true,
+            'preguntas' => [[
+                'id' => 'q1',
+                'texto' => '¿Cuál es la respuesta?',
+                'opciones' => ['A', 'B'],
+                'respuestaCorrecta' => 0,
+                'explicacion' => 'Explicación',
+            ]],
+        ]);
+
+        Sanctum::actingAs($user);
+        $catalog = $this->getJson('/api/cuestionarios')->assertOk()->json('data');
+        $this->assertSame("## Conceptos\nEstudia antes de responder.", $catalog[0]['guia']);
+
+        Sanctum::actingAs($user);
+        $attempt = $this->postJson('/api/cuestionarios/guia-previa/intentos', [])->assertCreated()->json('data');
+        $this->assertArrayNotHasKey('respuestaCorrecta', $attempt['preguntas'][0]);
+
+        $record = IntentoCuestionario::findOrFail($attempt['intentoId']);
+        $correctDisplayIndex = array_search(0, $record->opcionesOrden['q1'], true);
+        Sanctum::actingAs($user);
+        $this->postJson('/api/cuestionarios/intentos/'.$attempt['intentoId'].'/respuestas', [
+            'preguntaId' => 'q1',
+            'opcion' => $correctDisplayIndex,
+        ])->assertOk()->assertJsonPath('data.retroalimentacion.correcta', true);
     }
 }

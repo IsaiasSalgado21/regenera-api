@@ -47,7 +47,9 @@
         <button class="button button-secondary" type="button" data-quiz-regenerate-slug>Generar desde el título</button>
         <p class="quiz-admin-identifier-status" id="quiz-identifier-status" data-quiz-identifier-status hidden role="status"></p>
         <label>Descripción<textarea name="descripcion" rows="2" required maxlength="500"></textarea></label>
-        <label>Guía de estudio<textarea name="guia" rows="4" required maxlength="2000"></textarea></label>
+        <label>Guía de estudio<textarea name="guia" rows="8" required maxlength="2000" aria-describedby="quiz-guide-help quiz-guide-counter"></textarea></label>
+        <p class="quiz-admin-help" id="quiz-guide-help">Admite títulos con ##, listas con -, y referencias como [Institución](https://...). El contenido se muestra como texto seguro; no pegues HTML.</p>
+        <p class="quiz-admin-help" id="quiz-guide-counter" data-guide-counter aria-live="polite">0 / 2.000 caracteres</p>
         <fieldset class="quiz-admin-audience">
             <legend>Audiencia</legend>
             <label><input type="checkbox" name="audiencia" value="usuario"> Usuarios</label>
