@@ -21,6 +21,7 @@ class RegeneraCatalogSeeder extends Seeder
         $places = $this->seedPlaces($catalog, $imagePaths);
 
         $this->seedSpecies($catalog, $imagePaths, $places);
+        $this->syncAdditionalSpeciesPlaces($places);
         $this->seedArticles($catalog, $imagePaths);
 
         $this->command?->info('Catálogo inicial: 10 lugares, 10 especies y 6 artículos; fichas de especies sincronizadas por nombre científico.');
@@ -92,25 +93,66 @@ class RegeneraCatalogSeeder extends Seeder
                 $description .= "\n".$this->imageCredit($catalog[$imageKey]);
             }
 
-            $record = Lugar::query()->firstOrCreate(
-                ['nombre' => $place['name']],
-                [
-                    'descripcion' => $description,
-                    'municipio' => $place['municipality'],
-                    'direccion' => $place['address'],
-                    'latitud' => $place['latitude'],
-                    'longitud' => $place['longitude'],
-                    'tipo' => $place['type'],
-                    'imagen' => $imageKey === null ? null : $imagePaths[$imageKey],
-                    'estado' => 'activo',
-                    'creadoPor' => null,
-                ],
-            );
+            $record = Lugar::query()->firstOrNew(['nombre' => $place['name']]);
+            $attributes = [
+                'nombre' => $place['name'],
+                'descripcion' => $description,
+                'municipio' => $place['municipality'],
+                'direccion' => $place['address'],
+                'tipo' => $place['type'],
+            ];
+
+            if (! $record->exists) {
+                $attributes['latitud'] = $place['latitude'];
+                $attributes['longitud'] = $place['longitude'];
+                $attributes['estado'] = 'activo';
+                $attributes['creadoPor'] = null;
+            }
+            if (! $record->exists || empty($record->imagen)) {
+                $attributes['imagen'] = $imageKey === null ? null : $imagePaths[$imageKey];
+            }
+
+            $record->fill($attributes);
+            $record->save();
 
             $places[$place['name']] = $record;
         }
 
         return $places;
+    }
+
+    private function syncAdditionalSpeciesPlaces(array $places): void
+    {
+        $relationships = [
+            'Rhizophora mangle' => ['Parque Nacional Bahía de Loreto'],
+            'Chelonia mydas' => [
+                'Parque Nacional Bahía de Loreto',
+                'Parque Nacional Cabo Pulmo',
+                'Complejo Lagunar Ojo de Liebre',
+            ],
+        ];
+
+        foreach ($relationships as $scientificName => $placeNames) {
+            $record = FloraFauna::query()
+                ->where('nombreCientifico', $scientificName)
+                ->first();
+
+            if (! $record) {
+                continue;
+            }
+
+            $relatedPlaces = [];
+            foreach ($placeNames as $placeName) {
+                if (! isset($places[$placeName])) {
+                    throw new RuntimeException("No se encontró el lugar relacionado {$placeName}.");
+                }
+
+                $relatedPlaces[] = new ObjectId((string) $places[$placeName]->_id);
+            }
+
+            $record->lugaresRelacionados = $relatedPlaces;
+            $record->save();
+        }
     }
 
     private function seedSpecies(array $catalog, array $imagePaths, array $places): void
@@ -389,122 +431,132 @@ class RegeneraCatalogSeeder extends Seeder
             [
                 'name' => 'Área de Protección de Flora y Fauna Balandra',
                 'municipality' => 'La Paz',
-                'address' => 'Municipio de La Paz, Baja California Sur',
-                'type' => 'Área natural protegida',
+                'address' => 'Bahía de La Paz, municipio de La Paz, Baja California Sur',
+                'type' => 'reserva',
                 'latitude' => 24.31290,
                 'longitude' => -110.32250,
                 'image' => 'balandra',
-                'source' => 'CONANP, Área de Protección de Flora y Fauna Balandra: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=9',
-                'mapNote' => 'El marcador se ubica en una referencia terrestre cercana del área; no representa su límite oficial.',
-                'description' => 'Balandra es un área natural protegida de gran importancia ecológica y paisajística ubicada en el municipio de La Paz. Sus ambientes costeros incluyen playas, ensenadas, zonas de manglar y ecosistemas marinos someros. Es un espacio relevante para la conservación de la biodiversidad y el turismo de naturaleza. Ecosistemas: manglar, costa arenosa, ambientes marinos y matorral desértico. Flora y fauna relacionadas: cardón, lomboy, torote colorado, aves costeras y fauna marina.',
+                'source' => 'CONANP, ficha del APFF Balandra: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=9',
+                'mapNote' => 'El marcador conservado es una referencia terrestre cercana; no representa el centro ni los límites oficiales del APFF.',
+                'description' => 'El Área de Protección de Flora y Fauna Balandra se encuentra en el municipio de La Paz, en la bahía del mismo nombre, sobre el litoral del Golfo de California. CONANP documenta un mosaico de manglares, dunas, playas, arrecifes rocosos y matorral, con transiciones entre ambientes terrestres, costeros y marinos someros.'."\n\n".
+                    'La ficha oficial registra 2,512.73 ha y designaciones de sitio Ramsar (2008) y Bien de Patrimonio Mundial (2005). Los manglares y otros humedales costeros ofrecen hábitat a fauna asociada, mientras que las dunas y costas rocosas forman parte del mismo sistema ecológico. La categoría nacional de manejo es Área de Protección de Flora y Fauna.',
             ],
             [
                 'name' => 'Parque Nacional Zona Marina del Archipiélago de Espíritu Santo',
                 'municipality' => 'La Paz',
                 'address' => 'Golfo de California, municipio de La Paz, Baja California Sur',
-                'type' => 'Parque nacional',
+                'type' => 'parque',
                 'latitude' => 24.50778,
                 'longitude' => -110.34889,
                 'image' => 'espiritu-santo',
                 'source' => 'CONANP, Zona marina del Archipiélago de Espíritu Santo: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=183',
-                'mapNote' => null,
-                'description' => 'El Archipiélago de Espíritu Santo está integrado por islas e islotes del Golfo de California, frente a la costa de La Paz. Su entorno contiene ambientes terrestres y marinos con una notable diversidad de especies. Ecosistemas: islas desérticas, costas rocosas, playas y ambientes marinos. Fauna relacionada: lobo marino de California, aves marinas y peces. Flora relacionada: cardón y vegetación desértica insular.',
+                'mapNote' => 'El punto guardado es una referencia cartográfica; no define el polígono oficial del parque marino.',
+                'description' => 'El Parque Nacional Zona Marina del Archipiélago de Espíritu Santo protege islas e islotes y las aguas que los rodean en el Golfo de California, frente al municipio de La Paz. El área reúne costas rocosas, playas, ambientes insulares áridos y ecosistemas marinos, por lo que conecta hábitats terrestres y acuáticos.'."\n\n".
+                    'CONANP registra una superficie de 48,654.83 ha y documenta una colonia reproductora de lobo marino de California en el complejo insular. Esa colonia y la diversidad de ambientes costeros sustentan su importancia para la conservación. Su categoría federal es Parque Nacional de zona marina.',
             ],
             [
                 'name' => 'Humedales El Mogote y Ensenada de La Paz',
                 'municipality' => 'La Paz',
                 'address' => 'Ensenada de La Paz, Baja California Sur',
-                'type' => 'Humedal costero',
+                'type' => 'otro',
                 'latitude' => 24.15400,
                 'longitude' => -110.35200,
                 'image' => null,
-                'source' => 'Ramsar, Humedales Mogote - Ensenada La Paz (sitio 1816): https://rsis.ramsar.org/ris/1816?language=en',
-                'mapNote' => 'El marcador es una referencia terrestre cercana al sitio Ramsar; el humedal abarca zonas costeras y acuáticas.',
-                'description' => 'La Ensenada de La Paz y los ambientes costeros asociados a El Mogote forman un sistema de gran importancia ecológica. Sus humedales y zonas de manglar ofrecen refugio, alimentación y descanso a diversas especies, especialmente aves acuáticas y organismos costeros. Ecosistemas: manglares, humedales, planicies intermareales y costa. Fauna relacionada: aves acuáticas, peces y otros organismos costeros.',
+                'source' => 'Convención Ramsar, Humedales Mogote-Ensenada de La Paz, sitio 1816: https://rsis.ramsar.org/es/ris/1816',
+                'mapNote' => 'El marcador se conserva como referencia terrestre cercana; no representa el límite del sitio Ramsar ni del humedal.',
+                'description' => 'El sitio Ramsar Humedales Mogote-Ensenada de La Paz comprende la ensenada costera y el sistema de barrera arenosa de El Mogote, en el municipio de La Paz. La ficha Ramsar describe laguna costera, manglares, planicies de marea y otros ambientes intermareales que enlazan la costa con aguas someras.'."\n\n".
+                    'El sitio fue designado el 2 de febrero de 2008 y su ficha Ramsar reporta 9,184.1 ha. Esos humedales mantienen hábitat para aves acuáticas y organismos costeros; la ficha identifica al lobo marino de California como el mamífero más común del sitio. Esta cifra corresponde al sitio Ramsar y no a otra área protegida de la región.',
             ],
             [
                 'name' => 'Reserva de la Biosfera Sierra La Laguna',
                 'municipality' => 'La Paz y Los Cabos',
                 'address' => 'Sierra La Laguna, Baja California Sur',
-                'type' => 'Reserva de la biosfera',
+                'type' => 'reserva',
                 'latitude' => 23.53029,
                 'longitude' => -109.95842,
                 'image' => 'sierra-la-laguna',
                 'source' => 'CONANP, Reserva de la Biosfera Sierra La Laguna: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=162',
-                'mapNote' => null,
-                'description' => 'Sierra La Laguna constituye una región montañosa de gran importancia ambiental en el extremo sur de la península. Su gradiente altitudinal permite la presencia de diferentes comunidades vegetales, incluyendo bosques de pino y encino, selva baja y matorrales. También es importante para la captación y regulación natural del agua. Ecosistemas: bosque de pino-encino, selva baja caducifolia y matorral. Flora y fauna relacionadas: vegetación nativa de montaña y especies adaptadas a los distintos pisos altitudinales.',
+                'mapNote' => 'El punto guardado es una referencia del catálogo; el polígono de CONANP, no este marcador, define el área protegida.',
+                'description' => 'La Reserva de la Biosfera Sierra La Laguna se extiende por los municipios de La Paz y Los Cabos, en el extremo sur de la península. El relieve montañoso y sus cambios ambientales permiten la presencia de bosque de pino-encino, selva baja caducifolia y vegetación semidesértica, ecosistemas que contrastan con las planicies áridas cercanas.'."\n\n".
+                    'CONANP registra una superficie de 112,437.07 ha y las designaciones internacionales de Reserva de la Biosfera MaB y sitio Ramsar. Sus gradientes de vegetación y elevación sostienen hábitats diferenciados y procesos naturales de captación de agua. La superficie indicada corresponde a la reserva federal.',
             ],
             [
                 'name' => 'Reserva de la Biosfera El Vizcaíno',
                 'municipality' => 'Mulegé',
                 'address' => 'Municipio de Mulegé, Baja California Sur',
-                'type' => 'Reserva de la biosfera',
+                'type' => 'reserva',
                 'latitude' => 27.443697,
                 'longitude' => -113.617198,
                 'image' => 'el-vizcaino',
                 'source' => 'CONANP, Reserva de la Biosfera El Vizcaíno: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=64. Coordenada seleccionada dentro del polígono oficial CONANP: https://sig.conanp.gob.mx/storage/descargas/files/kml/232-ANP_ITRF08_19162026.kmz',
-                'mapNote' => null,
-                'description' => 'El Vizcaíno es una extensa área natural protegida del norte de Baja California Sur que comprende ecosistemas desérticos, costeros y lagunares. Su diversidad ambiental permite la presencia de numerosas especies terrestres y marinas. Incluye sitios de importancia internacional para la reproducción de la ballena gris. Ecosistemas: desierto, lagunas costeras, humedales y ambientes marinos. Fauna relacionada: ballena gris, aves acuáticas y fauna desértica.',
+                'mapNote' => 'La coordenada existente se conserva dentro del polígono oficial; es un punto de referencia y no representa el centro ni los límites de la reserva.',
+                'description' => 'La Reserva de la Biosfera El Vizcaíno ocupa una amplia región del municipio de Mulegé, en el norte de Baja California Sur. Sus ambientes incluyen sierras, planicies desérticas y lagunas costeras del Pacífico; el contraste entre zonas áridas y humedales sostiene ecosistemas terrestres, costeros y marinos. La Reserva es importante para el ciclo de vida de la ballena gris.'."\n\n".
+                    'CONANP registra 2,546,790.25 ha y señala designaciones internacionales de Patrimonio Mundial, Reserva de la Biosfera MaB y sitios Ramsar asociados a la región. Las superficies de sitios Ramsar específicos, como Ojo de Liebre, son distintas y no deben confundirse con la extensión total de la reserva.',
             ],
             [
                 'name' => 'Laguna San Ignacio',
                 'municipality' => 'Mulegé',
                 'address' => 'Municipio de Mulegé, Baja California Sur',
-                'type' => 'Laguna costera',
+                'type' => 'otro',
                 'latitude' => 26.75000,
                 'longitude' => -113.11667,
                 'image' => 'laguna-san-ignacio',
-                'source' => 'Ramsar, Laguna San Ignacio (sitio 1341): https://rsis.ramsar.org/ris/1341?language=en. CONANP, Reserva de la Biosfera El Vizcaíno: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=64',
-                'mapNote' => 'El marcador corresponde a las coordenadas del sitio Ramsar y es una referencia del sistema lagunar.',
-                'description' => 'Laguna San Ignacio forma parte de la región de la Reserva de la Biosfera El Vizcaíno. Es un ambiente costero de gran importancia para la reproducción y crianza de la ballena gris. Sus características naturales la convierten en un sitio relevante para la conservación marina. Ecosistemas: laguna costera, humedales y ambientes desérticos. Fauna relacionada: ballena gris y aves acuáticas.',
+                'source' => 'Convención Ramsar, Laguna San Ignacio, sitio 1341: https://rsis.ramsar.org/es/ris/1341; CONANP, Reserva de la Biosfera El Vizcaíno: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=64',
+                'mapNote' => 'El marcador se conserva como referencia del sistema lagunar; no representa el límite del sitio Ramsar ni de El Vizcaíno.',
+                'description' => 'Laguna San Ignacio es un sistema costero salobre del Pacífico, en el municipio de Mulegé y dentro de la región de El Vizcaíno. La ficha Ramsar describe aguas lagunares, planicies intermareales y humedales asociados, en un contexto desértico. El conjunto ofrece áreas de alimentación y refugio para fauna costera.'."\n\n".
+                    'El sitio Ramsar 1341 fue designado el 2 de febrero de 2004 y tiene una superficie registrada de 17,500 ha. La laguna es un área importante para la reproducción y crianza de la ballena gris; la ficha también registra al lobo marino de California como mamífero residente y la identifica dentro de la Reserva de la Biosfera y el sitio de Patrimonio Mundial El Vizcaíno. Esta superficie corresponde al sitio Ramsar, no a toda la Reserva.',
             ],
             [
                 'name' => 'Complejo Lagunar Ojo de Liebre',
                 'municipality' => 'Mulegé',
-                'address' => 'Municipio de Mulegé, Baja California Sur',
-                'type' => 'Complejo lagunar',
+                'address' => 'Mulegé, Baja California Sur y norte de Baja California',
+                'type' => 'reserva',
                 'latitude' => 27.76518,
                 'longitude' => -114.23078,
                 'image' => 'ojo-de-liebre',
-                'source' => 'CONANP, Complejo Lagunar Ojo de Liebre: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=38. Ramsar, Laguna Ojo de Liebre (sitio 1339): https://rsis.ramsar.org/ris/1339?language=en',
-                'mapNote' => 'El marcador es una referencia terrestre cercana al sitio; no representa el límite del complejo lagunar.',
-                'description' => 'El Complejo Lagunar Ojo de Liebre se localiza en el municipio de Mulegé y constituye uno de los ambientes lagunares más importantes de la península. Es reconocido por su importancia para el ciclo reproductivo de la ballena gris y por sus ecosistemas de humedales. Ecosistemas: lagunas costeras, marismas y humedales. Fauna relacionada: ballena gris y aves acuáticas.',
+                'source' => 'CONANP, Complejo Lagunar Ojo de Liebre: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=38; Convención Ramsar, Laguna Ojo de Liebre, sitio 1339: https://rsis.ramsar.org/es/ris/1339',
+                'mapNote' => 'El marcador se conserva como referencia terrestre cercana; no representa los límites de la Reserva de la Biosfera ni del sitio Ramsar.',
+                'description' => 'El Complejo Lagunar Ojo de Liebre forma parte de la Reserva de la Biosfera del mismo nombre, en Mulegé, Baja California Sur, y se prolonga hacia el norte de Baja California. Sus lagunas costeras, canales, planicies intermareales y humedales se integran en un paisaje árido y son importantes para la ballena gris y las aves acuáticas.'."\n\n".
+                    'La ficha CONANP registra 79,328.98 ha para la Reserva de la Biosfera y también documenta a la tortuga prieta. El sitio Ramsar Laguna Ojo de Liebre (1339), designado en 2004, tiene 36,600 ha: son designaciones y superficies diferentes. El complejo también forma parte del Santuario de Ballenas de El Vizcaíno, inscrito como Patrimonio Mundial.',
             ],
             [
                 'name' => 'Parque Nacional Bahía de Loreto',
                 'municipality' => 'Loreto',
                 'address' => 'Bahía de Loreto, Baja California Sur',
-                'type' => 'Parque nacional',
+                'type' => 'parque',
                 'latitude' => 26.01170,
                 'longitude' => -111.34700,
                 'image' => null,
                 'source' => 'CONANP, Parque Nacional Bahía de Loreto: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=7',
                 'mapNote' => 'El marcador ubica la localidad de Loreto como referencia terrestre; no representa el límite del parque ni sus islas.',
-                'description' => 'El Parque Nacional Bahía de Loreto protege un conjunto de ambientes insulares y marinos del Golfo de California. Sus aguas y costas albergan comunidades de organismos marinos y paisajes naturales de gran valor ecológico. Ecosistemas: islas, costas rocosas, playas y ambientes marinos. Fauna relacionada: mamíferos marinos, peces, aves y tortugas marinas.',
+                'description' => 'El Parque Nacional Bahía de Loreto comprende aguas del Golfo de California y un conjunto de islas, costas rocosas y ambientes marinos y costeros frente al municipio de Loreto. CONANP identifica cinco islas principales y registra una superficie de 206,580.75 ha.'."\n\n".
+                    'Sus hábitats sostienen fauna marina y costera; la ficha oficial documenta, entre otras especies, ballena azul, lobo marino de California, tortuga prieta y mangle rojo. CONANP registra designaciones de Patrimonio Mundial y sitio Ramsar, además de la certificación de Lista Verde. La coordenada del catálogo es una referencia próxima a la localidad, no el límite marino del parque.',
             ],
             [
                 'name' => 'Parque Nacional Cabo Pulmo',
                 'municipality' => 'Los Cabos',
                 'address' => 'Cabo Pulmo, Baja California Sur',
-                'type' => 'Parque nacional',
+                'type' => 'parque',
                 'latitude' => 23.44571,
                 'longitude' => -109.42451,
                 'image' => 'cabo-pulmo',
                 'source' => 'CONANP, Parque Nacional Cabo Pulmo: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=18',
                 'mapNote' => 'El marcador es una referencia terrestre cercana al área protegida; no representa su límite oficial.',
-                'description' => 'Cabo Pulmo es un área natural protegida marina del municipio de Los Cabos, reconocida por sus comunidades arrecifales. Sus ecosistemas sostienen una amplia diversidad de organismos marinos y son fundamentales para la conservación de los ambientes costeros del Golfo de California. Ecosistemas: arrecife rocoso y coralino, ambientes marinos y costa. Fauna relacionada: peces arrecifales, tortugas marinas y otros organismos marinos.',
+                'description' => 'El Parque Nacional Cabo Pulmo protege un sector marino del Golfo de California frente al municipio de Los Cabos. Su ecosistema arrecifal rocoso-coralino es una estructura relevante para la vida marina y forma parte de la conectividad ecológica de la costa sudcaliforniana.'."\n\n".
+                    'CONANP registra 7,111.01 ha y designaciones de Patrimonio Mundial y sitio Ramsar, además de la certificación de Lista Verde. La ficha oficial documenta tortugas prieta y golfina, además de ballena gris, entre la fauna del área. El punto guardado es una referencia terrestre cercana y no representa el límite oficial del parque.',
             ],
             [
                 'name' => 'Área de Protección de Flora y Fauna Islas del Golfo de California',
-                'municipality' => 'La Paz y Mulegé, entre otros municipios de la región',
-                'address' => 'Golfo de California, Baja California Sur',
-                'type' => 'Área natural protegida',
+                'municipality' => 'Varios municipios del Golfo de California',
+                'address' => 'Islas e islotes de Baja California, BCS, Sonora y Sinaloa',
+                'type' => 'reserva',
                 'latitude' => 24.981136,
                 'longitude' => -110.621914,
                 'image' => 'islas-golfo-california',
-                'source' => 'CONANP, región Península de Baja California y Pacífico Norte: https://www.gob.mx/conanp/acciones-y-programas/peninsula-de-baja-california-y-pacifico-norte. Polígono oficial CONANP: https://sig.conanp.gob.mx/storage/descargas/files/kml/232-ANP_ITRF08_19162026.kmz',
-                'mapNote' => 'El marcador está en la Isla San José, un punto terrestre dentro del polígono del APFF.',
-                'description' => 'Esta área de protección comprende numerosas islas e islotes del Golfo de California. Sus ecosistemas insulares y marinos son importantes para la conservación de especies endémicas, aves marinas y fauna costera. La porción sudcaliforniana forma parte del patrimonio natural de la península. Ecosistemas: islas desérticas, costas rocosas y ambientes marinos. Fauna relacionada: aves marinas, reptiles insulares, lobos marinos y peces.',
+                'source' => 'CONANP-SIMEC, ficha del APFF Islas del Golfo de California (ANP 80): https://simec.conanp.gob.mx/informacion/ficha/80?reg=11; CONANP, polígono oficial: https://sig.conanp.gob.mx/storage/descargas/files/kml/232-ANP_ITRF08_19162026.kmz',
+                'mapNote' => 'El marcador y la imagen se refieren a Isla San José, BCS; son referencias puntuales. El APFF comprende numerosas islas e islotes en cuatro estados y no se limita a esa isla.',
+                'description' => 'El Área de Protección de Flora y Fauna Islas del Golfo de California comprende numerosas islas e islotes distribuidos entre Baja California, Baja California Sur, Sonora y Sinaloa; no es un área limitada a Isla San José. En Baja California Sur, la ficha SIMEC incluye municipios como La Paz, Loreto y Mulegé. El mosaico insular alberga matorral xerófilo, mezquital, selva baja caducifolia y espinosa, dunas costeras, vegetación hidrófila y manglar.'."\n\n".
+                    'La ficha SIMEC registra una superficie total de 374,553.63 ha y documenta al cardón (Pachycereus pringlei) entre su flora representativa. También enumera varias designaciones Ramsar, de Patrimonio Mundial y MaB asociadas a sectores o sitios de la región; no significa que toda el área protegida sea un único sitio Ramsar. La foto y el marcador conservados muestran Isla San José como referencia, no la extensión completa del APFF.',
             ],
         ];
     }
@@ -522,7 +574,7 @@ class RegeneraCatalogSeeder extends Seeder
                 'habitat' => 'Matorral sarcocaule, planicies y laderas áridas de Baja California y Baja California Sur.',
                 'location' => 'Distribución endémica de México; registros de EncicloVida en La Paz y Mulegé, Baja California Sur.',
                 'conservation' => null,
-                'relatedPlaces' => [],
+                'relatedPlaces' => ['Área de Protección de Flora y Fauna Islas del Golfo de California'],
                 'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/144024-pachycereus-pringlei',
                 'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/144024/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
@@ -610,6 +662,7 @@ class RegeneraCatalogSeeder extends Seeder
                     'Laguna San Ignacio',
                     'Complejo Lagunar Ojo de Liebre',
                     'Reserva de la Biosfera El Vizcaíno',
+                    'Parque Nacional Cabo Pulmo',
                 ],
                 'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/34616-eschrichtius-robustus',
                 'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/34616/consulta-registros.json?coleccion=snib&formato=json; CONANP, Reserva de la Biosfera El Vizcaíno: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=64; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
@@ -624,7 +677,12 @@ class RegeneraCatalogSeeder extends Seeder
                 'habitat' => 'Costas rocosas, islas e islotes del Pacífico y del Golfo de California.',
                 'location' => 'Distribución en costas e islas del Pacífico y Golfo de California; colonia reproductora documentada en el Archipiélago de Espíritu Santo.',
                 'conservation' => 'Sujeta a protección especial (Pr)',
-                'relatedPlaces' => ['Parque Nacional Zona Marina del Archipiélago de Espíritu Santo'],
+                'relatedPlaces' => [
+                    'Parque Nacional Zona Marina del Archipiélago de Espíritu Santo',
+                    'Humedales El Mogote y Ensenada de La Paz',
+                    'Parque Nacional Bahía de Loreto',
+                    'Laguna San Ignacio',
+                ],
                 'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/33659-zalophus-californianus',
                 'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/33659/consulta-registros.json?coleccion=snib&formato=json; CONANP, Zona marina del Archipiélago de Espíritu Santo: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=183; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
@@ -638,7 +696,7 @@ class RegeneraCatalogSeeder extends Seeder
                 'habitat' => 'Aguas marinas tropicales y subtropicales; playas utilizadas para anidación.',
                 'location' => 'Distribución marina tropical y subtropical; no se asigna una localidad o playa de anidación específica en Baja California Sur.',
                 'conservation' => null,
-                'relatedPlaces' => [],
+                'relatedPlaces' => ['Parque Nacional Cabo Pulmo'],
                 'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/27179-lepidochelys-olivacea',
                 'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/27179/consulta-registros.json?coleccion=snib&formato=json; categoría pendiente de cotejo en DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
@@ -652,7 +710,7 @@ class RegeneraCatalogSeeder extends Seeder
                 'habitat' => 'Océano abierto del Pacífico norte y zonas de alimentación estacionales del Golfo de California.',
                 'location' => 'Distribución en el Pacífico norte y el Golfo de California; EncicloVida registra ejemplares en Baja California Sur.',
                 'conservation' => 'Sujeta a protección especial (Pr)',
-                'relatedPlaces' => [],
+                'relatedPlaces' => ['Parque Nacional Bahía de Loreto'],
                 'source' => 'CONABIO, EncicloVida (consulta 2026-11-18): https://enciclovida.mx/especies/34367-balaenoptera-musculus',
                 'reference' => 'CONABIO, SNIB, registros geográficos y NOM-059 (consulta 2026-11-18): https://enciclovida.mx/especies/34367/consulta-registros.json?coleccion=snib&formato=json; DOF, Modificación del Anexo III NOM-059 (14-11-2019): https://www.dof.gob.mx/nota_detalle.php?codigo=5578808&fecha=14/11/2019',
             ],
