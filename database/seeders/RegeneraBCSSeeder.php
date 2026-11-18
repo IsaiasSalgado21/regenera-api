@@ -365,34 +365,90 @@ class RegeneraBCSSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        $articulo1 = Articulo::firstOrCreate(
+        $articulo1 = Articulo::query()->firstOrNew(
             ['titulo' => 'La importancia de la restauración de manglares en la Bahía de La Paz'],
-            [
+        );
+        if (! $articulo1->exists) {
+            $articulo1->fill([
                 'autorId' => (string) $organizador->_id,
-                'contenido' => 'Los manglares actúan como barreras naturales contra la erosión y son el hogar de numerosas especies marinas juveniles. Su conservación es vital para el equilibrio ecológico...',
                 'imagen' => null,
                 'categoria' => 'Conservación',
                 'estado' => 'publicado',
                 'fechaPublicacion' => now(),
                 'fechaActualizacion' => now(),
-            ]
-        );
+            ]);
+        }
+        $articulo1->contenido = <<<'CONTENT'
+En la Bahía de La Paz, los manglares forman una franja viva entre el mar y la tierra. En un estado de clima árido, estos humedales sostienen hábitats costeros y ayudan a amortiguar algunos efectos de la erosión y el oleaje. Restaurarlos significa recuperar las condiciones que permiten que el ecosistema funcione, no simplemente plantar árboles.
 
-        $articulo2 = Articulo::firstOrCreate(
+Cómo funciona un manglar
+Los manglares son comunidades de árboles y arbustos tolerantes a la sal que crecen en la zona de influencia de las mareas. Sus raíces y la vegetación asociada crean una estructura compleja donde se retienen sedimentos y materia orgánica. La mezcla de agua marina, escurrimientos y aportes de nutrientes cambia con las mareas y las lluvias, por lo que el manglar depende de un intercambio de agua y de un suelo apropiado.
+
+Refugio, alimento y protección costera
+Las raíces ofrecen refugio y áreas de alimentación a peces juveniles, crustáceos, moluscos y otros organismos costeros; la hojarasca y el material orgánico sostienen redes alimentarias que se extienden a esteros y aguas cercanas. Estos hábitats pueden contribuir a actividades pesqueras al favorecer etapas tempranas de especies aprovechadas, aunque la productividad de una pesquería depende de muchos factores y no se garantiza por la presencia de manglar. La vegetación también retiene sedimentos y ayuda a reducir la energía de las olas y la erosión en determinados sitios.
+
+Qué los degrada
+La modificación de canales y escurrimientos, los rellenos, la urbanización y otras obras costeras pueden cambiar la duración o frecuencia de inundación, la salinidad y el movimiento del agua. La contaminación y el pisoteo también deterioran el hábitat. En una zona árida, una alteración local del aporte de agua puede tener efectos importantes sobre un humedal que depende del equilibrio entre mareas, lluvias y escorrentía.
+
+Restaurar es recuperar procesos
+Antes de plantar, es necesario identificar por qué se perdió o degradó el manglar y recuperar, cuando corresponda, el flujo de agua y el hidroperiodo propios del sitio. También se deben considerar la elevación del terreno, la salinidad, la disponibilidad de propágulos y la vegetación adecuada para cada ambiente. La plantación aislada, sin corregir las causas hidrológicas, puede tener baja supervivencia y no restablece por sí sola el funcionamiento del ecosistema. El seguimiento posterior permite evaluar si regresan las condiciones y la vegetación esperadas.
+
+Cómo participar responsablemente
+La comunidad puede apoyar evitando arrojar residuos o rellenar zonas húmedas, respetando la vegetación y los canales, reportando daños a las autoridades competentes y participando en acciones de restauración organizadas por personal con conocimiento del sitio. En limpiezas o actividades de plantación conviene seguir el plan de trabajo y no abrir canales, podar ni introducir plantas por cuenta propia.
+
+La restauración de los manglares de la Bahía de La Paz requiere proteger tanto el humedal como los escurrimientos que lo conectan con su cuenca. El trabajo sostenido, basado en las condiciones ecológicas locales y acompañado por las comunidades, ofrece una oportunidad más sólida de conservar estos ambientes para la biodiversidad y las generaciones futuras.
+
+Fuentes consultadas
+CONANP, “Manglares de México: soluciones naturales al cambio climático” (17-12-2020): https://www.gob.mx/conanp/articulos/manglares-de-mexico-soluciones-naturales-al-cambio-climatico
+Convención sobre los Humedales, ficha Ramsar 1816, Humedales Mogote–Ensenada La Paz: https://rsis.ramsar.org/ris/1816
+CONTENT;
+        $articulo1->save();
+
+        $articulo2 = Articulo::query()->firstOrNew(
             ['titulo' => 'Guía práctica para reducir residuos plásticos en las playas de BCS'],
-            [
+        );
+        if (! $articulo2->exists) {
+            $articulo2->fill([
                 'autorId' => (string) $organizador->_id,
-                'contenido' => 'Pequeñas acciones diarias, como el uso de termos reutilizables y la participación en limpiezas comunitarias, generan un impacto positivo directo en nuestros ecosistemas costeros...',
                 'imagen' => null,
                 'categoria' => 'Educación Ambiental',
                 'estado' => 'publicado',
                 'fechaPublicacion' => now(),
                 'fechaActualizacion' => now(),
-            ]
-        );
+            ]);
+        }
+        $articulo2->contenido = <<<'CONTENT'
+Las playas de Baja California Sur reciben residuos que llegan desde las ciudades, actividades recreativas, pesca y navegación, además de materiales transportados por arroyos, viento y corrientes marinas. Una botella o envoltura abandonada puede persistir en el ambiente y fragmentarse; por eso, reducir lo que llevamos es más eficaz que confiar únicamente en recogerlo después.
 
-        $this->replaceImage($articulo1, 'manglar.png', 'articulos');
-        $this->replaceImage($articulo2, 'costas-lapaz.jpg', 'articulos');
+Prevenir, reutilizar y reciclar
+Prevenir significa evitar generar residuos desde el inicio: elegir productos con menos empaque, rechazar artículos desechables cuando no se necesitan y planear la visita para llevar solo lo indispensable. Reutilizar es dar varios usos a una botella, bolsa o recipiente durable, siempre que se mantenga limpio y en condiciones seguras. Reciclar consiste en recuperar materiales mediante un sistema que los acepte; no todos los plásticos son reciclables en todas las localidades y la posibilidad depende del tipo de material, su limpieza y la infraestructura disponible.
+
+Antes de ir a la playa
+Prepara agua en un recipiente rellenable, alimentos en contenedores reutilizables y una bolsa para regresar con tus residuos. Evita comprar productos con envolturas innecesarias y verifica de antemano dónde podrás disponer de la basura. No asumas que habrá contenedores o recolección en una playa remota.
+
+Durante la visita
+Mantén juntos tus residuos y no entierres colillas, tapas o envolturas en la arena. Asegura los objetos ligeros para que el viento no los disperse, y no dejes residuos ni restos de comida en la costa. Si encuentras basura peligrosa, como vidrio roto, objetos punzantes o materiales desconocidos, no los manipules sin equipo y orientación adecuados.
+
+Al terminar
+Lleva lo recolectado hasta un punto de disposición disponible y separa los materiales solo cuando exista un sistema que efectivamente los reciba. Evita dejar bolsas llenas junto a contenedores desbordados o en sitios sin servicio de recolección; consulta las indicaciones locales para su manejo.
+
+Limpiezas comunitarias seguras
+Una jornada organizada puede retirar residuos y documentar problemas, pero no sustituye la prevención ni corrige por sí misma las fuentes que los generan. Las personas organizadoras deben establecer un área y horario de trabajo, contar con guantes y herramientas apropiadas, separar residuos conforme a las posibilidades locales y prever la entrega final a un servicio de manejo. No se recomienda remover vegetación, alterar dunas, manipular fauna ni abrir nidos o mover organismos durante una limpieza.
+
+Las playas saludables dependen de decisiones repetidas antes, durante y después de cada visita, así como de una gestión adecuada de residuos por parte de comunidades e instituciones. Reducir los desechables y participar de manera segura en iniciativas locales ayuda a que menos basura alcance los ecosistemas costeros de Baja California Sur.
+
+Fuentes consultadas
+SEMARNAT, “Prevención y gestión integral de los residuos”: https://www.gob.mx/semarnat/acciones-y-programas/prevencion-y-gestion-integral-de-los-residuos
+SEMARNAT, Programa Nacional para la Prevención y Gestión Integral de los Residuos 2022–2024: https://dsiappsdev.semarnat.gob.mx/datos/portal/publicaciones/2022/PNPGIR_2022.pdf
+CONTENT;
+        $articulo2->save();
+
+        if (empty($articulo1->imagen) && empty($articulo1->imagenes)) {
+            $this->replaceImage($articulo1, 'manglar.png', 'articulos');
+        }
+        if (empty($articulo2->imagen) && empty($articulo2->imagenes)) {
+            $this->replaceImage($articulo2, 'costas-lapaz.jpg', 'articulos');
+        }
 
         /*
         |--------------------------------------------------------------------------

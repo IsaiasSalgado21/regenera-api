@@ -206,26 +206,34 @@ class RegeneraCatalogSeeder extends Seeder
     private function seedArticles(array $catalog, array $imagePaths): void
     {
         foreach ($this->articles() as $article) {
-            $content = $article['content']."\n\nFuente: {$article['source']}";
-            if ($article['image'] !== null) {
-                $content .= "\n".$this->imageCredit($catalog[$article['image']]);
+            $content = $article['content']."\n\nFuentes consultadas\n{$article['source']}";
+            $imagePath = $article['image'] === null ? null : $imagePaths[$article['image']];
+            $record = Articulo::query()->firstOrNew(
+                ['titulo' => $article['title']],
+            );
+            $credit = null;
+            if ($record->exists && preg_match('/^Crédito de imagen:.*$/m', (string) $record->contenido, $matches)) {
+                $credit = $matches[0];
+            } elseif (! $record->exists && $article['image'] !== null) {
+                $credit = $this->imageCredit($catalog[$article['image']]);
+            }
+            if ($credit !== null) {
+                $content .= "\n\n".$credit;
             }
 
-            $imagePath = $article['image'] === null ? null : $imagePaths[$article['image']];
-            Articulo::query()->firstOrCreate(
-                ['titulo' => $article['title']],
-                [
+            if (! $record->exists) {
+                $record->fill([
                     'autorId' => null,
-                    'titulo' => $article['title'],
-                    'contenido' => $content,
                     'imagen' => $imagePath,
                     'imagenes' => $imagePath === null ? [] : [$imagePath],
                     'categoria' => $article['category'],
                     'estado' => 'publicado',
                     'fechaPublicacion' => now(),
                     'fechaActualizacion' => now(),
-                ],
-            );
+                ]);
+            }
+            $record->contenido = $content;
+            $record->save();
         }
     }
 
@@ -724,122 +732,144 @@ class RegeneraCatalogSeeder extends Seeder
                 'title' => 'Los manglares de Balandra: guardianes de la costa sudcaliforniana',
                 'category' => 'Ecosistemas',
                 'image' => 'balandra',
-                'source' => 'CONANP, información y programa de manejo de Balandra.',
+                'source' => 'CONANP, Programa de Manejo del APFF Balandra, “Flora y Fauna Balandra” (2017): https://www.conanp.gob.mx/que_hacemos/pdf/programas_manejo/2017/Flora%20y%20Fauna%20Balandra%20%28libro%20completo%29.pdf',
                 'content' => <<<'CONTENT'
-Resumen: Los manglares son ecosistemas costeros fundamentales para la biodiversidad y la protección natural de las costas. En Balandra forman parte de un entorno donde se conectan ambientes terrestres, marinos y humedales.
+En la Bahía de La Paz, el Área de Protección de Flora y Fauna (APFF) Balandra reúne ambientes costeros y marinos dentro de un paisaje árido. En sus esteros, los manglares son parte de una transición entre tierra y mar: su permanencia depende de que se conserven tanto la vegetación como los movimientos de agua que la sostienen.
 
-Introducción
-Los manglares son comunidades vegetales adaptadas a vivir en zonas costeras donde se mezclan el agua dulce y el agua salada. Sus raíces y estructuras naturales forman ambientes complejos que ofrecen refugio, alimentación y zonas de reproducción para numerosas especies.
+El estero y sus manglares
+Los manglares son árboles y arbustos tolerantes a la sal que crecen en la franja influida por las mareas. En un estero, el nivel y la salinidad del agua varían con las mareas, las lluvias y los escurrimientos de la cuenca. Las raíces atrapan sedimentos y materia orgánica, mientras que los canales y zonas inundables conectan el manglar con los ambientes vecinos. En Balandra, el manejo del área debe considerar estos componentes como parte de un ecosistema conectado.
 
-En Baja California Sur, estos ecosistemas tienen un valor especial debido a que se desarrollan en una región predominantemente árida. Su presencia permite mantener espacios de biodiversidad que contrastan con el paisaje desértico circundante.
+Refugio en una costa árida
+La estructura de raíces, ramas y cuerpos de agua del manglar ofrece refugio y áreas de alimentación para organismos costeros; peces e invertebrados pueden utilizar estos ambientes en distintas etapas de su vida, y las aves encuentran sitios para alimentarse o descansar. La función de cada zona depende de las condiciones locales, por lo que no es adecuado asumir que todas las especies de la bahía usan cada estero de la misma manera.
 
-En Balandra, los ambientes de manglar forman parte de un conjunto de ecosistemas costeros que también incluye playas, ensenadas y zonas marinas poco profundas. La conservación de estos ambientes requiere evitar la contaminación, respetar las zonas delimitadas y reducir las alteraciones ocasionadas por actividades humanas.
+Cuenca, escurrimientos y continuidad
+Los escurrimientos que descienden de las microcuencas transportan agua y sedimentos hacia la costa, y se encuentran con la influencia de las mareas. Si se obstruyen, desvían o contaminan esos flujos, pueden cambiar la inundación y la salinidad que permiten la continuidad del manglar. Por eso, la conservación de Balandra no se limita a proteger los árboles visibles: también requiere cuidar los cauces y evitar rellenos u obras que alteren la circulación natural del agua.
 
-Visitar un área natural protegida implica comprender que no se trata solamente de un paisaje para fotografiar. Es un ecosistema que necesita condiciones adecuadas para mantener sus procesos naturales.
+Amenazas y visita responsable
+El pisoteo, la acumulación de basura y las alteraciones de canales o vegetación pueden degradar el hábitat. Durante una visita, mantente en los espacios permitidos, no cortes ni dañes plantas, evita dejar residuos y no ingreses a zonas de manglar o estero si está restringido. Sigue la señalización e indicaciones de la autoridad del área; las condiciones de visita pueden variar y no se deben inferir accesos o permisos a partir de este artículo.
 
-La protección de los manglares comienza con acciones sencillas: no arrojar residuos, no dañar la vegetación, respetar los senderos y seguir las indicaciones de las autoridades ambientales.
+El manglar de Balandra forma parte de un sistema costero conectado. Protegerlo implica respetar el estero, sus escurrimientos y la vegetación, además de atender las orientaciones de manejo del área natural protegida. La visita cuidadosa ayuda a mantener este ecosistema para la fauna y para las comunidades que valoran la bahía.
 CONTENT,
             ],
             [
                 'title' => 'Tiburón ballena en La Paz: cómo observarlo sin ponerlo en riesgo',
                 'category' => 'Fauna marina',
                 'image' => 'tiburon-ballena',
-                'source' => 'CONABIO y autoridades ambientales responsables de la regulación de observación.',
+                'source' => 'SEMARNAT, NOM-171-SEMARNAT-2018: https://sidof.segob.gob.mx/notas/docFuente/5579132; SEMARNAT, Plan de manejo de tiburón ballena 2025–2026: https://biblioteca.semarnat.gob.mx/janium/Documentos/Ciga/libros2023/CD010338.pdf',
                 'content' => <<<'CONTENT'
-Resumen: La presencia estacional del tiburón ballena en la Bahía de La Paz representa una oportunidad para conocer la biodiversidad marina y fomentar actividades de observación responsable.
+En ciertos periodos del año, la Bahía de La Paz puede recibir tiburones ballena. Su presencia no es constante ni está garantizada en cada salida. Observar uno en libertad es una oportunidad para conocer un gran pez filtrador, pero la prioridad debe ser no interferir con su desplazamiento ni con su alimentación.
 
-Introducción
-El tiburón ballena es el pez más grande del planeta. A pesar de su tamaño, se alimenta principalmente mediante filtración, consumiendo plancton y pequeños organismos presentes en el agua.
+Un pez que se alimenta filtrando
+El tiburón ballena (Rhincodon typus) es el pez de mayor tamaño conocido. Aunque su cuerpo es enorme, se alimenta filtrando agua para retener plancton y otros organismos pequeños. Se desplaza por aguas superficiales y puede cambiar de dirección o sumergirse; por ello, una embarcación o un nadador que se interponga puede obstaculizar su movimiento. La especie se enfrenta, entre otros riesgos, a colisiones con embarcaciones y a perturbaciones por actividades no reguladas.
 
-La Bahía de La Paz es reconocida por la presencia estacional de esta especie. Su llegada permite desarrollar actividades de observación que, cuando se realizan de manera responsable y conforme a la regulación vigente, pueden contribuir a la educación ambiental.
+Presencia estacional, no garantizada
+La Bahía de La Paz es una zona de presencia estacional de la especie, pero su aparición depende de condiciones ecológicas que cambian. No se debe prometer un avistamiento ni perseguir animales para aumentar la posibilidad de verlo. Si no se encuentra un ejemplar o las condiciones no son adecuadas, la observación no debe forzarse.
 
-Sin embargo, observar a un animal silvestre implica respetar su comportamiento. Acercamientos inadecuados, persecuciones, contacto físico o interferencias con su desplazamiento pueden ocasionar estrés y alterar sus actividades naturales.
+Reglas para observar sin causar daño
+La NOM-171-SEMARNAT-2018 regula las actividades de observación y nado con tiburón ballena y establece condiciones de autorización, acercamiento, distancias, tiempos y conducta. Antes de participar, confirma que la actividad se realice conforme a las autorizaciones y disposiciones vigentes, y sigue las instrucciones de la persona responsable.
 
-Los visitantes deben contratar prestadores autorizados, respetar las indicaciones de los guías y cumplir las disposiciones oficiales vigentes para la observación.
+No toques, persigas, montes ni alimentes al tiburón ballena. No bloquees su trayectoria ni nades frente a su cabeza o cerca de su cola. Mantén la distancia y el tiempo de observación indicados por la normativa y el personal autorizado; espera a que el animal se acerque por sí mismo y retírate si cambia su conducta o se aleja. No arrojes objetos ni residuos al agua.
 
-La conservación del tiburón ballena no depende solamente de proteger a los ejemplares. También requiere mantener la calidad del agua, reducir los residuos y conservar los ecosistemas marinos que utiliza para alimentarse.
+Conservar más que un avistamiento
+La observación responsable depende de embarcaciones manejadas con cuidado y del cumplimiento de límites y condiciones oficiales, no solo de la conducta de cada visitante. También es importante reducir la basura que llega al mar y mantener los ecosistemas que ofrecen alimento a la especie. Una experiencia valiosa es aquella que permite observar sin convertir al animal en un objeto de persecución.
+
 CONTENT,
             ],
             [
                 'title' => 'El viaje de la ballena gris: una historia de migración y conservación',
                 'category' => 'Fauna marina',
                 'image' => 'ballena-gris',
-                'source' => 'CONANP, Reserva de la Biosfera El Vizcaíno.',
+                'source' => 'CONANP, “Reserva de la Biosfera El Vizcaíno, Santuario de la Ballena Gris”: https://www.conanp.gob.mx/temp/ballena.php; Convención sobre los Humedales, ficha Ramsar 1341, Laguna San Ignacio: https://rsis.ramsar.org/ris/1341; ficha Ramsar 1339, Laguna Ojo de Liebre: https://rsis.ramsar.org/ris/1339',
                 'content' => <<<'CONTENT'
-Resumen: Las lagunas de Baja California Sur forman parte de una de las regiones más importantes para la reproducción y crianza de la ballena gris en el Pacífico.
+Cada año, ballenas grises recorren el Pacífico nororiental entre sus áreas de alimentación del norte y las lagunas costeras de Baja California. En Baja California Sur, Laguna San Ignacio y el Complejo Lagunar Ojo de Liebre son parte de la región donde la especie se aparea, pare y cría a sus ballenatos. La migración conecta ecosistemas distantes y hace especialmente importante la protección de sus destinos.
 
-Introducción
-La ballena gris realiza una migración de larga distancia entre sus áreas de alimentación en el norte del Pacífico y las lagunas de reproducción ubicadas en la península de Baja California.
+Un recorrido entre el norte y la península
+La población migratoria se alimenta en aguas frías del norte del Pacífico, incluidas las regiones de los mares de Bering y Chukchi, y se desplaza hacia el sur por la costa occidental de Norteamérica. Durante los meses de invierno, una parte llega a las lagunas de la península de Baja California. Las fuentes de CONANP describen a El Vizcaíno como una de las áreas donde ocurre la estancia invernal de la ballena gris; la duración y abundancia varían entre temporadas.
 
-Durante su estancia en Baja California Sur, las hembras pueden dar a luz y cuidar a sus crías en ambientes costeros protegidos. Estas lagunas ofrecen condiciones que resultan importantes durante las primeras etapas de vida de los ballenatos.
+Lagunas para reproducirse y criar
+Laguna San Ignacio y Ojo de Liebre son humedales costeros con aguas someras y ambientes protegidos que la especie utiliza durante su ciclo reproductivo. Las hembras pueden parir allí y permanecer con sus crías mientras estas dependen de la leche materna y desarrollan fuerza para el viaje de regreso. La estancia en las lagunas es temporal: las ballenas no permanecen allí todo el año.
 
-Laguna San Ignacio y el Complejo Lagunar Ojo de Liebre son dos sitios emblemáticos de este proceso natural. Ambos forman parte de la región protegida de El Vizcaíno y tienen gran importancia para la conservación de la especie.
+Un santuario de alcance internacional
+Los humedales de San Ignacio y Ojo de Liebre cuentan con designaciones Ramsar y forman parte del contexto de protección del Santuario de Ballenas de El Vizcaíno, reconocido como sitio de Patrimonio Mundial. La ficha Ramsar de San Ignacio identifica la laguna como sitio importante para la ballena gris y señala su relación con la Reserva de la Biosfera y el sitio de Patrimonio Mundial. Estas designaciones protegen hábitats de reproducción, además de otros ecosistemas y especies.
 
-La historia de la ballena gris también demuestra la importancia de la protección ambiental. Después de haber enfrentado una intensa explotación histórica, su recuperación estuvo vinculada a medidas de conservación y cooperación internacional.
+Observar con distancia y respeto
+Si se realizan actividades de observación, deben sujetarse a las autorizaciones y disposiciones aplicables en el área. Mantén la distancia indicada, no intentes acercarte por cuenta propia, no alimentes ni toques a los animales y evita maniobras que separen a una madre de su cría o corten su ruta. Sigue las instrucciones de personal autorizado y acepta que el comportamiento de las ballenas determina si es posible observarlas.
 
-Actualmente, mantener la tranquilidad de las zonas de reproducción y regular las actividades turísticas son acciones importantes para proteger a las ballenas y sus crías.
+La migración de la ballena gris depende de una red de hábitats a lo largo de miles de kilómetros. Cuidar las lagunas de Baja California Sur, reducir las perturbaciones y respetar las medidas de observación contribuye a conservar las condiciones necesarias para que las siguientes generaciones completen su ciclo.
+
 CONTENT,
             ],
             [
                 'title' => 'Tortugas marinas en Baja California Sur: proteger las playas donde comienza la vida',
                 'category' => 'Conservación',
                 'image' => 'tortuga-golfina',
-                'source' => 'PROFEPA, CONANP y NOM-059-SEMARNAT.',
+                'source' => 'PROFEPA, “Protección de las tortugas marinas en México” (27-08-2019): https://www.gob.mx/profepa/articulos/proteccion-de-las-tortugas-marinas-en-mexico; CONANP, Programa de Acción para la Conservación de la Especie Tortuga Verde-Negra: https://www.gob.mx/conanp/documentos/programa-de-accion-para-la-conservacion-de-la-especie-tortuga-verde-negra-chelonia-mydas',
                 'content' => <<<'CONTENT'
-Resumen: Las playas son espacios esenciales para la reproducción de las tortugas marinas. Su protección requiere reducir las alteraciones humanas y mantener condiciones adecuadas para la anidación.
+Las tortugas marinas pasan gran parte de su vida en el mar, pero las hembras deben regresar a playas adecuadas para depositar sus huevos. En Baja California Sur, cuidar esos espacios significa proteger tanto a los animales como a las condiciones de la playa y del litoral que permiten completar distintas etapas de su ciclo de vida.
 
-Introducción
-Las tortugas marinas pasan gran parte de su vida en el océano, pero necesitan regresar a las playas para completar su ciclo reproductivo. Durante la anidación, las hembras excavan nidos en la arena y depositan sus huevos, que posteriormente se desarrollan bajo condiciones ambientales específicas.
+Anidación y primeras etapas
+Una hembra que anida sale del agua, elige un sitio en la arena, excava una cámara y deposita los huevos. Tras el periodo de incubación, las crías emergen y se desplazan hacia el mar. La temperatura, humedad, estructura de la arena y tranquilidad de la playa influyen en este proceso. Por ello, conservar la playa como hábitat es tan importante como proteger a los ejemplares que se observan en ella.
 
-La conservación de las playas es fundamental para que este proceso ocurra correctamente. La iluminación artificial, los residuos, el tránsito de vehículos y la alteración de la arena pueden afectar las condiciones de los nidos y el desplazamiento de las crías.
+Presiones que enfrentan
+Entre las amenazas documentadas para las tortugas marinas se encuentran la captura incidental en pesquerías, la extracción de huevos y hembras, la contaminación y degradación de sitios de alimentación, y la transformación de playas de anidación. La iluminación artificial puede desorientar a las crías y alterar su desplazamiento; los residuos y las actividades en la arena también pueden afectar el entorno del nido.
 
-En Baja California Sur existen esfuerzos de protección y monitoreo de tortugas marinas que involucran a autoridades, organizaciones y comunidades locales.
+Cómo evitar molestias
+Si ves una tortuga, un nido o crías, mantén distancia y no uses flash ni luces para acercarte. No la toques, persigas, rodees ni bloquees su camino; mantén a otras personas y animales domésticos alejados sin acercarte al sitio. No excaves ni remuevas arena, huevos o nidos y no intentes trasladar o liberar ejemplares por tu cuenta.
 
-Las personas que visitan playas pueden contribuir evitando acercarse a tortugas que estén anidando, no manipulando huevos o crías y reportando actividades que puedan ponerlas en riesgo a las autoridades correspondientes.
+Si un animal parece herido, está en riesgo o encuentras un posible nido, avisa a las autoridades ambientales o al personal autorizado de conservación de la zona. Proporciona la ubicación desde una distancia segura y sigue las instrucciones que recibas; la manipulación corresponde a personal capacitado y autorizado.
 
-La protección de estos animales requiere acciones continuas y el respeto a las disposiciones ambientales vigentes.
+Una responsabilidad compartida
+La protección requiere vigilancia, reducción de impactos y respeto a las disposiciones ambientales aplicables. Visitantes, comunidades, autoridades y equipos de conservación pueden contribuir informando sin exponerse ni interferir con el trabajo autorizado. No recolectes huevos ni compres productos derivados de tortugas.
+
+Las playas de anidación son parte de un ciclo que conecta el litoral con el océano abierto. Mantenerlas oscuras y tranquilas, reducir los residuos y reportar situaciones de riesgo sin manipular a los animales son acciones sencillas que ayudan a protegerlas.
+
 CONTENT,
             ],
             [
                 'title' => 'Sierra La Laguna: el bosque que sostiene la vida en el desierto',
                 'category' => 'Ecosistemas terrestres',
                 'image' => 'sierra-la-laguna',
-                'source' => 'CONANP, ficha y programa de manejo de Sierra La Laguna: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=162',
+                'source' => 'CONANP, “Reserva de la Biósfera Sierra La Laguna” (03-12-2019): https://www.gob.mx/conanp/documentos/reserva-de-la-biosfera-sierra-la-laguna-228702; CONANP, Área Natural Protegida Sierra La Laguna: https://descubreanp.conanp.gob.mx/es/conanp/anp?suri=162',
                 'content' => <<<'CONTENT'
-Resumen: La Sierra La Laguna representa un contraste ecológico dentro del paisaje árido de Baja California Sur y tiene importancia para la biodiversidad y el funcionamiento de las cuencas.
+En los municipios de La Paz y Los Cabos, al sur de Baja California Sur, la Reserva de la Biosfera Sierra La Laguna se eleva sobre las tierras áridas que la rodean. La altitud y el relieve generan ambientes distintos en distancias relativamente cortas: la reserva incluye bosques de pino-encino, selva baja caducifolia y zonas semidesérticas, no un solo bosque uniforme.
 
-Introducción
-La Sierra La Laguna es una región montañosa ubicada al sur de Baja California Sur. Su elevación y condiciones ambientales permiten el desarrollo de comunidades vegetales que contrastan con los matorrales desérticos presentes en otras partes de la península.
+Ecosistemas que cambian con el relieve
+En las partes altas se desarrollan bosques de pino y encino; en otras elevaciones y laderas predominan comunidades de selva baja caducifolia y vegetación adaptada a condiciones más secas. La lluvia, la temperatura, la exposición y el suelo cambian con la altitud, creando hábitats con composición y condiciones propias. Esa variedad sostiene biodiversidad terrestre y distingue a la sierra dentro del paisaje peninsular.
 
-En sus zonas de mayor altitud se encuentran bosques de pino y encino, mientras que otras áreas presentan selva baja caducifolia y distintos tipos de vegetación adaptados a las condiciones locales.
+Cuencas y agua
+La reserva contribuye a la captación de agua de lluvia; sus laderas y cauces también conducen escurrimientos hacia zonas más bajas. Conservar la cobertura vegetal y los cauces ayuda a mantener esos procesos, aunque la disponibilidad de agua depende asimismo de las lluvias y de las condiciones geológicas y climáticas. Proteger la cuenca significa evitar que las actividades degraden suelos, cauces y vegetación.
 
-Esta diversidad de ambientes permite la presencia de especies vegetales y animales con diferentes requerimientos ecológicos.
+Visitar con cuidado
+Antes de realizar una actividad, infórmate con la administración del área o con fuentes locales autorizadas sobre las rutas, permisos, condiciones y restricciones vigentes; pueden cambiar según el sitio y la temporada. Mantente en senderos permitidos, retira tus residuos, evita encender fuego fuera de los sitios autorizados y no extraigas plantas, animales ni materiales naturales. Conduce con cuidado y respeta las indicaciones del personal del área.
 
-Además de su biodiversidad, la sierra desempeña un papel importante en los procesos hidrológicos regionales. La vegetación y las condiciones naturales del terreno contribuyen a la captación, infiltración y regulación del agua.
+La Reserva de la Biosfera Sierra La Laguna protege un mosaico de ecosistemas y los procesos de cuenca que los conectan. Conservarla requiere reconocer sus diferencias ecológicas y reducir impactos en toda la sierra, desde las zonas altas hasta las laderas y cauces que llevan el agua hacia el entorno regional.
 
-Conservar la Sierra La Laguna significa proteger un sistema natural que beneficia a los ecosistemas y a las comunidades humanas del sur de la península.
 CONTENT,
             ],
             [
                 'title' => 'Cómo sobrevive la flora del desierto sudcaliforniano',
                 'category' => 'Flora',
                 'image' => 'cardon',
-                'source' => 'CONANP, Programa de Manejo de Balandra; documentación botánica regional de SEMARNAT.',
+                'source' => 'CONABIO, EncicloVida, fichas de Pachycereus pringlei (144024), Stenocereus gummosus (144034), Jatropha cinerea (148914), Bursera microphylla (155000) y Fouquieria diguetii (172177); INEGI, Síntesis geográfica de Baja California Sur: https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/historicos/2104/702825220860/702825220860_1.pdf',
                 'content' => <<<'CONTENT'
-Resumen: La vegetación de Baja California Sur presenta adaptaciones que le permiten desarrollarse en condiciones de altas temperaturas, precipitaciones limitadas y suelos áridos.
+En Baja California Sur, la escasez e irregularidad de las lluvias condicionan el crecimiento de las plantas, pero no producen un paisaje sin vida. El matorral sarcocaule y otras comunidades desérticas reúnen especies con distintas formas de crecer, conservar agua y responder a periodos secos. Sus adaptaciones no son idénticas: reflejan la historia y la biología de cada planta.
 
-Introducción
-El desierto sudcaliforniano puede parecer un ambiente con poca vida, pero alberga una gran diversidad de plantas adaptadas a condiciones de escasez de agua.
+Estrategias distintas frente a la sequía
+Algunas cactáceas almacenan agua en tallos carnosos y reducen la superficie expuesta mediante hojas transformadas en espinas; otras plantas leñosas pierden o reducen sus hojas durante periodos desfavorables, o presentan tallos y ramas que toleran la aridez. La captación de agua, el crecimiento y la floración pueden concentrarse en periodos con humedad disponible. Estas estrategias varían entre especies y no deben atribuirse por igual a toda la flora del desierto.
 
-Muchas especies presentan tallos capaces de almacenar humedad, hojas reducidas o estructuras que disminuyen la pérdida de agua. Estas características les permiten aprovechar los periodos de lluvia y sobrevivir durante temporadas secas.
+Cinco plantas del paisaje sudcaliforniano
+El cardón (Pachycereus pringlei) es una cactácea columnar de gran porte; sus tallos almacenan agua y forman una estructura visible del paisaje. La pitaya agria (Stenocereus gummosus) también es una cactácea de tallos suculentos, pero tiene un porte y una forma de crecimiento diferentes a los del cardón.
 
-Entre las plantas representativas de la región se encuentran el cardón, la pitaya agria, el lomboy, el torote colorado y el palo Adán.
+El lomboy (Jatropha cinerea) es un arbusto propio de ambientes áridos; su respuesta a la sequía no es la misma que la de las cactáceas. El torote colorado (Bursera microphylla) es una planta leñosa de zonas secas que puede presentarse como árbol o arbusto. El palo Adán (Fouquieria diguetii) es otra especie característica de ambientes áridos, con ramas espinosas. La presencia y abundancia de cada una dependen del sitio y sus condiciones; una fotografía o un nombre común por sí solos no confirman su presencia en una localidad concreta.
 
-Estas especies forman parte de comunidades vegetales que proporcionan recursos y espacios de refugio para diferentes organismos. Su importancia no se limita a su apariencia: contribuyen al funcionamiento de los ecosistemas y a las relaciones ecológicas del desierto.
+Relaciones con otros organismos
+Las plantas nativas forman parte de redes ecológicas: sus flores, frutos, tallos y ramas pueden ofrecer recursos o estructura a distintos organismos. El tipo de interacción depende de la especie vegetal, el sitio y la temporada; no es correcto asumir que las cinco plantas comparten los mismos polinizadores o fauna asociada sin registros específicos. La ficha de EncicloVida de cada taxón y los registros regionales ayudan a distinguir información de especie de evidencia de presencia local.
 
-La conservación de la flora nativa requiere evitar la extracción ilegal, prevenir daños a la vegetación y mantener los ambientes donde estas plantas se desarrollan naturalmente.
+Cómo proteger la vegetación nativa
+Evita cortar, extraer o dañar plantas, y no abandones senderos para acercarte a ejemplares. No introduzcas especies ni retires semillas o frutos de áreas protegidas sin autorización. Si observas daño o extracción, repórtalo por los canales de la autoridad correspondiente. Conocer las diferencias entre las especies ayuda a valorar el matorral como una comunidad diversa, no como terreno vacío.
 
-Conocer las especies del desierto permite comprender que la aridez no significa ausencia de biodiversidad, sino la existencia de ecosistemas con adaptaciones especializadas.
+La flora del desierto persiste gracias a múltiples estrategias y a las relaciones con el suelo, el agua y otros organismos. Proteger su hábitat y evitar su extracción permite que estos procesos continúen en los paisajes áridos de Baja California Sur.
+
 CONTENT,
             ],
         ];
