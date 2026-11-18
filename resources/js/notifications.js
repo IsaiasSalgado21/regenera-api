@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { apiUrl } from './api-url';
 import { loadForCompleteProfile } from './notification-access';
+import { playNotificationSound } from './notification-sound';
 
 const drawer = document.querySelector('[data-notification-drawer]');
 if (drawer) {
@@ -16,6 +17,9 @@ if (drawer) {
     let recipientFilter = 'mine';
     let isAdmin = false;
     let lastFocused = null;
+    let hasLoadedNotifications = false;
+    const seenNotificationIds = new Set();
+    let toastContainer = null;
 
     const tokenHeaders = () => {
         const token = sessionStorage.getItem('regenera_access_token');
@@ -50,6 +54,94 @@ if (drawer) {
             badge.textContent = count > 99 ? '99+' : String(count);
             badge.hidden = count < 1;
         });
+    }
+
+    function positionToasts() {
+        if (!toastContainer) return;
+        const bell = toggles.find(toggle => !toggle.hidden && toggle.getBoundingClientRect().width > 0);
+        if (!bell) return;
+        const bounds = bell.getBoundingClientRect();
+        toastContainer.style.top = `${Math.ceil(bounds.bottom + 8)}px`;
+        toastContainer.style.right = `${Math.max(8, Math.ceil(window.innerWidth - bounds.right))}px`;
+    }
+
+    function showToast(notification) {
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'notification-toast-container';
+            toastContainer.setAttribute('aria-live', 'polite');
+            toastContainer.setAttribute('aria-relevant', 'additions');
+            document.body.append(toastContainer);
+        }
+
+        const toast = document.createElement('article');
+        toast.className = 'notification-toast';
+        toast.setAttribute('role', 'status');
+
+        const heading = document.createElement('strong');
+        heading.className = 'notification-toast-title';
+        heading.textContent = notification.titulo || 'Nueva notificación';
+        toast.append(heading);
+
+        const message = document.createElement('p');
+        message.className = 'notification-toast-message';
+        message.textContent = notification.mensaje || '';
+        toast.append(message);
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'notification-toast-close';
+        close.setAttribute('aria-label', 'Cerrar notificación');
+        close.textContent = '×';
+        toast.append(close);
+
+        if (notification.url) {
+            const target = new URL(notification.url, window.location.origin);
+            if (target.origin === window.location.origin) {
+                const link = document.createElement('a');
+                link.className = 'notification-toast-link';
+                link.href = target.href;
+                link.textContent = 'Ver notificación';
+                toast.append(link);
+            }
+        }
+
+        const removeToast = () => {
+            toast.remove();
+            if (toastContainer && !toastContainer.childElementCount) {
+                toastContainer.remove();
+                toastContainer = null;
+            }
+        };
+        let dismissTimer = window.setTimeout(removeToast, 6_000);
+        const pauseDismissal = () => window.clearTimeout(dismissTimer);
+        const resumeDismissal = () => {
+            window.clearTimeout(dismissTimer);
+            dismissTimer = window.setTimeout(removeToast, 6_000);
+        };
+        toast.addEventListener('mouseenter', pauseDismissal);
+        toast.addEventListener('mouseleave', resumeDismissal);
+        toast.addEventListener('focusin', pauseDismissal);
+        toast.addEventListener('focusout', resumeDismissal);
+        close.addEventListener('click', removeToast);
+        toastContainer.append(toast);
+        positionToasts();
+        playNotificationSound();
+    }
+
+    function announceNewNotifications(nextNotifications) {
+        const newNotifications = [];
+        nextNotifications.forEach(notification => {
+            const id = String(notification.id ?? '');
+            if (!id || seenNotificationIds.has(id)) return;
+            seenNotificationIds.add(id);
+            if (hasLoadedNotifications) newNotifications.push(notification);
+        });
+        if (!hasLoadedNotifications) {
+            hasLoadedNotifications = true;
+            return;
+        }
+        newNotifications.reverse().forEach(showToast);
     }
 
     function render() {
@@ -107,6 +199,7 @@ if (drawer) {
                 return;
             }
             notifications = response.data.data ?? [];
+            announceNewNotifications(notifications);
             isAdmin = response.data.esAdmin === true;
             recipientFilters.hidden = !isAdmin;
             updateBadge(notifications.filter(item => !item.leida).length);
@@ -203,15 +296,29 @@ if (drawer) {
     });
     document.addEventListener('regenera:auth-changed', event => {
         if (event.detail?.user) {
+            hasLoadedNotifications = false;
+            seenNotificationIds.clear();
             load();
             return;
         }
+        hasLoadedNotifications = false;
+        seenNotificationIds.clear();
         toggles.forEach(toggle => { toggle.hidden = true; });
         updateBadge(0);
     });
+    document.addEventListener('regenera:inscription-created', load);
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data?.type === 'regenera:notifications-updated') {
+                load();
+            }
+        });
+    }
+    window.addEventListener('resize', positionToasts);
+    window.addEventListener('scroll', positionToasts, { passive: true });
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape' && !drawer.hidden) setOpen(false);
     });
     load();
-    window.setInterval(load, 60_000);
+    window.setInterval(load, 15_000);
 }

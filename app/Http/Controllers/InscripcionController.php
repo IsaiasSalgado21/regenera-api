@@ -119,14 +119,9 @@ class InscripcionController extends Controller
             ], 409);
         }
 
-        if ($this->gamificacion->requiereCuestionarioSeguridad($usuario)) {
-            return response()->json([
-                'success' => false,
-                'code' => 'cuestionario_seguridad_requerido',
-                'cuestionario' => 'seguridad-limpieza',
-                'message' => 'Aprueba el cuestionario de seguridad antes de realizar tu primera inscripción.',
-            ], 428);
-        }
+        $cuestionarioSugerido = $this->gamificacion->requiereCuestionarioSeguridad($usuario)
+            ? 'seguridad-limpieza'
+            : null;
 
         $usuarioId = (string) $usuario->getAuthIdentifier();
         $voluntariadoId = (string) $voluntariado->_id;
@@ -222,6 +217,7 @@ class InscripcionController extends Controller
                 'success' => true,
                 'message' => 'Inscripción registrada correctamente.',
                 'inscripcion' => $inscripcion,
+                'cuestionarioSugerido' => $cuestionarioSugerido,
             ], 201);
         }
 
@@ -233,6 +229,7 @@ class InscripcionController extends Controller
             'success' => true,
             'message' => 'Inscripción registrada correctamente.',
             'inscripcion' => $inscripcion,
+            'cuestionarioSugerido' => $cuestionarioSugerido,
         ], 201);
     }
 
